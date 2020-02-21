@@ -90,7 +90,7 @@ func TestNullBubbling(t *testing.T) {
 		resolvers.ErrorsResolver.D = func(ctx context.Context, obj *Errors) (i *Error, e error) { return nil, nil }
 		resolvers.ErrorsResolver.E = func(ctx context.Context, obj *Errors) (i *Error, e error) { return nil, nil }
 
-		err := c.Post(`{ errors { 
+		err := c.Post(`{ errors {
 			a { id },
 			b { id },
 			c { id },
