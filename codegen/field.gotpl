@@ -44,7 +44,7 @@ func (ec *executionContext) _{{$object.Name}}_{{$field.Name}}(ctx context.Contex
 	if resTmp == nil {
 		{{- if $field.TypeReference.GQL.NonNull }}
 			if !graphql.HasFieldError(ctx, fc) {
-				ec.Errorf(ctx, "must not be null")
+				ec.Errorf(ctx, "{{$object.Name}}.{{$field.Name}} must not be null")
 			}
 		{{- end }}
 		return {{ $null }}
