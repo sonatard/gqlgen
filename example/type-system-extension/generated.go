@@ -405,7 +405,7 @@ func (ec *executionContext) _MyMutation_createTodo(ctx context.Context, field gr
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "MyMutation.createTodo must not be null")
 		}
 		return graphql.Null
 	}
@@ -439,7 +439,7 @@ func (ec *executionContext) _MyQuery_todos(ctx context.Context, field graphql.Co
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "MyQuery.todos must not be null")
 		}
 		return graphql.Null
 	}
@@ -580,7 +580,7 @@ func (ec *executionContext) _Todo_id(ctx context.Context, field graphql.Collecte
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Todo.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -614,7 +614,7 @@ func (ec *executionContext) _Todo_text(ctx context.Context, field graphql.Collec
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Todo.text must not be null")
 		}
 		return graphql.Null
 	}
@@ -648,7 +648,7 @@ func (ec *executionContext) _Todo_state(ctx context.Context, field graphql.Colle
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Todo.state must not be null")
 		}
 		return graphql.Null
 	}
@@ -702,7 +702,7 @@ func (ec *executionContext) _Todo_verified(ctx context.Context, field graphql.Co
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Todo.verified must not be null")
 		}
 		return graphql.Null
 	}
@@ -736,7 +736,7 @@ func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Directive.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -801,7 +801,7 @@ func (ec *executionContext) ___Directive_locations(ctx context.Context, field gr
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Directive.locations must not be null")
 		}
 		return graphql.Null
 	}
@@ -835,7 +835,7 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Directive.args must not be null")
 		}
 		return graphql.Null
 	}
@@ -869,7 +869,7 @@ func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__EnumValue.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -934,7 +934,7 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__EnumValue.isDeprecated must not be null")
 		}
 		return graphql.Null
 	}
@@ -999,7 +999,7 @@ func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.Col
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Field.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -1064,7 +1064,7 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Field.args must not be null")
 		}
 		return graphql.Null
 	}
@@ -1098,7 +1098,7 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Field.type must not be null")
 		}
 		return graphql.Null
 	}
@@ -1132,7 +1132,7 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Field.isDeprecated must not be null")
 		}
 		return graphql.Null
 	}
@@ -1197,7 +1197,7 @@ func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphq
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__InputValue.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -1262,7 +1262,7 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__InputValue.type must not be null")
 		}
 		return graphql.Null
 	}
@@ -1327,7 +1327,7 @@ func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.C
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Schema.types must not be null")
 		}
 		return graphql.Null
 	}
@@ -1361,7 +1361,7 @@ func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graph
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Schema.queryType must not be null")
 		}
 		return graphql.Null
 	}
@@ -1457,7 +1457,7 @@ func (ec *executionContext) ___Schema_directives(ctx context.Context, field grap
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Schema.directives must not be null")
 		}
 		return graphql.Null
 	}
@@ -1491,7 +1491,7 @@ func (ec *executionContext) ___Type_kind(ctx context.Context, field graphql.Coll
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Type.kind must not be null")
 		}
 		return graphql.Null
 	}

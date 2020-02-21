@@ -3089,7 +3089,7 @@ func (ec *executionContext) _A_id(ctx context.Context, field graphql.CollectedFi
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "A.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -3120,7 +3120,7 @@ func (ec *executionContext) _AIt_id(ctx context.Context, field graphql.Collected
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "AIt.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -3151,7 +3151,7 @@ func (ec *executionContext) _AbIt_id(ctx context.Context, field graphql.Collecte
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "AbIt.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -3182,7 +3182,7 @@ func (ec *executionContext) _Autobind_int(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Autobind.int must not be null")
 		}
 		return graphql.Null
 	}
@@ -3213,7 +3213,7 @@ func (ec *executionContext) _Autobind_int32(ctx context.Context, field graphql.C
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Autobind.int32 must not be null")
 		}
 		return graphql.Null
 	}
@@ -3244,7 +3244,7 @@ func (ec *executionContext) _Autobind_int64(ctx context.Context, field graphql.C
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Autobind.int64 must not be null")
 		}
 		return graphql.Null
 	}
@@ -3275,7 +3275,7 @@ func (ec *executionContext) _Autobind_idStr(ctx context.Context, field graphql.C
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Autobind.idStr must not be null")
 		}
 		return graphql.Null
 	}
@@ -3306,7 +3306,7 @@ func (ec *executionContext) _Autobind_idInt(ctx context.Context, field graphql.C
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Autobind.idInt must not be null")
 		}
 		return graphql.Null
 	}
@@ -3337,7 +3337,7 @@ func (ec *executionContext) _B_id(ctx context.Context, field graphql.CollectedFi
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "B.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -3368,7 +3368,7 @@ func (ec *executionContext) _BackedByInterface_id(ctx context.Context, field gra
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "BackedByInterface.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -3399,7 +3399,7 @@ func (ec *executionContext) _BackedByInterface_thisShouldBind(ctx context.Contex
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "BackedByInterface.thisShouldBind must not be null")
 		}
 		return graphql.Null
 	}
@@ -3430,7 +3430,7 @@ func (ec *executionContext) _BackedByInterface_thisShouldBindWithError(ctx conte
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "BackedByInterface.thisShouldBindWithError must not be null")
 		}
 		return graphql.Null
 	}
@@ -3461,7 +3461,7 @@ func (ec *executionContext) _Cat_species(ctx context.Context, field graphql.Coll
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Cat.species must not be null")
 		}
 		return graphql.Null
 	}
@@ -3492,7 +3492,7 @@ func (ec *executionContext) _Cat_catBreed(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Cat.catBreed must not be null")
 		}
 		return graphql.Null
 	}
@@ -3607,7 +3607,7 @@ func (ec *executionContext) _ConcreteNodeA_id(ctx context.Context, field graphql
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ConcreteNodeA.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -3638,7 +3638,7 @@ func (ec *executionContext) _ConcreteNodeA_child(ctx context.Context, field grap
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ConcreteNodeA.child must not be null")
 		}
 		return graphql.Null
 	}
@@ -3669,7 +3669,7 @@ func (ec *executionContext) _ConcreteNodeA_name(ctx context.Context, field graph
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ConcreteNodeA.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -3700,7 +3700,7 @@ func (ec *executionContext) _ConcreteNodeInterface_id(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ConcreteNodeInterface.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -3731,7 +3731,7 @@ func (ec *executionContext) _ConcreteNodeInterface_child(ctx context.Context, fi
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ConcreteNodeInterface.child must not be null")
 		}
 		return graphql.Null
 	}
@@ -3818,7 +3818,7 @@ func (ec *executionContext) _Dog_species(ctx context.Context, field graphql.Coll
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Dog.species must not be null")
 		}
 		return graphql.Null
 	}
@@ -3849,7 +3849,7 @@ func (ec *executionContext) _Dog_dogBreed(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Dog.dogBreed must not be null")
 		}
 		return graphql.Null
 	}
@@ -3880,7 +3880,7 @@ func (ec *executionContext) _EmbeddedCase1_exportedEmbeddedPointerExportedMethod
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "EmbeddedCase1.exportedEmbeddedPointerExportedMethod must not be null")
 		}
 		return graphql.Null
 	}
@@ -3911,7 +3911,7 @@ func (ec *executionContext) _EmbeddedCase2_unexportedEmbeddedPointerExportedMeth
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "EmbeddedCase2.unexportedEmbeddedPointerExportedMethod must not be null")
 		}
 		return graphql.Null
 	}
@@ -3942,7 +3942,7 @@ func (ec *executionContext) _EmbeddedCase3_unexportedEmbeddedInterfaceExportedMe
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "EmbeddedCase3.unexportedEmbeddedInterfaceExportedMethod must not be null")
 		}
 		return graphql.Null
 	}
@@ -4057,7 +4057,7 @@ func (ec *executionContext) _Error_id(ctx context.Context, field graphql.Collect
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Error.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -4116,7 +4116,7 @@ func (ec *executionContext) _Error_errorOnRequiredField(ctx context.Context, fie
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Error.errorOnRequiredField must not be null")
 		}
 		return graphql.Null
 	}
@@ -4147,7 +4147,7 @@ func (ec *executionContext) _Error_nilOnRequiredField(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Error.nilOnRequiredField must not be null")
 		}
 		return graphql.Null
 	}
@@ -4178,7 +4178,7 @@ func (ec *executionContext) _Errors_a(ctx context.Context, field graphql.Collect
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Errors.a must not be null")
 		}
 		return graphql.Null
 	}
@@ -4209,7 +4209,7 @@ func (ec *executionContext) _Errors_b(ctx context.Context, field graphql.Collect
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Errors.b must not be null")
 		}
 		return graphql.Null
 	}
@@ -4240,7 +4240,7 @@ func (ec *executionContext) _Errors_c(ctx context.Context, field graphql.Collect
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Errors.c must not be null")
 		}
 		return graphql.Null
 	}
@@ -4271,7 +4271,7 @@ func (ec *executionContext) _Errors_d(ctx context.Context, field graphql.Collect
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Errors.d must not be null")
 		}
 		return graphql.Null
 	}
@@ -4302,7 +4302,7 @@ func (ec *executionContext) _Errors_e(ctx context.Context, field graphql.Collect
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Errors.e must not be null")
 		}
 		return graphql.Null
 	}
@@ -4361,7 +4361,7 @@ func (ec *executionContext) _InnerObject_id(ctx context.Context, field graphql.C
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "InnerObject.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -4392,7 +4392,7 @@ func (ec *executionContext) _InvalidIdentifier_id(ctx context.Context, field gra
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "InvalidIdentifier.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -4423,7 +4423,7 @@ func (ec *executionContext) _It_id(ctx context.Context, field graphql.CollectedF
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "It.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -4454,7 +4454,7 @@ func (ec *executionContext) _LoopA_b(ctx context.Context, field graphql.Collecte
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "LoopA.b must not be null")
 		}
 		return graphql.Null
 	}
@@ -4485,7 +4485,7 @@ func (ec *executionContext) _LoopB_a(ctx context.Context, field graphql.Collecte
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "LoopB.a must not be null")
 		}
 		return graphql.Null
 	}
@@ -4516,7 +4516,7 @@ func (ec *executionContext) _Map_id(ctx context.Context, field graphql.Collected
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Map.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -4621,7 +4621,7 @@ func (ec *executionContext) _ModelMethods_resolverField(ctx context.Context, fie
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ModelMethods.resolverField must not be null")
 		}
 		return graphql.Null
 	}
@@ -4652,7 +4652,7 @@ func (ec *executionContext) _ModelMethods_noContext(ctx context.Context, field g
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ModelMethods.noContext must not be null")
 		}
 		return graphql.Null
 	}
@@ -4683,7 +4683,7 @@ func (ec *executionContext) _ModelMethods_withContext(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ModelMethods.withContext must not be null")
 		}
 		return graphql.Null
 	}
@@ -4746,7 +4746,7 @@ func (ec *executionContext) _ObjectDirectives_text(ctx context.Context, field gr
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ObjectDirectives.text must not be null")
 		}
 		return graphql.Null
 	}
@@ -4873,7 +4873,7 @@ func (ec *executionContext) _OuterObject_inner(ctx context.Context, field graphq
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "OuterObject.inner must not be null")
 		}
 		return graphql.Null
 	}
@@ -4904,7 +4904,7 @@ func (ec *executionContext) _OverlappingFields_oneFoo(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "OverlappingFields.oneFoo must not be null")
 		}
 		return graphql.Null
 	}
@@ -4935,7 +4935,7 @@ func (ec *executionContext) _OverlappingFields_twoFoo(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "OverlappingFields.twoFoo must not be null")
 		}
 		return graphql.Null
 	}
@@ -4966,7 +4966,7 @@ func (ec *executionContext) _OverlappingFields_oldFoo(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "OverlappingFields.oldFoo must not be null")
 		}
 		return graphql.Null
 	}
@@ -4997,7 +4997,7 @@ func (ec *executionContext) _OverlappingFields_newFoo(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "OverlappingFields.newFoo must not be null")
 		}
 		return graphql.Null
 	}
@@ -5028,7 +5028,7 @@ func (ec *executionContext) _OverlappingFields_new_foo(ctx context.Context, fiel
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "OverlappingFields.new_foo must not be null")
 		}
 		return graphql.Null
 	}
@@ -5059,7 +5059,7 @@ func (ec *executionContext) _Panics_fieldScalarMarshal(ctx context.Context, fiel
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Panics.fieldScalarMarshal must not be null")
 		}
 		return graphql.Null
 	}
@@ -5097,7 +5097,7 @@ func (ec *executionContext) _Panics_fieldFuncMarshal(ctx context.Context, field 
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Panics.fieldFuncMarshal must not be null")
 		}
 		return graphql.Null
 	}
@@ -5135,7 +5135,7 @@ func (ec *executionContext) _Panics_argUnmarshal(ctx context.Context, field grap
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Panics.argUnmarshal must not be null")
 		}
 		return graphql.Null
 	}
@@ -5166,7 +5166,7 @@ func (ec *executionContext) _Primitive_value(ctx context.Context, field graphql.
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Primitive.value must not be null")
 		}
 		return graphql.Null
 	}
@@ -5197,7 +5197,7 @@ func (ec *executionContext) _Primitive_squared(ctx context.Context, field graphq
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Primitive.squared must not be null")
 		}
 		return graphql.Null
 	}
@@ -5228,7 +5228,7 @@ func (ec *executionContext) _PrimitiveString_value(ctx context.Context, field gr
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "PrimitiveString.value must not be null")
 		}
 		return graphql.Null
 	}
@@ -5259,7 +5259,7 @@ func (ec *executionContext) _PrimitiveString_doubled(ctx context.Context, field 
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "PrimitiveString.doubled must not be null")
 		}
 		return graphql.Null
 	}
@@ -5290,7 +5290,7 @@ func (ec *executionContext) _PrimitiveString_len(ctx context.Context, field grap
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "PrimitiveString.len must not be null")
 		}
 		return graphql.Null
 	}
@@ -5545,7 +5545,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.user must not be null")
 		}
 		return graphql.Null
 	}
@@ -5618,7 +5618,7 @@ func (ec *executionContext) _Query_inputSlice(ctx context.Context, field graphql
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.inputSlice must not be null")
 		}
 		return graphql.Null
 	}
@@ -5649,7 +5649,7 @@ func (ec *executionContext) _Query_shapeUnion(ctx context.Context, field graphql
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.shapeUnion must not be null")
 		}
 		return graphql.Null
 	}
@@ -5708,7 +5708,7 @@ func (ec *executionContext) _Query_deprecatedField(ctx context.Context, field gr
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.deprecatedField must not be null")
 		}
 		return graphql.Null
 	}
@@ -6033,7 +6033,7 @@ func (ec *executionContext) _Query_directiveFieldDef(ctx context.Context, field 
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.directiveFieldDef must not be null")
 		}
 		return graphql.Null
 	}
@@ -6285,7 +6285,7 @@ func (ec *executionContext) _Query_enumInInput(ctx context.Context, field graphq
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.enumInInput must not be null")
 		}
 		return graphql.Null
 	}
@@ -6392,7 +6392,7 @@ func (ec *executionContext) _Query_node(ctx context.Context, field graphql.Colle
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.node must not be null")
 		}
 		return graphql.Null
 	}
@@ -6701,7 +6701,7 @@ func (ec *executionContext) _Query_valid(ctx context.Context, field graphql.Coll
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.valid must not be null")
 		}
 		return graphql.Null
 	}
@@ -6760,7 +6760,7 @@ func (ec *executionContext) _Query_primitiveObject(ctx context.Context, field gr
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.primitiveObject must not be null")
 		}
 		return graphql.Null
 	}
@@ -6791,7 +6791,7 @@ func (ec *executionContext) _Query_primitiveStringObject(ctx context.Context, fi
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.primitiveStringObject must not be null")
 		}
 		return graphql.Null
 	}
@@ -6829,7 +6829,7 @@ func (ec *executionContext) _Query_defaultScalar(ctx context.Context, field grap
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.defaultScalar must not be null")
 		}
 		return graphql.Null
 	}
@@ -6888,7 +6888,7 @@ func (ec *executionContext) _Query_scalarSlice(ctx context.Context, field graphq
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.scalarSlice must not be null")
 		}
 		return graphql.Null
 	}
@@ -6926,7 +6926,7 @@ func (ec *executionContext) _Query_fallback(ctx context.Context, field graphql.C
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.fallback must not be null")
 		}
 		return graphql.Null
 	}
@@ -7013,7 +7013,7 @@ func (ec *executionContext) _Query_wrappedStruct(ctx context.Context, field grap
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.wrappedStruct must not be null")
 		}
 		return graphql.Null
 	}
@@ -7044,7 +7044,7 @@ func (ec *executionContext) _Query_wrappedScalar(ctx context.Context, field grap
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Query.wrappedScalar must not be null")
 		}
 		return graphql.Null
 	}
@@ -7278,7 +7278,7 @@ func (ec *executionContext) _Slices_test3(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Slices.test3 must not be null")
 		}
 		return graphql.Null
 	}
@@ -7309,7 +7309,7 @@ func (ec *executionContext) _Slices_test4(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Slices.test4 must not be null")
 		}
 		return graphql.Null
 	}
@@ -7340,7 +7340,7 @@ func (ec *executionContext) _Subscription_updated(ctx context.Context, field gra
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Subscription.updated must not be null")
 		}
 		return nil
 	}
@@ -7381,7 +7381,7 @@ func (ec *executionContext) _Subscription_initPayload(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "Subscription.initPayload must not be null")
 		}
 		return nil
 	}
@@ -7672,7 +7672,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "User.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -7703,7 +7703,7 @@ func (ec *executionContext) _User_friends(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "User.friends must not be null")
 		}
 		return graphql.Null
 	}
@@ -7734,7 +7734,7 @@ func (ec *executionContext) _User_created(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "User.created must not be null")
 		}
 		return graphql.Null
 	}
@@ -7793,7 +7793,7 @@ func (ec *executionContext) _ValidType_differentCase(ctx context.Context, field 
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ValidType.differentCase must not be null")
 		}
 		return graphql.Null
 	}
@@ -7824,7 +7824,7 @@ func (ec *executionContext) _ValidType_different_case(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ValidType.different_case must not be null")
 		}
 		return graphql.Null
 	}
@@ -7862,7 +7862,7 @@ func (ec *executionContext) _ValidType_validInputKeywords(ctx context.Context, f
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ValidType.validInputKeywords must not be null")
 		}
 		return graphql.Null
 	}
@@ -7900,7 +7900,7 @@ func (ec *executionContext) _ValidType_validArgs(ctx context.Context, field grap
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "ValidType.validArgs must not be null")
 		}
 		return graphql.Null
 	}
@@ -7931,7 +7931,7 @@ func (ec *executionContext) _WrappedStruct_name(ctx context.Context, field graph
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "WrappedStruct.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -7962,7 +7962,7 @@ func (ec *executionContext) _XXIt_id(ctx context.Context, field graphql.Collecte
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "XXIt.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -7993,7 +7993,7 @@ func (ec *executionContext) _XxIt_id(ctx context.Context, field graphql.Collecte
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "XxIt.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -8024,7 +8024,7 @@ func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Directive.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -8083,7 +8083,7 @@ func (ec *executionContext) ___Directive_locations(ctx context.Context, field gr
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Directive.locations must not be null")
 		}
 		return graphql.Null
 	}
@@ -8114,7 +8114,7 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Directive.args must not be null")
 		}
 		return graphql.Null
 	}
@@ -8145,7 +8145,7 @@ func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__EnumValue.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -8204,7 +8204,7 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__EnumValue.isDeprecated must not be null")
 		}
 		return graphql.Null
 	}
@@ -8263,7 +8263,7 @@ func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Field.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -8322,7 +8322,7 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Field.args must not be null")
 		}
 		return graphql.Null
 	}
@@ -8353,7 +8353,7 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Field.type must not be null")
 		}
 		return graphql.Null
 	}
@@ -8384,7 +8384,7 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Field.isDeprecated must not be null")
 		}
 		return graphql.Null
 	}
@@ -8443,7 +8443,7 @@ func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphq
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__InputValue.name must not be null")
 		}
 		return graphql.Null
 	}
@@ -8502,7 +8502,7 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__InputValue.type must not be null")
 		}
 		return graphql.Null
 	}
@@ -8561,7 +8561,7 @@ func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.C
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Schema.types must not be null")
 		}
 		return graphql.Null
 	}
@@ -8592,7 +8592,7 @@ func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graph
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Schema.queryType must not be null")
 		}
 		return graphql.Null
 	}
@@ -8679,7 +8679,7 @@ func (ec *executionContext) ___Schema_directives(ctx context.Context, field grap
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Schema.directives must not be null")
 		}
 		return graphql.Null
 	}
@@ -8710,7 +8710,7 @@ func (ec *executionContext) ___Type_kind(ctx context.Context, field graphql.Coll
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "__Type.kind must not be null")
 		}
 		return graphql.Null
 	}
@@ -8979,7 +8979,7 @@ func (ec *executionContext) _asdfIt_id(ctx context.Context, field graphql.Collec
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "asdfIt.id must not be null")
 		}
 		return graphql.Null
 	}
@@ -9010,7 +9010,7 @@ func (ec *executionContext) _iIt_id(ctx context.Context, field graphql.Collected
 
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
+			ec.Errorf(ctx, "iIt.id must not be null")
 		}
 		return graphql.Null
 	}
