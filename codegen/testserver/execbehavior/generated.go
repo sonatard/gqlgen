@@ -76,6 +76,7 @@ type QueryResolver interface {
 	CheckedInput(ctx context.Context, input CheckedInput) (string, error)
 	Described(ctx context.Context, input *DescribedInput, choice *OneOfInput) (*Described, error)
 	MarkedParent(ctx context.Context) (*MarkedParent, error)
+	Nullability(ctx context.Context, valid bool) (*Nullability, error)
 	Panicking(ctx context.Context) (*string, error)
 	PanickingNonNull(ctx context.Context) (string, error)
 	Viewer(ctx context.Context) (*Viewer, error)
@@ -189,7 +190,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "abstract_types.graphql" "defer.graphql" "field_context_child.graphql" "input_object_directive.graphql" "introspection.graphql" "mark_non_null.graphql" "panic.graphql" "root_fields.graphql" "root_typed_field.graphql" "schema.graphql" "worker_limit.graphql" "wrong_type.graphql"
+//go:embed "abstract_types.graphql" "defer.graphql" "field_context_child.graphql" "input_object_directive.graphql" "introspection.graphql" "mark_non_null.graphql" "nullability.graphql" "panic.graphql" "root_fields.graphql" "root_typed_field.graphql" "schema.graphql" "worker_limit.graphql" "wrong_type.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -207,6 +208,7 @@ var sources = []*ast.Source{
 	{Name: "input_object_directive.graphql", Input: sourceData("input_object_directive.graphql"), BuiltIn: false},
 	{Name: "introspection.graphql", Input: sourceData("introspection.graphql"), BuiltIn: false},
 	{Name: "mark_non_null.graphql", Input: sourceData("mark_non_null.graphql"), BuiltIn: false},
+	{Name: "nullability.graphql", Input: sourceData("nullability.graphql"), BuiltIn: false},
 	{Name: "panic.graphql", Input: sourceData("panic.graphql"), BuiltIn: false},
 	{Name: "root_fields.graphql", Input: sourceData("root_fields.graphql"), BuiltIn: false},
 	{Name: "root_typed_field.graphql", Input: sourceData("root_typed_field.graphql"), BuiltIn: false},
@@ -274,6 +276,16 @@ func (ec *executionContext) childFields_Described(ctx context.Context, field gra
 	return nil, fmt.Errorf("no field named %q was found under type Described", field.Name)
 }
 
+func (ec *executionContext) childFields_Dog(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "name":
+		return ec.fieldContext_Dog_name(ctx, field)
+	case "barks":
+		return ec.fieldContext_Dog_barks(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Dog", field.Name)
+}
+
 func (ec *executionContext) childFields_LimitedItem(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -320,6 +332,26 @@ func (ec *executionContext) childFields_Mutation(ctx context.Context, field grap
 	return nil, fmt.Errorf("no field named %q was found under type Mutation", field.Name)
 }
 
+func (ec *executionContext) childFields_Nullability(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "optional":
+		return ec.fieldContext_Nullability_optional(ctx, field)
+	case "required":
+		return ec.fieldContext_Nullability_required(ctx, field)
+	case "requiredElems":
+		return ec.fieldContext_Nullability_requiredElems(ctx, field)
+	case "requiredList":
+		return ec.fieldContext_Nullability_requiredList(ctx, field)
+	case "nested":
+		return ec.fieldContext_Nullability_nested(ctx, field)
+	case "requiredObject":
+		return ec.fieldContext_Nullability_requiredObject(ctx, field)
+	case "requiredDogs":
+		return ec.fieldContext_Nullability_requiredDogs(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Nullability", field.Name)
+}
+
 func (ec *executionContext) childFields_Query(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "ping":
@@ -342,6 +374,8 @@ func (ec *executionContext) childFields_Query(ctx context.Context, field graphql
 		return ec.fieldContext_Query_described(ctx, field)
 	case "markedParent":
 		return ec.fieldContext_Query_markedParent(ctx, field)
+	case "nullability":
+		return ec.fieldContext_Query_nullability(ctx, field)
 	case "panicking":
 		return ec.fieldContext_Query_panicking(ctx, field)
 	case "panickingNonNull":
@@ -659,6 +693,20 @@ func (ec *executionContext) field_Query_limitedItems_args(ctx context.Context, r
 		return nil, err
 	}
 	args["count"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_nullability_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "valid",
+		func(ctx context.Context, v any) (bool, error) {
+			return ec.unmarshalNBoolean2bool(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["valid"] = arg0
 	return args, nil
 }
 
@@ -1656,6 +1704,185 @@ func (ec *executionContext) fieldContext_Mutation_appendLog(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Nullability_optional(ctx context.Context, field graphql.CollectedField, obj *Nullability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Nullability_optional(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Optional, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Nullability_optional(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Nullability", field, false, false, "String")
+}
+
+func (ec *executionContext) _Nullability_required(ctx context.Context, field graphql.CollectedField, obj *Nullability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Nullability_required(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Required, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalNString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Nullability_required(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Nullability", field, false, false, "String")
+}
+
+func (ec *executionContext) _Nullability_requiredElems(ctx context.Context, field graphql.CollectedField, obj *Nullability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Nullability_requiredElems(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RequiredElems, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*string) graphql.Marshaler {
+			return ec.marshalOString2ᚕᚖstringᚄ(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Nullability_requiredElems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Nullability", field, false, false, "String")
+}
+
+func (ec *executionContext) _Nullability_requiredList(ctx context.Context, field graphql.CollectedField, obj *Nullability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Nullability_requiredList(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RequiredList, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*string) graphql.Marshaler {
+			return ec.marshalNString2ᚕᚖstring(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Nullability_requiredList(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Nullability", field, false, false, "String")
+}
+
+func (ec *executionContext) _Nullability_nested(ctx context.Context, field graphql.CollectedField, obj *Nullability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Nullability_nested(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Nested, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v [][]*string) graphql.Marshaler {
+			return ec.marshalOString2ᚕᚕᚖstringᚄ(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Nullability_nested(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Nullability", field, false, false, "String")
+}
+
+func (ec *executionContext) _Nullability_requiredObject(ctx context.Context, field graphql.CollectedField, obj *Nullability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Nullability_requiredObject(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RequiredObject, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *Dog) graphql.Marshaler {
+			return ec.marshalNDog2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐDog(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Nullability_requiredObject(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Nullability",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Dog(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Nullability_requiredDogs(ctx context.Context, field graphql.CollectedField, obj *Nullability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Nullability_requiredDogs(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RequiredDogs, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*Dog) graphql.Marshaler {
+			return ec.marshalODog2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐDogᚄ(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Nullability_requiredDogs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Nullability",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Dog(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2020,6 +2247,50 @@ func (ec *executionContext) fieldContext_Query_markedParent(_ context.Context, f
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_MarkedParent(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_nullability(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_nullability(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().Nullability(ctx, fc.Args["valid"].(bool))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *Nullability) graphql.Marshaler {
+			return ec.marshalONullability2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐNullability(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_nullability(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Nullability(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_nullability_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4555,6 +4826,69 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var nullabilityImplementors = []string{"Nullability"}
+
+func (ec *executionContext) _Nullability(ctx context.Context, sel ast.SelectionSet, obj *Nullability) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nullabilityImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Nullability")
+		case "optional":
+			out.Values[i] = ec._Nullability_optional(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "required":
+			out.Values[i] = ec._Nullability_required(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "requiredElems":
+			out.Values[i] = ec._Nullability_requiredElems(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "requiredList":
+			out.Values[i] = ec._Nullability_requiredList(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nested":
+			out.Values[i] = ec._Nullability_nested(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "requiredObject":
+			out.Values[i] = ec._Nullability_requiredObject(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "requiredDogs":
+			out.Values[i] = ec._Nullability_requiredDogs(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -4633,6 +4967,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				true, false,
 				func(ctx context.Context) graphql.Marshaler {
 					return ec._Query_markedParent(ctx, field)
+				})
+		case "nullability":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, false,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_nullability(ctx, field)
 				})
 		case "panicking":
 			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
@@ -5276,6 +5616,16 @@ func (ec *executionContext) marshalNDeferItem2ᚖgithubᚗcomᚋ99designsᚋgqlg
 	return ec._DeferItem(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNDog2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐDog(ctx context.Context, sel ast.SelectionSet, v *Dog) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Dog(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5417,6 +5767,80 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v any) ([]*string, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNString2ᚕᚖstringᚄ(ctx context.Context, v any) ([]*string, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕᚖstringᚄ(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2ᚖstring(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNString2ᚖstring(ctx context.Context, v any) (*string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNString2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	_ = sel
+	res := graphql.MarshalString(*v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNValueViewer2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐValueViewer(ctx context.Context, sel ast.SelectionSet, v *ValueViewer) graphql.Marshaler {
@@ -5676,6 +6100,25 @@ func (ec *executionContext) unmarshalODescribedInput2ᚖgithubᚗcomᚋ99designs
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalODog2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐDogᚄ(ctx context.Context, sel ast.SelectionSet, v []*Dog) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 2, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNDog2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐDog(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -5756,6 +6199,13 @@ func (ec *executionContext) marshalONameFormat2ᚖgithubᚗcomᚋ99designsᚋgql
 	return v
 }
 
+func (ec *executionContext) marshalONullability2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐNullability(ctx context.Context, sel ast.SelectionSet, v *Nullability) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Nullability(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOOneOfInput2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐOneOfInput(ctx context.Context, v any) (*OneOfInput, error) {
 	if v == nil {
 		return nil, nil
@@ -5792,6 +6242,76 @@ func (ec *executionContext) marshalOQuery2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 		return graphql.Null
 	}
 	return ec._Query(ctx, sel)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕᚕᚖstringᚄ(ctx context.Context, v any) ([][]*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([][]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2ᚕᚖstringᚄ(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕᚕᚖstringᚄ(ctx context.Context, sel ast.SelectionSet, v [][]*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2ᚕᚖstringᚄ(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOString2ᚕᚖstringᚄ(ctx context.Context, v any) ([]*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕᚖstringᚄ(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2ᚖstring(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

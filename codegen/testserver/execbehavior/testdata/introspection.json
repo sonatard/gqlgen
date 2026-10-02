@@ -900,6 +900,150 @@
             "possibleTypes": []
           },
           {
+            "kind": "OBJECT",
+            "name": "Nullability",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [
+              {
+                "name": "optional",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "required",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "requiredElems",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "String",
+                      "ofType": null
+                    }
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "requiredList",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "String",
+                      "ofType": null
+                    }
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "nested",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "LIST",
+                      "name": null,
+                      "ofType": {
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "String",
+                          "ofType": null
+                        }
+                      }
+                    }
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "requiredObject",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Dog",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "requiredDogs",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "OBJECT",
+                      "name": "Dog",
+                      "ofType": null
+                    }
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "inputFields": [],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
             "kind": "INPUT_OBJECT",
             "name": "OneOfInput",
             "description": "Exactly one of the fields.",
@@ -1200,6 +1344,33 @@
                 "type": {
                   "kind": "OBJECT",
                   "name": "MarkedParent",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "nullability",
+                "description": null,
+                "args": [
+                  {
+                    "name": "valid",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "Boolean",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "OBJECT",
+                  "name": "Nullability",
                   "ofType": null
                 },
                 "isDeprecated": false,
