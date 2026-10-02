@@ -51,6 +51,7 @@ type MarkedChildResolver interface {
 }
 type MutationResolver interface {
 	Touch(ctx context.Context) (string, error)
+	Panicking(ctx context.Context) (*string, error)
 	AppendLog(ctx context.Context, entry string) ([]string, error)
 }
 type QueryResolver interface {
@@ -58,6 +59,8 @@ type QueryResolver interface {
 	ChildProbe(ctx context.Context) (*ChildProbe, error)
 	CheckedInput(ctx context.Context, input CheckedInput) (string, error)
 	MarkedParent(ctx context.Context) (*MarkedParent, error)
+	Panicking(ctx context.Context) (*string, error)
+	PanickingNonNull(ctx context.Context) (string, error)
 	Viewer(ctx context.Context) (*Viewer, error)
 	ValueViewer(ctx context.Context) (*ValueViewer, error)
 	WrongTypes(ctx context.Context) (*WrongTypes, error)
@@ -166,7 +169,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "field_context_child.graphql" "input_object_directive.graphql" "mark_non_null.graphql" "root_fields.graphql" "root_typed_field.graphql" "schema.graphql" "wrong_type.graphql"
+//go:embed "field_context_child.graphql" "input_object_directive.graphql" "mark_non_null.graphql" "panic.graphql" "root_fields.graphql" "root_typed_field.graphql" "schema.graphql" "wrong_type.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -181,6 +184,7 @@ var sources = []*ast.Source{
 	{Name: "field_context_child.graphql", Input: sourceData("field_context_child.graphql"), BuiltIn: false},
 	{Name: "input_object_directive.graphql", Input: sourceData("input_object_directive.graphql"), BuiltIn: false},
 	{Name: "mark_non_null.graphql", Input: sourceData("mark_non_null.graphql"), BuiltIn: false},
+	{Name: "panic.graphql", Input: sourceData("panic.graphql"), BuiltIn: false},
 	{Name: "root_fields.graphql", Input: sourceData("root_fields.graphql"), BuiltIn: false},
 	{Name: "root_typed_field.graphql", Input: sourceData("root_typed_field.graphql"), BuiltIn: false},
 	{Name: "schema.graphql", Input: sourceData("schema.graphql"), BuiltIn: false},
@@ -248,6 +252,8 @@ func (ec *executionContext) childFields_Mutation(ctx context.Context, field grap
 	switch field.Name {
 	case "touch":
 		return ec.fieldContext_Mutation_touch(ctx, field)
+	case "panicking":
+		return ec.fieldContext_Mutation_panicking(ctx, field)
 	case "appendLog":
 		return ec.fieldContext_Mutation_appendLog(ctx, field)
 	}
@@ -264,6 +270,10 @@ func (ec *executionContext) childFields_Query(ctx context.Context, field graphql
 		return ec.fieldContext_Query_checkedInput(ctx, field)
 	case "markedParent":
 		return ec.fieldContext_Query_markedParent(ctx, field)
+	case "panicking":
+		return ec.fieldContext_Query_panicking(ctx, field)
+	case "panickingNonNull":
+		return ec.fieldContext_Query_panickingNonNull(ctx, field)
 	case "viewer":
 		return ec.fieldContext_Query_viewer(ctx, field)
 	case "valueViewer":
@@ -1082,6 +1092,29 @@ func (ec *executionContext) fieldContext_Mutation_touch(_ context.Context, field
 	return graphql.NewScalarFieldContext("Mutation", field, true, true, "String")
 }
 
+func (ec *executionContext) _Mutation_panicking(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_panicking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Mutation().Panicking(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_panicking(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Mutation", field, true, true, "String")
+}
+
 func (ec *executionContext) _Mutation_appendLog(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1255,6 +1288,52 @@ func (ec *executionContext) fieldContext_Query_markedParent(_ context.Context, f
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _Query_panicking(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_panicking(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Panicking(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_panicking(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Query", field, true, true, "String")
+}
+
+func (ec *executionContext) _Query_panickingNonNull(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_panickingNonNull(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().PanickingNonNull(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_panickingNonNull(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Query", field, true, true, "String")
 }
 
 func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3306,6 +3385,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "panicking":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_panicking(ctx, field)
+			})
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
 		case "appendLog":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_appendLog(ctx, field)
@@ -3372,6 +3458,18 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				true, false,
 				func(ctx context.Context) graphql.Marshaler {
 					return ec._Query_markedParent(ctx, field)
+				})
+		case "panicking":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, false,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_panicking(ctx, field)
+				})
+		case "panickingNonNull":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, true,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_panickingNonNull(ctx, field)
 				})
 		case "viewer":
 			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
