@@ -29,6 +29,7 @@ type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 type ResolverRoot interface {
 	MarkedChild() MarkedChildResolver
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -48,10 +49,15 @@ type MarkedChildResolver interface {
 	ResolvedValue(ctx context.Context, obj *MarkedChild) (*string, error)
 	Node(ctx context.Context, obj *MarkedChild) (MarkedNode, error)
 }
+type MutationResolver interface {
+	Touch(ctx context.Context) (string, error)
+}
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
 	CheckedInput(ctx context.Context, input CheckedInput) (string, error)
 	MarkedParent(ctx context.Context) (*MarkedParent, error)
+	Viewer(ctx context.Context) (*Viewer, error)
+	ValueViewer(ctx context.Context) (*ValueViewer, error)
 	WrongTypes(ctx context.Context) (*WrongTypes, error)
 	WrongTypeArg(ctx context.Context, value *string) (*string, error)
 	WrongTypeInput(ctx context.Context, input WrongTypeInput) (*string, error)
@@ -118,6 +124,21 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 
 			return &response
 		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			ctx = graphql.WithLazyInputUnmarshalerIndex(ctx, inputUnmarshalers)
+			data := ec._Mutation(ctx, opCtx.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
 
 	default:
 		return graphql.OneShot(graphql.ErrorResponse(ctx, "unsupported GraphQL operation"))
@@ -143,7 +164,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "input_object_directive.graphql" "mark_non_null.graphql" "schema.graphql" "wrong_type.graphql"
+//go:embed "input_object_directive.graphql" "mark_non_null.graphql" "root_typed_field.graphql" "schema.graphql" "wrong_type.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -157,6 +178,7 @@ func sourceData(filename string) string {
 var sources = []*ast.Source{
 	{Name: "input_object_directive.graphql", Input: sourceData("input_object_directive.graphql"), BuiltIn: false},
 	{Name: "mark_non_null.graphql", Input: sourceData("mark_non_null.graphql"), BuiltIn: false},
+	{Name: "root_typed_field.graphql", Input: sourceData("root_typed_field.graphql"), BuiltIn: false},
 	{Name: "schema.graphql", Input: sourceData("schema.graphql"), BuiltIn: false},
 	{Name: "wrong_type.graphql", Input: sourceData("wrong_type.graphql"), BuiltIn: false},
 }
@@ -188,6 +210,64 @@ func (ec *executionContext) childFields_MarkedParent(ctx context.Context, field 
 		return ec.fieldContext_MarkedParent_child(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type MarkedParent", field.Name)
+}
+
+func (ec *executionContext) childFields_Mutation(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "touch":
+		return ec.fieldContext_Mutation_touch(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Mutation", field.Name)
+}
+
+func (ec *executionContext) childFields_Query(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "ping":
+		return ec.fieldContext_Query_ping(ctx, field)
+	case "checkedInput":
+		return ec.fieldContext_Query_checkedInput(ctx, field)
+	case "markedParent":
+		return ec.fieldContext_Query_markedParent(ctx, field)
+	case "viewer":
+		return ec.fieldContext_Query_viewer(ctx, field)
+	case "valueViewer":
+		return ec.fieldContext_Query_valueViewer(ctx, field)
+	case "wrongTypes":
+		return ec.fieldContext_Query_wrongTypes(ctx, field)
+	case "wrongTypeArg":
+		return ec.fieldContext_Query_wrongTypeArg(ctx, field)
+	case "wrongTypeInput":
+		return ec.fieldContext_Query_wrongTypeInput(ctx, field)
+	case "__schema":
+		return ec.fieldContext_Query___schema(ctx, field)
+	case "__type":
+		return ec.fieldContext_Query___type(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Query", field.Name)
+}
+
+func (ec *executionContext) childFields_ValueViewer(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "name":
+		return ec.fieldContext_ValueViewer_name(ctx, field)
+	case "query":
+		return ec.fieldContext_ValueViewer_query(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ValueViewer", field.Name)
+}
+
+func (ec *executionContext) childFields_Viewer(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "name":
+		return ec.fieldContext_Viewer_name(ctx, field)
+	case "query":
+		return ec.fieldContext_Viewer_query(ctx, field)
+	case "optionalQuery":
+		return ec.fieldContext_Viewer_optionalQuery(ctx, field)
+	case "mutation":
+		return ec.fieldContext_Viewer_mutation(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Viewer", field.Name)
 }
 
 func (ec *executionContext) childFields_WrongTypes(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -684,6 +764,29 @@ func (ec *executionContext) fieldContext_MarkedParent_child(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_touch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_touch(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Mutation().Touch(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_touch(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Mutation", field, true, true, "String")
+}
+
 func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -778,6 +881,70 @@ func (ec *executionContext) fieldContext_Query_markedParent(_ context.Context, f
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_MarkedParent(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_viewer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_viewer(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Viewer(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *Viewer) graphql.Marshaler {
+			return ec.marshalNViewer2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐViewer(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_viewer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Viewer(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_valueViewer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_valueViewer(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().ValueViewer(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *ValueViewer) graphql.Marshaler {
+			return ec.marshalNValueViewer2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐValueViewer(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_valueViewer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ValueViewer(ctx, field)
 		},
 	}
 	return fc, nil
@@ -974,6 +1141,168 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields___Schema(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ValueViewer_name(ctx context.Context, field graphql.CollectedField, obj *ValueViewer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ValueViewer_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ValueViewer_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ValueViewer", field, false, false, "String")
+}
+
+func (ec *executionContext) _ValueViewer_query(ctx context.Context, field graphql.CollectedField, obj *ValueViewer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ValueViewer_query(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	res := Query{}
+	fc.Result = res
+	return ec.marshalNQuery2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐQuery(ctx, field.Selections, res)
+}
+func (ec *executionContext) fieldContext_ValueViewer_query(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ValueViewer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Query(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Viewer_name(ctx context.Context, field graphql.CollectedField, obj *Viewer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Viewer_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Viewer_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Viewer", field, false, false, "String")
+}
+
+func (ec *executionContext) _Viewer_query(ctx context.Context, field graphql.CollectedField, obj *Viewer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Viewer_query(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	res := &Query{}
+	fc.Result = res
+	return ec.marshalNQuery2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐQuery(ctx, field.Selections, res)
+}
+func (ec *executionContext) fieldContext_Viewer_query(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Viewer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Query(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Viewer_optionalQuery(ctx context.Context, field graphql.CollectedField, obj *Viewer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Viewer_optionalQuery(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	res := &Query{}
+	fc.Result = res
+	return ec.marshalOQuery2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐQuery(ctx, field.Selections, res)
+}
+func (ec *executionContext) fieldContext_Viewer_optionalQuery(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Viewer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Query(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Viewer_mutation(ctx context.Context, field graphql.CollectedField, obj *Viewer) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Viewer_mutation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	res := &Mutation{}
+	fc.Result = res
+	return ec.marshalOMutation2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐMutation(ctx, field.Selections, res)
+}
+func (ec *executionContext) fieldContext_Viewer_mutation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Viewer",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Mutation(ctx, field)
 		},
 	}
 	return fc, nil
@@ -2464,6 +2793,49 @@ func (ec *executionContext) _MarkedParent(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
+			Object: field.Name,
+			Field:  field,
+		})
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "touch":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_touch(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2501,6 +2873,18 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				func(ctx context.Context) graphql.Marshaler {
 					return ec._Query_markedParent(ctx, field)
 				})
+		case "viewer":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, true,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_viewer(ctx, field)
+				})
+		case "valueViewer":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, true,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_valueViewer(ctx, field)
+				})
 		case "wrongTypes":
 			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
 				true, false,
@@ -2532,6 +2916,92 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			})
 			if out.Values[i] == graphql.RequiredNull {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var valueViewerImplementors = []string{"ValueViewer"}
+
+func (ec *executionContext) _ValueViewer(ctx context.Context, sel ast.SelectionSet, obj *ValueViewer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, valueViewerImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ValueViewer")
+		case "name":
+			out.Values[i] = ec._ValueViewer_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "query":
+			out.Values[i] = ec._ValueViewer_query(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var viewerImplementors = []string{"Viewer"}
+
+func (ec *executionContext) _Viewer(ctx context.Context, sel ast.SelectionSet, obj *Viewer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, viewerImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Viewer")
+		case "name":
+			out.Values[i] = ec._Viewer_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "query":
+			out.Values[i] = ec._Viewer_query(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "optionalQuery":
+			out.Values[i] = ec._Viewer_optionalQuery(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "mutation":
+			out.Values[i] = ec._Viewer_mutation(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -2997,6 +3467,20 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) marshalNQuery2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐQuery(ctx context.Context, sel ast.SelectionSet, v Query) graphql.Marshaler {
+	return ec._Query(ctx, sel)
+}
+
+func (ec *executionContext) marshalNQuery2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐQuery(ctx context.Context, sel ast.SelectionSet, v *Query) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Query(ctx, sel)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3011,6 +3495,26 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNValueViewer2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐValueViewer(ctx context.Context, sel ast.SelectionSet, v *ValueViewer) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ValueViewer(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNViewer2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐViewer(ctx context.Context, sel ast.SelectionSet, v *Viewer) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Viewer(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNWrongTypeInput2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐWrongTypeInput(ctx context.Context, v any) (WrongTypeInput, error) {
@@ -3207,6 +3711,20 @@ func (ec *executionContext) marshalOMarkedParent2ᚖgithubᚗcomᚋ99designsᚋg
 		return graphql.Null
 	}
 	return ec._MarkedParent(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMutation2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐMutation(ctx context.Context, sel ast.SelectionSet, v *Mutation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Mutation(ctx, sel)
+}
+
+func (ec *executionContext) marshalOQuery2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐQuery(ctx context.Context, sel ast.SelectionSet, v *Query) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Query(ctx, sel)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {
