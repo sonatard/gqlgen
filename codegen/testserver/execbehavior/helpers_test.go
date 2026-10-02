@@ -30,8 +30,14 @@ func newServer(resolvers *Stub, directives DirectiveRoot) *handler.Server {
 // errors removed and errors sorted by message, so that tests can compare it as a whole.
 func post(t *testing.T, srv http.Handler, query string) string {
 	t.Helper()
+	return postVars(t, srv, query, nil)
+}
 
-	body, err := json.Marshal(map[string]any{"query": query})
+// postVars is post with variables.
+func postVars(t *testing.T, srv http.Handler, query string, variables map[string]any) string {
+	t.Helper()
+
+	body, err := json.Marshal(map[string]any{"query": query, "variables": variables})
 	require.NoError(t, err)
 	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
