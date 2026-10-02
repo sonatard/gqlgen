@@ -7,6 +7,9 @@ import (
 )
 
 type Stub struct {
+	ArgObjectResolver struct {
+		Echo func(ctx context.Context, obj *ArgObject, strict Strict) (*string, error)
+	}
 	DeferItemResolver struct {
 		Slow           func(ctx context.Context, obj *DeferItem) (string, error)
 		Failing        func(ctx context.Context, obj *DeferItem) (*string, error)
@@ -36,6 +39,8 @@ type Stub struct {
 		Animals          func(ctx context.Context) ([]Animal, error)
 		Pets             func(ctx context.Context) ([]Pet, error)
 		StrangeAnimal    func(ctx context.Context, kind string) (Animal, error)
+		ArgProbe         func(ctx context.Context, strict *Strict, withDefault *int, plain *string) (*string, error)
+		ArgObject        func(ctx context.Context) (*ArgObject, error)
 		DeferItem        func(ctx context.Context) (*DeferItem, error)
 		DeferItems       func(ctx context.Context) ([]*DeferItem, error)
 		ChildProbe       func(ctx context.Context) (*ChildProbe, error)
@@ -56,6 +61,9 @@ type Stub struct {
 	}
 }
 
+func (r *Stub) ArgObject() ArgObjectResolver {
+	return &stubArgObject{r}
+}
 func (r *Stub) DeferItem() DeferItemResolver {
 	return &stubDeferItem{r}
 }
@@ -73,6 +81,12 @@ func (r *Stub) Mutation() MutationResolver {
 }
 func (r *Stub) Query() QueryResolver {
 	return &stubQuery{r}
+}
+
+type stubArgObject struct{ *Stub }
+
+func (r *stubArgObject) Echo(ctx context.Context, obj *ArgObject, strict Strict) (*string, error) {
+	return r.ArgObjectResolver.Echo(ctx, obj, strict)
 }
 
 type stubDeferItem struct{ *Stub }
@@ -145,6 +159,12 @@ func (r *stubQuery) Pets(ctx context.Context) ([]Pet, error) {
 }
 func (r *stubQuery) StrangeAnimal(ctx context.Context, kind string) (Animal, error) {
 	return r.QueryResolver.StrangeAnimal(ctx, kind)
+}
+func (r *stubQuery) ArgProbe(ctx context.Context, strict *Strict, withDefault *int, plain *string) (*string, error) {
+	return r.QueryResolver.ArgProbe(ctx, strict, withDefault, plain)
+}
+func (r *stubQuery) ArgObject(ctx context.Context) (*ArgObject, error) {
+	return r.QueryResolver.ArgObject(ctx)
 }
 func (r *stubQuery) DeferItem(ctx context.Context) (*DeferItem, error) {
 	return r.QueryResolver.DeferItem(ctx)
