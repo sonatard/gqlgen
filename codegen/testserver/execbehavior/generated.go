@@ -91,6 +91,7 @@ type QueryResolver interface {
 	CheckedInput(ctx context.Context, input CheckedInput) (string, error)
 	Described(ctx context.Context, input *DescribedInput, choice *OneOfInput) (*Described, error)
 	MarkedParent(ctx context.Context) (*MarkedParent, error)
+	UnmarshalNamed(ctx context.Context, kind string, raw map[string]any) (*string, error)
 	Nullability(ctx context.Context, valid bool) (*Nullability, error)
 	Panicking(ctx context.Context) (*string, error)
 	PanickingNonNull(ctx context.Context) (string, error)
@@ -209,7 +210,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "abstract_types.graphql" "arguments.graphql" "defer.graphql" "field_context_child.graphql" "input_coercion.graphql" "input_object_directive.graphql" "introspection.graphql" "mark_non_null.graphql" "nullability.graphql" "panic.graphql" "resolver_errors.graphql" "root_fields.graphql" "root_typed_field.graphql" "schema.graphql" "worker_limit.graphql" "wrong_type.graphql"
+//go:embed "abstract_types.graphql" "arguments.graphql" "defer.graphql" "field_context_child.graphql" "input_coercion.graphql" "input_object_directive.graphql" "introspection.graphql" "mark_non_null.graphql" "named_input.graphql" "nullability.graphql" "panic.graphql" "resolver_errors.graphql" "root_fields.graphql" "root_typed_field.graphql" "schema.graphql" "worker_limit.graphql" "wrong_type.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -229,6 +230,7 @@ var sources = []*ast.Source{
 	{Name: "input_object_directive.graphql", Input: sourceData("input_object_directive.graphql"), BuiltIn: false},
 	{Name: "introspection.graphql", Input: sourceData("introspection.graphql"), BuiltIn: false},
 	{Name: "mark_non_null.graphql", Input: sourceData("mark_non_null.graphql"), BuiltIn: false},
+	{Name: "named_input.graphql", Input: sourceData("named_input.graphql"), BuiltIn: false},
 	{Name: "nullability.graphql", Input: sourceData("nullability.graphql"), BuiltIn: false},
 	{Name: "panic.graphql", Input: sourceData("panic.graphql"), BuiltIn: false},
 	{Name: "resolver_errors.graphql", Input: sourceData("resolver_errors.graphql"), BuiltIn: false},
@@ -430,6 +432,8 @@ func (ec *executionContext) childFields_Query(ctx context.Context, field graphql
 		return ec.fieldContext_Query_described(ctx, field)
 	case "markedParent":
 		return ec.fieldContext_Query_markedParent(ctx, field)
+	case "unmarshalNamed":
+		return ec.fieldContext_Query_unmarshalNamed(ctx, field)
 	case "nullability":
 		return ec.fieldContext_Query_nullability(ctx, field)
 	case "panicking":
@@ -855,6 +859,28 @@ func (ec *executionContext) field_Query_strangeAnimal_args(ctx context.Context, 
 		return nil, err
 	}
 	args["kind"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_unmarshalNamed_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "kind",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNString2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["kind"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "raw",
+		func(ctx context.Context, v any) (map[string]any, error) {
+			return ec.unmarshalNMap2map(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["raw"] = arg1
 	return args, nil
 }
 
@@ -2706,6 +2732,50 @@ func (ec *executionContext) fieldContext_Query_markedParent(_ context.Context, f
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_MarkedParent(ctx, field)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_unmarshalNamed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_unmarshalNamed(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().UnmarshalNamed(ctx, fc.Args["kind"].(string), fc.Args["raw"].(map[string]any))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_unmarshalNamed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_unmarshalNamed_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -5693,6 +5763,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				func(ctx context.Context) graphql.Marshaler {
 					return ec._Query_markedParent(ctx, field)
 				})
+		case "unmarshalNamed":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, false,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_unmarshalNamed(ctx, field)
+				})
 		case "nullability":
 			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
 				true, false,
@@ -6424,6 +6500,28 @@ func (ec *executionContext) marshalNLimitedItem2ᚖgithubᚗcomᚋ99designsᚋgq
 		return graphql.Null
 	}
 	return ec._LimitedItem(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v any) (map[string]any, error) {
+	res, err := graphql.UnmarshalMap(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]any) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	_ = sel
+	res := graphql.MarshalMap(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNPet2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐPet(ctx context.Context, sel ast.SelectionSet, v Pet) graphql.Marshaler {
