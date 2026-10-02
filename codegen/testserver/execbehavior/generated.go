@@ -54,6 +54,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
+	ChildProbe(ctx context.Context) (*ChildProbe, error)
 	CheckedInput(ctx context.Context, input CheckedInput) (string, error)
 	MarkedParent(ctx context.Context) (*MarkedParent, error)
 	Viewer(ctx context.Context) (*Viewer, error)
@@ -164,7 +165,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "input_object_directive.graphql" "mark_non_null.graphql" "root_typed_field.graphql" "schema.graphql" "wrong_type.graphql"
+//go:embed "field_context_child.graphql" "input_object_directive.graphql" "mark_non_null.graphql" "root_typed_field.graphql" "schema.graphql" "wrong_type.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -176,6 +177,7 @@ func sourceData(filename string) string {
 }
 
 var sources = []*ast.Source{
+	{Name: "field_context_child.graphql", Input: sourceData("field_context_child.graphql"), BuiltIn: false},
 	{Name: "input_object_directive.graphql", Input: sourceData("input_object_directive.graphql"), BuiltIn: false},
 	{Name: "mark_non_null.graphql", Input: sourceData("mark_non_null.graphql"), BuiltIn: false},
 	{Name: "root_typed_field.graphql", Input: sourceData("root_typed_field.graphql"), BuiltIn: false},
@@ -187,6 +189,34 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // childFields_* functions provide shared child field context lookups.
 // Each function is generated once per unique object type, deduplicating the
 // switch statements that were previously inlined in every fieldContext_* function.
+
+func (ec *executionContext) childFields_ChildProbe(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "scalar":
+		return ec.fieldContext_ChildProbe_scalar(ctx, field)
+	case "enumValue":
+		return ec.fieldContext_ChildProbe_enumValue(ctx, field)
+	case "union":
+		return ec.fieldContext_ChildProbe_union(ctx, field)
+	case "iface":
+		return ec.fieldContext_ChildProbe_iface(ctx, field)
+	case "object":
+		return ec.fieldContext_ChildProbe_object(ctx, field)
+	case "list":
+		return ec.fieldContext_ChildProbe_list(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ChildProbe", field.Name)
+}
+
+func (ec *executionContext) childFields_ChildProbeObject(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_ChildProbeObject_id(ctx, field)
+	case "nested":
+		return ec.fieldContext_ChildProbeObject_nested(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type ChildProbeObject", field.Name)
+}
 
 func (ec *executionContext) childFields_MarkedChild(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
@@ -224,6 +254,8 @@ func (ec *executionContext) childFields_Query(ctx context.Context, field graphql
 	switch field.Name {
 	case "ping":
 		return ec.fieldContext_Query_ping(ctx, field)
+	case "childProbe":
+		return ec.fieldContext_Query_childProbe(ctx, field)
 	case "checkedInput":
 		return ec.fieldContext_Query_checkedInput(ctx, field)
 	case "markedParent":
@@ -414,6 +446,20 @@ func (ec *executionContext) dir_returnValue_args(ctx context.Context, rawArgs ma
 	return args, nil
 }
 
+func (ec *executionContext) field_ChildProbeObject_nested_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit",
+		func(ctx context.Context, v any) (*int, error) {
+			return ec.unmarshalOInt2ᚖint(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -575,6 +621,237 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ***************************** args.gotpl *****************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _ChildProbe_scalar(ctx context.Context, field graphql.CollectedField, obj *ChildProbe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ChildProbe_scalar(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Scalar, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ChildProbe_scalar(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ChildProbe", field, false, false, "String")
+}
+
+func (ec *executionContext) _ChildProbe_enumValue(ctx context.Context, field graphql.CollectedField, obj *ChildProbe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ChildProbe_enumValue(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.EnumValue, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *ProbeEnum) graphql.Marshaler {
+			return ec.marshalOProbeEnum2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐProbeEnum(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ChildProbe_enumValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ChildProbe", field, false, false, "ProbeEnum")
+}
+
+func (ec *executionContext) _ChildProbe_union(ctx context.Context, field graphql.CollectedField, obj *ChildProbe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ChildProbe_union(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Union, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v ProbeUnion) graphql.Marshaler {
+			return ec.marshalOProbeUnion2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐProbeUnion(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ChildProbe_union(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ChildProbe", field, false, false, "ProbeUnion")
+}
+
+func (ec *executionContext) _ChildProbe_iface(ctx context.Context, field graphql.CollectedField, obj *ChildProbe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ChildProbe_iface(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Iface, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v MarkedNode) graphql.Marshaler {
+			return ec.marshalOMarkedNode2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐMarkedNode(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ChildProbe_iface(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChildProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChildProbe_object(ctx context.Context, field graphql.CollectedField, obj *ChildProbe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ChildProbe_object(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Object, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *ChildProbeObject) graphql.Marshaler {
+			return ec.marshalOChildProbeObject2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐChildProbeObject(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ChildProbe_object(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChildProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ChildProbeObject(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChildProbe_list(ctx context.Context, field graphql.CollectedField, obj *ChildProbe) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ChildProbe_list(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.List, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*ChildProbeObject) graphql.Marshaler {
+			return ec.marshalOChildProbeObject2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐChildProbeObjectᚄ(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ChildProbe_list(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChildProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ChildProbeObject(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChildProbeObject_id(ctx context.Context, field graphql.CollectedField, obj *ChildProbeObject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ChildProbeObject_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_ChildProbeObject_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("ChildProbeObject", field, false, false, "ID")
+}
+
+func (ec *executionContext) _ChildProbeObject_nested(ctx context.Context, field graphql.CollectedField, obj *ChildProbeObject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_ChildProbeObject_nested(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Nested, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_ChildProbeObject_nested(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChildProbeObject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_ChildProbeObject_nested_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _MarkedChild_value(ctx context.Context, field graphql.CollectedField, obj *MarkedChild) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
@@ -808,6 +1085,38 @@ func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.Colle
 }
 func (ec *executionContext) fieldContext_Query_ping(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Query", field, true, true, "String")
+}
+
+func (ec *executionContext) _Query_childProbe(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_childProbe(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().ChildProbe(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *ChildProbe) graphql.Marshaler {
+			return ec.marshalOChildProbe2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐChildProbe(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_childProbe(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_ChildProbe(ctx, field)
+		},
+	}
+	return fc, nil
 }
 
 func (ec *executionContext) _Query_checkedInput(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2668,9 +2977,125 @@ func (ec *executionContext) _MarkedNode(ctx context.Context, sel ast.SelectionSe
 	}
 }
 
+func (ec *executionContext) _ProbeUnion(ctx context.Context, sel ast.SelectionSet, obj ProbeUnion) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case ChildProbeObject:
+		return ec._ChildProbeObject(ctx, sel, &obj)
+	case *ChildProbeObject:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ChildProbeObject(ctx, sel, obj)
+	default:
+		if typedObj, ok := obj.(graphql.Marshaler); ok {
+			return typedObj
+		} else {
+			panic(fmt.Errorf("unexpected type %T; non-generated variants of ProbeUnion must implement graphql.Marshaler", obj))
+		}
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var childProbeImplementors = []string{"ChildProbe"}
+
+func (ec *executionContext) _ChildProbe(ctx context.Context, sel ast.SelectionSet, obj *ChildProbe) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, childProbeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChildProbe")
+		case "scalar":
+			out.Values[i] = ec._ChildProbe_scalar(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "enumValue":
+			out.Values[i] = ec._ChildProbe_enumValue(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "union":
+			out.Values[i] = ec._ChildProbe_union(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "iface":
+			out.Values[i] = ec._ChildProbe_iface(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "object":
+			out.Values[i] = ec._ChildProbe_object(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "list":
+			out.Values[i] = ec._ChildProbe_list(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var childProbeObjectImplementors = []string{"ChildProbeObject", "ProbeUnion"}
+
+func (ec *executionContext) _ChildProbeObject(ctx context.Context, sel ast.SelectionSet, obj *ChildProbeObject) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, childProbeObjectImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChildProbeObject")
+		case "id":
+			out.Values[i] = ec._ChildProbeObject_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nested":
+			out.Values[i] = ec._ChildProbeObject_nested(ctx, field, obj)
+			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
 
 var markedChildImplementors = []string{"MarkedChild"}
 
@@ -2860,6 +3285,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				true, true,
 				func(ctx context.Context) graphql.Marshaler {
 					return ec._Query_ping(ctx, field)
+				})
+		case "childProbe":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, false,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_childProbe(ctx, field)
 				})
 		case "checkedInput":
 			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
@@ -3451,6 +3882,16 @@ func (ec *executionContext) unmarshalNCheckedInput2githubᚗcomᚋ99designsᚋgq
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNChildProbeObject2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐChildProbeObject(ctx context.Context, sel ast.SelectionSet, v *ChildProbeObject) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ChildProbeObject(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3692,6 +4133,57 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalOChildProbe2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐChildProbe(ctx context.Context, sel ast.SelectionSet, v *ChildProbe) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ChildProbe(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOChildProbeObject2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐChildProbeObjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*ChildProbeObject) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNChildProbeObject2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐChildProbeObject(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOChildProbeObject2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐChildProbeObject(ctx context.Context, sel ast.SelectionSet, v *ChildProbeObject) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ChildProbeObject(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalInt(*v)
+	return res
+}
+
 func (ec *executionContext) marshalOMarkedChild2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐMarkedChild(ctx context.Context, sel ast.SelectionSet, v *MarkedChild) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -3718,6 +4210,29 @@ func (ec *executionContext) marshalOMutation2ᚖgithubᚗcomᚋ99designsᚋgqlge
 		return graphql.Null
 	}
 	return ec._Mutation(ctx, sel)
+}
+
+func (ec *executionContext) unmarshalOProbeEnum2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐProbeEnum(ctx context.Context, v any) (*ProbeEnum, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(ProbeEnum)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOProbeEnum2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐProbeEnum(ctx context.Context, sel ast.SelectionSet, v *ProbeEnum) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) marshalOProbeUnion2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐProbeUnion(ctx context.Context, sel ast.SelectionSet, v ProbeUnion) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProbeUnion(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOQuery2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐQuery(ctx context.Context, sel ast.SelectionSet, v *Query) graphql.Marshaler {
