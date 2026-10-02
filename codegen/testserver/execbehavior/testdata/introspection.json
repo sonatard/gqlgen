@@ -46,6 +46,45 @@
         "subscriptionType": null,
         "types": [
           {
+            "kind": "INTERFACE",
+            "name": "Animal",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [
+              {
+                "name": "name",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "inputFields": [],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": [
+              {
+                "kind": "OBJECT",
+                "name": "Dog",
+                "ofType": null
+              },
+              {
+                "kind": "OBJECT",
+                "name": "Cat",
+                "ofType": null
+              }
+            ]
+          },
+          {
             "kind": "SCALAR",
             "name": "Boolean",
             "description": "The `Boolean` scalar type represents `true` or `false`.",
@@ -53,6 +92,56 @@
             "fields": [],
             "inputFields": [],
             "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
+            "kind": "OBJECT",
+            "name": "Cat",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [
+              {
+                "name": "name",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "lives",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "inputFields": [],
+            "interfaces": [
+              {
+                "kind": "INTERFACE",
+                "name": "Animal",
+                "ofType": null
+              }
+            ],
             "enumValues": [],
             "possibleTypes": []
           },
@@ -413,6 +502,56 @@
               }
             ],
             "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
+            "kind": "OBJECT",
+            "name": "Dog",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [
+              {
+                "name": "name",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "barks",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "inputFields": [],
+            "interfaces": [
+              {
+                "kind": "INTERFACE",
+                "name": "Animal",
+                "ofType": null
+              }
+            ],
             "enumValues": [],
             "possibleTypes": []
           },
@@ -793,6 +932,28 @@
             "possibleTypes": []
           },
           {
+            "kind": "UNION",
+            "name": "Pet",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [],
+            "inputFields": [],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": [
+              {
+                "kind": "OBJECT",
+                "name": "Dog",
+                "ofType": null
+              },
+              {
+                "kind": "OBJECT",
+                "name": "Cat",
+                "ofType": null
+              }
+            ]
+          },
+          {
             "kind": "ENUM",
             "name": "ProbeEnum",
             "description": null,
@@ -845,6 +1006,77 @@
                     "name": "String",
                     "ofType": null
                   }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "animals",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "INTERFACE",
+                      "name": "Animal",
+                      "ofType": null
+                    }
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "pets",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "UNION",
+                        "name": "Pet",
+                        "ofType": null
+                      }
+                    }
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "strangeAnimal",
+                "description": null,
+                "args": [
+                  {
+                    "name": "kind",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "String",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "INTERFACE",
+                  "name": "Animal",
+                  "ofType": null
                 },
                 "isDeprecated": false,
                 "deprecationReason": null
