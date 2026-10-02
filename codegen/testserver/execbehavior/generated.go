@@ -44,6 +44,140 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ArgObject struct {
+		Echo func(childComplexity int, strict Strict) int
+		Ok   func(childComplexity int) int
+	}
+
+	Cat struct {
+		Lives func(childComplexity int) int
+		Name  func(childComplexity int) int
+	}
+
+	ChildProbe struct {
+		EnumValue func(childComplexity int) int
+		Iface     func(childComplexity int) int
+		List      func(childComplexity int) int
+		Object    func(childComplexity int) int
+		Scalar    func(childComplexity int) int
+		Union     func(childComplexity int) int
+	}
+
+	ChildProbeObject struct {
+		ID     func(childComplexity int) int
+		Nested func(childComplexity int, limit *int) int
+	}
+
+	DeferItem struct {
+		Failing        func(childComplexity int) int
+		ID             func(childComplexity int) int
+		NonNullFailing func(childComplexity int) int
+		Slow           func(childComplexity int) int
+	}
+
+	Described struct {
+		Link    func(childComplexity int) int
+		Name    func(childComplexity int, format *NameFormat, legacyFormat *string) int
+		OldName func(childComplexity int) int
+	}
+
+	Dog struct {
+		Barks func(childComplexity int) int
+		Name  func(childComplexity int) int
+	}
+
+	ErrorProbe struct {
+		Failing        func(childComplexity int) int
+		FailingNonNull func(childComplexity int) int
+		Multiple       func(childComplexity int) int
+		Ok             func(childComplexity int) int
+		ValueAndError  func(childComplexity int) int
+		WithExtensions func(childComplexity int) int
+	}
+
+	LimitedItem struct {
+		ID   func(childComplexity int) int
+		Slow func(childComplexity int) int
+	}
+
+	MarkedChild struct {
+		Node          func(childComplexity int) int
+		PlainNode     func(childComplexity int) int
+		ResolvedValue func(childComplexity int) int
+		Value         func(childComplexity int) int
+	}
+
+	MarkedLeaf struct {
+		ID func(childComplexity int) int
+	}
+
+	MarkedParent struct {
+		Child func(childComplexity int) int
+		Name  func(childComplexity int) int
+	}
+
+	Mutation struct {
+		AppendLog func(childComplexity int, entry string) int
+		Panicking func(childComplexity int) int
+		Touch     func(childComplexity int) int
+	}
+
+	Nullability struct {
+		Nested         func(childComplexity int) int
+		Optional       func(childComplexity int) int
+		Required       func(childComplexity int) int
+		RequiredDogs   func(childComplexity int) int
+		RequiredElems  func(childComplexity int) int
+		RequiredList   func(childComplexity int) int
+		RequiredObject func(childComplexity int) int
+	}
+
+	Query struct {
+		Animals          func(childComplexity int) int
+		ArgObject        func(childComplexity int) int
+		ArgProbe         func(childComplexity int, strict *Strict, withDefault *int, plain *string) int
+		CheckedInput     func(childComplexity int, input CheckedInput) int
+		ChildProbe       func(childComplexity int) int
+		Coerce           func(childComplexity int, input *CoerceInput, numbers []int, nested [][]int) int
+		DeferItem        func(childComplexity int) int
+		DeferItems       func(childComplexity int) int
+		Described        func(childComplexity int, input *DescribedInput, choice *OneOfInput) int
+		ErrorProbe       func(childComplexity int) int
+		FailingRoot      func(childComplexity int) int
+		LimitedItems     func(childComplexity int, count int) int
+		MarkedParent     func(childComplexity int) int
+		Nullability      func(childComplexity int, valid bool) int
+		Panicking        func(childComplexity int) int
+		PanickingNonNull func(childComplexity int) int
+		Pets             func(childComplexity int) int
+		Ping             func(childComplexity int) int
+		StrangeAnimal    func(childComplexity int, kind string) int
+		UnmarshalNamed   func(childComplexity int, kind string, raw map[string]any) int
+		ValueViewer      func(childComplexity int) int
+		Viewer           func(childComplexity int) int
+		WrongTypeArg     func(childComplexity int, value *string) int
+		WrongTypeInput   func(childComplexity int, input WrongTypeInput) int
+		WrongTypes       func(childComplexity int) int
+	}
+
+	ValueViewer struct {
+		Name  func(childComplexity int) int
+		Query func(childComplexity int) int
+	}
+
+	Viewer struct {
+		Mutation      func(childComplexity int) int
+		Name          func(childComplexity int) int
+		OptionalQuery func(childComplexity int) int
+		Query         func(childComplexity int) int
+	}
+
+	WrongTypes struct {
+		IntAsString          func(childComplexity int) int
+		Marshaler            func(childComplexity int) int
+		NonNullIntAsString   func(childComplexity int) int
+		ReplacedByMiddleware func(childComplexity int) int
+	}
 }
 
 // endregion ***************************** api!.gotpl *****************************
@@ -121,6 +255,584 @@ func (e *executableSchema) Schema() *ast.Schema {
 func (e *executableSchema) Complexity(ctx context.Context, typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
 	ec := newExecutionContext(nil, e, nil)
 	_ = ec
+	switch typeName + "." + field {
+
+	case "ArgObject.echo":
+		if e.ComplexityRoot.ArgObject.Echo == nil {
+			break
+		}
+
+		args, err := ec.field_ArgObject_echo_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.ArgObject.Echo(childComplexity, args["strict"].(Strict)), true
+	case "ArgObject.ok":
+		if e.ComplexityRoot.ArgObject.Ok == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ArgObject.Ok(childComplexity), true
+
+	case "Cat.lives":
+		if e.ComplexityRoot.Cat.Lives == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Cat.Lives(childComplexity), true
+	case "Cat.name":
+		if e.ComplexityRoot.Cat.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Cat.Name(childComplexity), true
+
+	case "ChildProbe.enumValue":
+		if e.ComplexityRoot.ChildProbe.EnumValue == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ChildProbe.EnumValue(childComplexity), true
+	case "ChildProbe.iface":
+		if e.ComplexityRoot.ChildProbe.Iface == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ChildProbe.Iface(childComplexity), true
+	case "ChildProbe.list":
+		if e.ComplexityRoot.ChildProbe.List == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ChildProbe.List(childComplexity), true
+	case "ChildProbe.object":
+		if e.ComplexityRoot.ChildProbe.Object == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ChildProbe.Object(childComplexity), true
+	case "ChildProbe.scalar":
+		if e.ComplexityRoot.ChildProbe.Scalar == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ChildProbe.Scalar(childComplexity), true
+	case "ChildProbe.union":
+		if e.ComplexityRoot.ChildProbe.Union == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ChildProbe.Union(childComplexity), true
+
+	case "ChildProbeObject.id":
+		if e.ComplexityRoot.ChildProbeObject.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ChildProbeObject.ID(childComplexity), true
+	case "ChildProbeObject.nested":
+		if e.ComplexityRoot.ChildProbeObject.Nested == nil {
+			break
+		}
+
+		args, err := ec.field_ChildProbeObject_nested_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.ChildProbeObject.Nested(childComplexity, args["limit"].(*int)), true
+
+	case "DeferItem.failing":
+		if e.ComplexityRoot.DeferItem.Failing == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeferItem.Failing(childComplexity), true
+	case "DeferItem.id":
+		if e.ComplexityRoot.DeferItem.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeferItem.ID(childComplexity), true
+	case "DeferItem.nonNullFailing":
+		if e.ComplexityRoot.DeferItem.NonNullFailing == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeferItem.NonNullFailing(childComplexity), true
+	case "DeferItem.slow":
+		if e.ComplexityRoot.DeferItem.Slow == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeferItem.Slow(childComplexity), true
+
+	case "Described.link":
+		if e.ComplexityRoot.Described.Link == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Described.Link(childComplexity), true
+	case "Described.name":
+		if e.ComplexityRoot.Described.Name == nil {
+			break
+		}
+
+		args, err := ec.field_Described_name_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Described.Name(childComplexity, args["format"].(*NameFormat), args["legacyFormat"].(*string)), true
+	case "Described.oldName":
+		if e.ComplexityRoot.Described.OldName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Described.OldName(childComplexity), true
+
+	case "Dog.barks":
+		if e.ComplexityRoot.Dog.Barks == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Dog.Barks(childComplexity), true
+	case "Dog.name":
+		if e.ComplexityRoot.Dog.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Dog.Name(childComplexity), true
+
+	case "ErrorProbe.failing":
+		if e.ComplexityRoot.ErrorProbe.Failing == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ErrorProbe.Failing(childComplexity), true
+	case "ErrorProbe.failingNonNull":
+		if e.ComplexityRoot.ErrorProbe.FailingNonNull == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ErrorProbe.FailingNonNull(childComplexity), true
+	case "ErrorProbe.multiple":
+		if e.ComplexityRoot.ErrorProbe.Multiple == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ErrorProbe.Multiple(childComplexity), true
+	case "ErrorProbe.ok":
+		if e.ComplexityRoot.ErrorProbe.Ok == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ErrorProbe.Ok(childComplexity), true
+	case "ErrorProbe.valueAndError":
+		if e.ComplexityRoot.ErrorProbe.ValueAndError == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ErrorProbe.ValueAndError(childComplexity), true
+	case "ErrorProbe.withExtensions":
+		if e.ComplexityRoot.ErrorProbe.WithExtensions == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ErrorProbe.WithExtensions(childComplexity), true
+
+	case "LimitedItem.id":
+		if e.ComplexityRoot.LimitedItem.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LimitedItem.ID(childComplexity), true
+	case "LimitedItem.slow":
+		if e.ComplexityRoot.LimitedItem.Slow == nil {
+			break
+		}
+
+		return e.ComplexityRoot.LimitedItem.Slow(childComplexity), true
+
+	case "MarkedChild.node":
+		if e.ComplexityRoot.MarkedChild.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarkedChild.Node(childComplexity), true
+	case "MarkedChild.plainNode":
+		if e.ComplexityRoot.MarkedChild.PlainNode == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarkedChild.PlainNode(childComplexity), true
+	case "MarkedChild.resolvedValue":
+		if e.ComplexityRoot.MarkedChild.ResolvedValue == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarkedChild.ResolvedValue(childComplexity), true
+	case "MarkedChild.value":
+		if e.ComplexityRoot.MarkedChild.Value == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarkedChild.Value(childComplexity), true
+
+	case "MarkedLeaf.id":
+		if e.ComplexityRoot.MarkedLeaf.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarkedLeaf.ID(childComplexity), true
+
+	case "MarkedParent.child":
+		if e.ComplexityRoot.MarkedParent.Child == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarkedParent.Child(childComplexity), true
+	case "MarkedParent.name":
+		if e.ComplexityRoot.MarkedParent.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarkedParent.Name(childComplexity), true
+
+	case "Mutation.appendLog":
+		if e.ComplexityRoot.Mutation.AppendLog == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_appendLog_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.AppendLog(childComplexity, args["entry"].(string)), true
+	case "Mutation.panicking":
+		if e.ComplexityRoot.Mutation.Panicking == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.Panicking(childComplexity), true
+	case "Mutation.touch":
+		if e.ComplexityRoot.Mutation.Touch == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.Touch(childComplexity), true
+
+	case "Nullability.nested":
+		if e.ComplexityRoot.Nullability.Nested == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Nullability.Nested(childComplexity), true
+	case "Nullability.optional":
+		if e.ComplexityRoot.Nullability.Optional == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Nullability.Optional(childComplexity), true
+	case "Nullability.required":
+		if e.ComplexityRoot.Nullability.Required == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Nullability.Required(childComplexity), true
+	case "Nullability.requiredDogs":
+		if e.ComplexityRoot.Nullability.RequiredDogs == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Nullability.RequiredDogs(childComplexity), true
+	case "Nullability.requiredElems":
+		if e.ComplexityRoot.Nullability.RequiredElems == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Nullability.RequiredElems(childComplexity), true
+	case "Nullability.requiredList":
+		if e.ComplexityRoot.Nullability.RequiredList == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Nullability.RequiredList(childComplexity), true
+	case "Nullability.requiredObject":
+		if e.ComplexityRoot.Nullability.RequiredObject == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Nullability.RequiredObject(childComplexity), true
+
+	case "Query.animals":
+		if e.ComplexityRoot.Query.Animals == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Animals(childComplexity), true
+	case "Query.argObject":
+		if e.ComplexityRoot.Query.ArgObject == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.ArgObject(childComplexity), true
+	case "Query.argProbe":
+		if e.ComplexityRoot.Query.ArgProbe == nil {
+			break
+		}
+
+		args, err := ec.field_Query_argProbe_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.ArgProbe(childComplexity, args["strict"].(*Strict), args["withDefault"].(*int), args["plain"].(*string)), true
+	case "Query.checkedInput":
+		if e.ComplexityRoot.Query.CheckedInput == nil {
+			break
+		}
+
+		args, err := ec.field_Query_checkedInput_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.CheckedInput(childComplexity, args["input"].(CheckedInput)), true
+	case "Query.childProbe":
+		if e.ComplexityRoot.Query.ChildProbe == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.ChildProbe(childComplexity), true
+	case "Query.coerce":
+		if e.ComplexityRoot.Query.Coerce == nil {
+			break
+		}
+
+		args, err := ec.field_Query_coerce_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Coerce(childComplexity, args["input"].(*CoerceInput), args["numbers"].([]int), args["nested"].([][]int)), true
+	case "Query.deferItem":
+		if e.ComplexityRoot.Query.DeferItem == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.DeferItem(childComplexity), true
+	case "Query.deferItems":
+		if e.ComplexityRoot.Query.DeferItems == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.DeferItems(childComplexity), true
+	case "Query.described":
+		if e.ComplexityRoot.Query.Described == nil {
+			break
+		}
+
+		args, err := ec.field_Query_described_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Described(childComplexity, args["input"].(*DescribedInput), args["choice"].(*OneOfInput)), true
+	case "Query.errorProbe":
+		if e.ComplexityRoot.Query.ErrorProbe == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.ErrorProbe(childComplexity), true
+	case "Query.failingRoot":
+		if e.ComplexityRoot.Query.FailingRoot == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.FailingRoot(childComplexity), true
+
+	case "Query.limitedItems":
+		if e.ComplexityRoot.Query.LimitedItems == nil {
+			break
+		}
+
+		args, err := ec.field_Query_limitedItems_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.LimitedItems(childComplexity, args["count"].(int)), true
+	case "Query.markedParent":
+		if e.ComplexityRoot.Query.MarkedParent == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.MarkedParent(childComplexity), true
+	case "Query.nullability":
+		if e.ComplexityRoot.Query.Nullability == nil {
+			break
+		}
+
+		args, err := ec.field_Query_nullability_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.Nullability(childComplexity, args["valid"].(bool)), true
+	case "Query.panicking":
+		if e.ComplexityRoot.Query.Panicking == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Panicking(childComplexity), true
+	case "Query.panickingNonNull":
+		if e.ComplexityRoot.Query.PanickingNonNull == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.PanickingNonNull(childComplexity), true
+	case "Query.pets":
+		if e.ComplexityRoot.Query.Pets == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Pets(childComplexity), true
+	case "Query.ping":
+		if e.ComplexityRoot.Query.Ping == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Ping(childComplexity), true
+	case "Query.strangeAnimal":
+		if e.ComplexityRoot.Query.StrangeAnimal == nil {
+			break
+		}
+
+		args, err := ec.field_Query_strangeAnimal_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.StrangeAnimal(childComplexity, args["kind"].(string)), true
+	case "Query.unmarshalNamed":
+		if e.ComplexityRoot.Query.UnmarshalNamed == nil {
+			break
+		}
+
+		args, err := ec.field_Query_unmarshalNamed_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.UnmarshalNamed(childComplexity, args["kind"].(string), args["raw"].(map[string]any)), true
+	case "Query.valueViewer":
+		if e.ComplexityRoot.Query.ValueViewer == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.ValueViewer(childComplexity), true
+	case "Query.viewer":
+		if e.ComplexityRoot.Query.Viewer == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Viewer(childComplexity), true
+	case "Query.wrongTypeArg":
+		if e.ComplexityRoot.Query.WrongTypeArg == nil {
+			break
+		}
+
+		args, err := ec.field_Query_wrongTypeArg_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.WrongTypeArg(childComplexity, args["value"].(*string)), true
+	case "Query.wrongTypeInput":
+		if e.ComplexityRoot.Query.WrongTypeInput == nil {
+			break
+		}
+
+		args, err := ec.field_Query_wrongTypeInput_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.WrongTypeInput(childComplexity, args["input"].(WrongTypeInput)), true
+	case "Query.wrongTypes":
+		if e.ComplexityRoot.Query.WrongTypes == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.WrongTypes(childComplexity), true
+
+	case "ValueViewer.name":
+		if e.ComplexityRoot.ValueViewer.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ValueViewer.Name(childComplexity), true
+	case "ValueViewer.query":
+		if e.ComplexityRoot.ValueViewer.Query == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ValueViewer.Query(childComplexity), true
+
+	case "Viewer.mutation":
+		if e.ComplexityRoot.Viewer.Mutation == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Viewer.Mutation(childComplexity), true
+	case "Viewer.name":
+		if e.ComplexityRoot.Viewer.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Viewer.Name(childComplexity), true
+	case "Viewer.optionalQuery":
+		if e.ComplexityRoot.Viewer.OptionalQuery == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Viewer.OptionalQuery(childComplexity), true
+	case "Viewer.query":
+		if e.ComplexityRoot.Viewer.Query == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Viewer.Query(childComplexity), true
+
+	case "WrongTypes.intAsString":
+		if e.ComplexityRoot.WrongTypes.IntAsString == nil {
+			break
+		}
+
+		return e.ComplexityRoot.WrongTypes.IntAsString(childComplexity), true
+	case "WrongTypes.marshaler":
+		if e.ComplexityRoot.WrongTypes.Marshaler == nil {
+			break
+		}
+
+		return e.ComplexityRoot.WrongTypes.Marshaler(childComplexity), true
+	case "WrongTypes.nonNullIntAsString":
+		if e.ComplexityRoot.WrongTypes.NonNullIntAsString == nil {
+			break
+		}
+
+		return e.ComplexityRoot.WrongTypes.NonNullIntAsString(childComplexity), true
+	case "WrongTypes.replacedByMiddleware":
+		if e.ComplexityRoot.WrongTypes.ReplacedByMiddleware == nil {
+			break
+		}
+
+		return e.ComplexityRoot.WrongTypes.ReplacedByMiddleware(childComplexity), true
+
+	}
 	return 0, false
 }
 

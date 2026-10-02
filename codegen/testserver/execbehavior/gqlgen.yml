@@ -8,7 +8,6 @@ exec:
 model:
   filename: models-gen.go
   package: execbehavior
-omit_complexity: true
 autobind:
   - github.com/99designs/gqlgen/codegen/testserver/execbehavior
 
