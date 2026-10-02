@@ -384,6 +384,80 @@
             "possibleTypes": []
           },
           {
+            "kind": "INPUT_OBJECT",
+            "name": "CoerceInput",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [],
+            "inputFields": [
+              {
+                "name": "numbers",
+                "description": null,
+                "type": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "Int",
+                      "ofType": null
+                    }
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "items",
+                "description": null,
+                "type": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "INPUT_OBJECT",
+                      "name": "CoerceItem",
+                      "ofType": null
+                    }
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
+            "kind": "INPUT_OBJECT",
+            "name": "CoerceItem",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [],
+            "inputFields": [
+              {
+                "name": "value",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Strict",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
             "kind": "OBJECT",
             "name": "DeferItem",
             "description": null,
@@ -1470,6 +1544,69 @@
                 "type": {
                   "kind": "OBJECT",
                   "name": "ChildProbe",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "coerce",
+                "description": null,
+                "args": [
+                  {
+                    "name": "input",
+                    "description": null,
+                    "type": {
+                      "kind": "INPUT_OBJECT",
+                      "name": "CoerceInput",
+                      "ofType": null
+                    },
+                    "defaultValue": null
+                  },
+                  {
+                    "name": "numbers",
+                    "description": null,
+                    "type": {
+                      "kind": "LIST",
+                      "name": null,
+                      "ofType": {
+                        "kind": "NON_NULL",
+                        "name": null,
+                        "ofType": {
+                          "kind": "SCALAR",
+                          "name": "Int",
+                          "ofType": null
+                        }
+                      }
+                    },
+                    "defaultValue": null
+                  },
+                  {
+                    "name": "nested",
+                    "description": null,
+                    "type": {
+                      "kind": "LIST",
+                      "name": null,
+                      "ofType": {
+                        "kind": "LIST",
+                        "name": null,
+                        "ofType": {
+                          "kind": "NON_NULL",
+                          "name": null,
+                          "ofType": {
+                            "kind": "SCALAR",
+                            "name": "Int",
+                            "ofType": null
+                          }
+                        }
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
                   "ofType": null
                 },
                 "isDeprecated": false,
