@@ -23,6 +23,10 @@ models:
     fields:
       slow:
         resolver: true
+  ArgObject:
+    fields:
+      echo:
+        resolver: true
   ErrorProbe:
     fields:
       failing:

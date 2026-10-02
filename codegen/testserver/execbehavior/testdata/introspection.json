@@ -85,6 +85,61 @@
             ]
           },
           {
+            "kind": "OBJECT",
+            "name": "ArgObject",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [
+              {
+                "name": "echo",
+                "description": null,
+                "args": [
+                  {
+                    "name": "strict",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "Strict",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "ok",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "inputFields": [],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
             "kind": "SCALAR",
             "name": "Boolean",
             "description": "The `Boolean` scalar type represents `true` or `false`.",
@@ -1318,6 +1373,61 @@
                 "deprecationReason": null
               },
               {
+                "name": "argProbe",
+                "description": null,
+                "args": [
+                  {
+                    "name": "strict",
+                    "description": null,
+                    "type": {
+                      "kind": "SCALAR",
+                      "name": "Strict",
+                      "ofType": null
+                    },
+                    "defaultValue": null
+                  },
+                  {
+                    "name": "withDefault",
+                    "description": null,
+                    "type": {
+                      "kind": "SCALAR",
+                      "name": "Int",
+                      "ofType": null
+                    },
+                    "defaultValue": "7"
+                  },
+                  {
+                    "name": "plain",
+                    "description": null,
+                    "type": {
+                      "kind": "SCALAR",
+                      "name": "String",
+                      "ofType": null
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "argObject",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "OBJECT",
+                  "name": "ArgObject",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
                 "name": "deferItem",
                 "description": null,
                 "args": [],
@@ -1654,6 +1764,17 @@
                 "deprecationReason": null
               }
             ],
+            "inputFields": [],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
+            "kind": "SCALAR",
+            "name": "Strict",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [],
             "inputFields": [],
             "interfaces": [],
             "enumValues": [],
