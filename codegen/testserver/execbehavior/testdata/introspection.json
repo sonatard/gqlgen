@@ -460,6 +460,17 @@
             "possibleTypes": []
           },
           {
+            "kind": "SCALAR",
+            "name": "CtxMaybe",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [],
+            "inputFields": [],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
             "kind": "OBJECT",
             "name": "DeferItem",
             "description": null,
@@ -1031,6 +1042,17 @@
             "possibleTypes": []
           },
           {
+            "kind": "SCALAR",
+            "name": "Maybe",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [],
+            "inputFields": [],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
             "kind": "OBJECT",
             "name": "Mutation",
             "description": null,
@@ -1558,6 +1580,118 @@
                   "kind": "OBJECT",
                   "name": "ChildProbe",
                   "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "maybe",
+                "description": null,
+                "args": [
+                  {
+                    "name": "v",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "String",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Maybe",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "maybeNonNull",
+                "description": null,
+                "args": [
+                  {
+                    "name": "v",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "String",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Maybe",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "ctxMaybe",
+                "description": null,
+                "args": [
+                  {
+                    "name": "v",
+                    "description": null,
+                    "type": {
+                      "kind": "SCALAR",
+                      "name": "CtxMaybe",
+                      "ofType": null
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "CtxMaybe",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "ctxMaybeNonNull",
+                "description": null,
+                "args": [
+                  {
+                    "name": "v",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "CtxMaybe",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "CtxMaybe",
+                    "ofType": null
+                  }
                 },
                 "isDeprecated": false,
                 "deprecationReason": null
