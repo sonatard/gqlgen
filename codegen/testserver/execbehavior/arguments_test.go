@@ -104,3 +104,33 @@ func TestArguments(t *testing.T) {
 		require.False(t, called)
 	})
 }
+
+func TestDirectiveArguments(t *testing.T) {
+	resolvers := &Stub{}
+	resolvers.QueryResolver.StrictDirective = func(ctx context.Context) (*string, error) {
+		return new("resolved"), nil
+	}
+	resolvers.QueryResolver.BadStrictDirective = func(ctx context.Context) (*string, error) {
+		return new("resolved"), nil
+	}
+	srv := newServer(resolvers, DirectiveRoot{
+		StrictArg: func(ctx context.Context, obj any, next graphql.Resolver, value Strict) (any, error) {
+			res, err := next(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return new(*res.(*string) + " with " + string(value)), nil
+		},
+	})
+
+	require.JSONEq(
+		t,
+		`{"data":{"strictDirective":"resolved with good"}}`,
+		post(t, srv, `{ strictDirective }`),
+	)
+	require.JSONEq(
+		t,
+		`{"data":{"badStrictDirective":null},"errors":[{"message":"strict rejects this value","path":["badStrictDirective"]}]}`,
+		post(t, srv, `{ badStrictDirective }`),
+	)
+}
