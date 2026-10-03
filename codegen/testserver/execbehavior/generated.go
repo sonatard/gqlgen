@@ -42,6 +42,7 @@ type DirectiveRoot struct {
 	InputCheck    func(ctx context.Context, obj any, next graphql.Resolver) (res any, err error)
 	ReplaceStream func(ctx context.Context, obj any, next graphql.Resolver, with string) (res any, err error)
 	ReturnValue   func(ctx context.Context, obj any, next graphql.Resolver, kind string) (res any, err error)
+	StrictArg     func(ctx context.Context, obj any, next graphql.Resolver, value Strict) (res any, err error)
 	Tag           func(ctx context.Context, obj any, next graphql.Resolver, name string) (res any, err error)
 }
 
@@ -135,35 +136,37 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Animals          func(childComplexity int) int
-		ArgObject        func(childComplexity int) int
-		ArgProbe         func(childComplexity int, strict *Strict, withDefault *int, plain *string) int
-		CheckedInput     func(childComplexity int, input CheckedInput) int
-		ChildProbe       func(childComplexity int) int
-		Coerce           func(childComplexity int, input *CoerceInput, numbers []int, nested [][]int) int
-		CtxMaybe         func(childComplexity int, v *string) int
-		CtxMaybeNonNull  func(childComplexity int, v string) int
-		DeferItem        func(childComplexity int) int
-		DeferItems       func(childComplexity int) int
-		Described        func(childComplexity int, input *DescribedInput, choice *OneOfInput) int
-		ErrorProbe       func(childComplexity int) int
-		FailingRoot      func(childComplexity int) int
-		LimitedItems     func(childComplexity int, count int) int
-		MarkedParent     func(childComplexity int) int
-		Maybe            func(childComplexity int, v string) int
-		MaybeNonNull     func(childComplexity int, v string) int
-		Nullability      func(childComplexity int, valid bool) int
-		Panicking        func(childComplexity int) int
-		PanickingNonNull func(childComplexity int) int
-		Pets             func(childComplexity int) int
-		Ping             func(childComplexity int) int
-		StrangeAnimal    func(childComplexity int, kind string) int
-		UnmarshalNamed   func(childComplexity int, kind string, raw map[string]any) int
-		ValueViewer      func(childComplexity int) int
-		Viewer           func(childComplexity int) int
-		WrongTypeArg     func(childComplexity int, value *string) int
-		WrongTypeInput   func(childComplexity int, input WrongTypeInput) int
-		WrongTypes       func(childComplexity int) int
+		Animals            func(childComplexity int) int
+		ArgObject          func(childComplexity int) int
+		ArgProbe           func(childComplexity int, strict *Strict, withDefault *int, plain *string) int
+		BadStrictDirective func(childComplexity int) int
+		CheckedInput       func(childComplexity int, input CheckedInput) int
+		ChildProbe         func(childComplexity int) int
+		Coerce             func(childComplexity int, input *CoerceInput, numbers []int, nested [][]int) int
+		CtxMaybe           func(childComplexity int, v *string) int
+		CtxMaybeNonNull    func(childComplexity int, v string) int
+		DeferItem          func(childComplexity int) int
+		DeferItems         func(childComplexity int) int
+		Described          func(childComplexity int, input *DescribedInput, choice *OneOfInput) int
+		ErrorProbe         func(childComplexity int) int
+		FailingRoot        func(childComplexity int) int
+		LimitedItems       func(childComplexity int, count int) int
+		MarkedParent       func(childComplexity int) int
+		Maybe              func(childComplexity int, v string) int
+		MaybeNonNull       func(childComplexity int, v string) int
+		Nullability        func(childComplexity int, valid bool) int
+		Panicking          func(childComplexity int) int
+		PanickingNonNull   func(childComplexity int) int
+		Pets               func(childComplexity int) int
+		Ping               func(childComplexity int) int
+		StrangeAnimal      func(childComplexity int, kind string) int
+		StrictDirective    func(childComplexity int) int
+		UnmarshalNamed     func(childComplexity int, kind string, raw map[string]any) int
+		ValueViewer        func(childComplexity int) int
+		Viewer             func(childComplexity int) int
+		WrongTypeArg       func(childComplexity int, value *string) int
+		WrongTypeInput     func(childComplexity int, input WrongTypeInput) int
+		WrongTypes         func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -240,6 +243,8 @@ type QueryResolver interface {
 	StrangeAnimal(ctx context.Context, kind string) (Animal, error)
 	ArgProbe(ctx context.Context, strict *Strict, withDefault *int, plain *string) (*string, error)
 	ArgObject(ctx context.Context) (*ArgObject, error)
+	StrictDirective(ctx context.Context) (*string, error)
+	BadStrictDirective(ctx context.Context) (*string, error)
 	DeferItem(ctx context.Context) (*DeferItem, error)
 	DeferItems(ctx context.Context) ([]*DeferItem, error)
 	ChildProbe(ctx context.Context) (*ChildProbe, error)
@@ -631,6 +636,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.ArgProbe(childComplexity, args["strict"].(*Strict), args["withDefault"].(*int), args["plain"].(*string)), true
+	case "Query.badStrictDirective":
+		if e.ComplexityRoot.Query.BadStrictDirective == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.BadStrictDirective(childComplexity), true
 	case "Query.checkedInput":
 		if e.ComplexityRoot.Query.CheckedInput == nil {
 			break
@@ -802,6 +813,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.StrangeAnimal(childComplexity, args["kind"].(string)), true
+	case "Query.strictDirective":
+		if e.ComplexityRoot.Query.StrictDirective == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.StrictDirective(childComplexity), true
 	case "Query.unmarshalNamed":
 		if e.ComplexityRoot.Query.UnmarshalNamed == nil {
 			break
@@ -1331,6 +1348,10 @@ func (ec *executionContext) childFields_Query(ctx context.Context, field graphql
 		return ec.fieldContext_Query_argProbe(ctx, field)
 	case "argObject":
 		return ec.fieldContext_Query_argObject(ctx, field)
+	case "strictDirective":
+		return ec.fieldContext_Query_strictDirective(ctx, field)
+	case "badStrictDirective":
+		return ec.fieldContext_Query_badStrictDirective(ctx, field)
 	case "deferItem":
 		return ec.fieldContext_Query_deferItem(ctx, field)
 	case "deferItems":
@@ -1564,6 +1585,20 @@ func (ec *executionContext) dir_returnValue_args(ctx context.Context, rawArgs ma
 		return nil, err
 	}
 	args["kind"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) dir_strictArg_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "value",
+		func(ctx context.Context, v any) (Strict, error) {
+			return ec.unmarshalNStrict2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐStrict(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["value"] = arg0
 	return args, nil
 }
 
@@ -3463,6 +3498,88 @@ func (ec *executionContext) fieldContext_Query_argObject(_ context.Context, fiel
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _Query_strictDirective(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_strictDirective(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().StrictDirective(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				value, err := ec.unmarshalNStrict2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐStrict(ctx, "good")
+				if err != nil {
+					var zeroVal *string
+					return zeroVal, err
+				}
+				if ec.Directives.StrictArg == nil {
+					var zeroVal *string
+					return zeroVal, errors.New("directive strictArg is not implemented")
+				}
+				return ec.Directives.StrictArg(ctx, nil, directive0, value)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_strictDirective(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Query", field, true, true, "String")
+}
+
+func (ec *executionContext) _Query_badStrictDirective(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_badStrictDirective(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().BadStrictDirective(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				value, err := ec.unmarshalNStrict2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋexecbehaviorᚐStrict(ctx, "bad")
+				if err != nil {
+					var zeroVal *string
+					return zeroVal, err
+				}
+				if ec.Directives.StrictArg == nil {
+					var zeroVal *string
+					return zeroVal, errors.New("directive strictArg is not implemented")
+				}
+				return ec.Directives.StrictArg(ctx, nil, directive0, value)
+			}
+
+			next = directive1
+			return next
+		},
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Query_badStrictDirective(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Query", field, true, true, "String")
 }
 
 func (ec *executionContext) _Query_deferItem(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7382,6 +7499,18 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				true, false,
 				func(ctx context.Context) graphql.Marshaler {
 					return ec._Query_argObject(ctx, field)
+				})
+		case "strictDirective":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, false,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_strictDirective(ctx, field)
+				})
+		case "badStrictDirective":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, false,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_badStrictDirective(ctx, field)
 				})
 		case "deferItem":
 			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
