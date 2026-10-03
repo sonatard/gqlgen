@@ -1,0 +1,243 @@
+package execbehavior
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"io"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/executor"
+)
+
+type eventKey struct{}
+
+func newSubscriptionSchema() graphql.ExecutableSchema {
+	resolvers := &Stub{}
+	r := &resolvers.SubscriptionResolver
+	r.Count = func(ctx context.Context, to int) (<-chan int, error) {
+		ch := make(chan int, to)
+		for i := 1; i <= to; i++ {
+			ch <- i
+		}
+		close(ch)
+		return ch, nil
+	}
+	r.Events = func(ctx context.Context, to int) (<-chan graphql.Event[int], error) {
+		ch := make(chan graphql.Event[int], to)
+		for i := 1; i <= to; i++ {
+			// Odd events carry no context, and are paired with the context of the call.
+			var eventCtx context.Context
+			if i%2 == 0 {
+				eventCtx = context.WithValue(ctx, eventKey{}, i)
+			}
+			ch <- graphql.Event[int]{Context: eventCtx, Value: i}
+		}
+		close(ch)
+		return ch, nil
+	}
+	r.Failing = func(ctx context.Context) (<-chan int, error) {
+		return nil, errors.New("failing stream")
+	}
+	r.FailingEvents = func(ctx context.Context) (<-chan graphql.Event[int], error) {
+		return nil, errors.New("failing events")
+	}
+	r.NilStream = func(ctx context.Context) (<-chan int, error) { return make(chan int), nil }
+	r.NullableNilStream = func(ctx context.Context) (<-chan *int, error) {
+		return make(chan *int), nil
+	}
+	r.NilEvents = func(ctx context.Context) (<-chan graphql.Event[int], error) {
+		return make(chan graphql.Event[int]), nil
+	}
+	r.Panicking = func(ctx context.Context) (<-chan int, error) { panic("panicking stream") }
+	r.ReplacedStream = func(ctx context.Context) (<-chan *string, error) {
+		return make(chan *string), nil
+	}
+	r.ReplacedEvents = func(ctx context.Context) (<-chan graphql.Event[*string], error) {
+		return make(chan graphql.Event[*string]), nil
+	}
+	r.WrongType = func(ctx context.Context) (<-chan *int, error) { return make(chan *int), nil }
+	r.WrongTypeEvents = func(ctx context.Context) (<-chan graphql.Event[*int], error) {
+		return make(chan graphql.Event[*int]), nil
+	}
+
+	once := func(field string) func() graphql.Marshaler {
+		sent := false
+		return func() graphql.Marshaler {
+			if sent {
+				return nil
+			}
+			sent = true
+			return graphql.WriterFunc(func(w io.Writer) {
+				_, _ = io.WriteString(w, `{"`+field+`":"from directive"}`)
+			})
+		}
+	}
+	return NewExecutableSchema(Config{
+		Resolvers: resolvers,
+		Directives: DirectiveRoot{
+			ReplaceStream: func(ctx context.Context, obj any, next graphql.Resolver, with string) (any, error) {
+				if _, err := next(ctx); err != nil {
+					return nil, err
+				}
+				switch with {
+				case "stream":
+					next := once("replacedStream")
+					return func(context.Context) graphql.Marshaler { return next() }, nil
+				case "events":
+					next := once("replacedEvents")
+					return func(ctx context.Context) (context.Context, graphql.Marshaler) {
+						return ctx, next()
+					}, nil
+				case "nil":
+					return nil, nil
+				}
+				return 42, nil
+			},
+		},
+	})
+}
+
+func TestSubscription(t *testing.T) {
+	es := newSubscriptionSchema()
+	for _, tc := range []struct {
+		name  string
+		query string
+		want  string
+	}{
+		{
+			name:  "one response per event",
+			query: `subscription { count(to: 3) }`,
+			want:  `[{"data":{"count":1}},{"data":{"count":2}},{"data":{"count":3}}]`,
+		},
+		{
+			name:  "events with and without their own context",
+			query: `subscription { events(to: 3) }`,
+			want:  `[{"data":{"events":1}},{"data":{"events":2}},{"data":{"events":3}}]`,
+		},
+		{
+			name:  "alias",
+			query: `subscription { n: count(to: 1) }`,
+			want:  `[{"data":{"n":1}}]`,
+		},
+		{
+			name:  "resolver error",
+			query: `subscription { failing }`,
+			want:  `[{"errors":[{"message":"failing stream","path":["failing"]}],"data":null}]`,
+		},
+		{
+			name:  "resolver error of a field with event context",
+			query: `subscription { failingEvents }`,
+			want:  `[{"errors":[{"message":"failing events","path":["failingEvents"]}],"data":null}]`,
+		},
+		{
+			name:  "nil for a non-null field",
+			query: `subscription { nilStream }`,
+			want:  `[{"errors":[{"message":"must not be null","path":["nilStream"]}],"data":null}]`,
+		},
+		{
+			// No error is reported, and the handler then calls the nil stream. This
+			// records the current behavior.
+			name:  "nil for a nullable field",
+			query: `subscription { nullableNilStream }`,
+			want:  `"panic"`,
+		},
+		{
+			name:  "nil for a non-null field with event context",
+			query: `subscription { nilEvents }`,
+			want:  `[{"errors":[{"message":"must not be null","path":["nilEvents"]}],"data":null}]`,
+		},
+		{
+			name:  "resolver panic",
+			query: `subscription { panicking }`,
+			want:  `[{"errors":[{"message":"internal system error","path":["panicking"]}],"data":null}]`,
+		},
+		{
+			name:  "directive returns the stream",
+			query: `subscription { replacedStream }`,
+			want:  `[{"data":{"replacedStream":"from directive"}}]`,
+		},
+		{
+			name:  "directive returns the stream with event context",
+			query: `subscription { replacedEvents }`,
+			want:  `[{"data":{"replacedEvents":"from directive"}}]`,
+		},
+		{
+			name:  "directive returns the wrong type",
+			query: `subscription { wrongType }`,
+			want: `[{"errors":[{"message":"unexpected type int from middleware/directive chain, ` +
+				`should be \u003c-chan *int","path":["wrongType"]}],"data":null}]`,
+		},
+		{
+			name:  "directive returns the wrong type for a field with event context",
+			query: `subscription { wrongTypeEvents }`,
+			want: `[{"errors":[{"message":"unexpected type int from middleware/directive chain, ` +
+				`should be \u003c-chan graphql.Event[*int]","path":["wrongTypeEvents"]}],"data":null}]`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.JSONEq(t, tc.want, subscribe(t, es, tc.query))
+		})
+	}
+}
+
+// subscribe runs the subscription query on es and returns its responses as a JSON array,
+// without the locations of errors, or "panic" when the response handler panics.
+func subscribe(t *testing.T, es graphql.ExecutableSchema, query string) (res string) {
+	t.Helper()
+	defer func() {
+		if r := recover(); r != nil {
+			res = `"panic"`
+		}
+	}()
+
+	exec := executor.New(es)
+	exec.SetRecoverFunc(func(ctx context.Context, err any) error {
+		return errors.New("internal system error")
+	})
+	ctx := graphql.StartOperationTrace(context.Background())
+	opCtx, errs := exec.CreateOperationContext(ctx, &graphql.RawParams{Query: query})
+	require.Empty(t, errs)
+	handler, ctx := exec.DispatchOperation(ctx, opCtx)
+
+	// The handler reuses the buffer of the data, so each response is encoded before the
+	// next one is read.
+	var responses []json.RawMessage
+	for range 100 {
+		resp := handler(ctx)
+		if resp == nil {
+			break
+		}
+		for _, err := range resp.Errors {
+			err.Locations = nil
+		}
+		b, err := json.Marshal(resp)
+		require.NoError(t, err)
+		responses = append(responses, b)
+	}
+	b, err := json.Marshal(responses)
+	require.NoError(t, err)
+	return string(b)
+}
+
+func TestSubscriptionEndsWithContext(t *testing.T) {
+	resolvers := &Stub{}
+	silent := make(chan graphql.Event[*int])
+	resolvers.SubscriptionResolver.SilentEvents = func(ctx context.Context) (<-chan graphql.Event[*int], error) {
+		return silent, nil
+	}
+	exec := executor.New(NewExecutableSchema(Config{Resolvers: resolvers}))
+	ctx := graphql.StartOperationTrace(context.Background())
+	opCtx, errs := exec.CreateOperationContext(ctx, &graphql.RawParams{
+		Query: `subscription { silentEvents }`,
+	})
+	require.Empty(t, errs)
+	handler, ctx := exec.DispatchOperation(ctx, opCtx)
+
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	require.Nil(t, handler(ctx))
+}

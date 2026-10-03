@@ -43,7 +43,9 @@
         "mutationType": {
           "name": "Mutation"
         },
-        "subscriptionType": null,
+        "subscriptionType": {
+          "name": "Subscription"
+        },
         "types": [
           {
             "kind": "INTERFACE",
@@ -1981,6 +1983,232 @@
             "possibleTypes": []
           },
           {
+            "kind": "OBJECT",
+            "name": "Subscription",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [
+              {
+                "name": "count",
+                "description": null,
+                "args": [
+                  {
+                    "name": "to",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "Int",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "events",
+                "description": null,
+                "args": [
+                  {
+                    "name": "to",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "SCALAR",
+                        "name": "Int",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "failing",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "failingEvents",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "nilStream",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "nullableNilStream",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "nilEvents",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "panicking",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "replacedStream",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "replacedEvents",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "wrongType",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "wrongTypeEvents",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "silentEvents",
+                "description": null,
+                "args": [],
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "inputFields": [],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
             "kind": "SCALAR",
             "name": "Url",
             "description": "A scalar with a specification.",
@@ -3206,6 +3434,29 @@
             "args": []
           },
           {
+            "name": "replaceStream",
+            "description": null,
+            "locations": [
+              "FIELD_DEFINITION"
+            ],
+            "args": [
+              {
+                "name": "with",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ]
+          },
+          {
             "name": "returnValue",
             "description": null,
             "locations": [
@@ -3277,6 +3528,14 @@
                 "defaultValue": null
               }
             ]
+          },
+          {
+            "name": "subscriptionContext",
+            "description": null,
+            "locations": [
+              "FIELD_DEFINITION"
+            ],
+            "args": []
           },
           {
             "name": "tag",
