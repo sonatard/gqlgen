@@ -11,3 +11,12 @@ extend type Query {
   argProbe(strict: Strict, withDefault: Int = 7, plain: String): String
   argObject: ArgObject
 }
+
+# The arguments of a directive are unmarshaled when the field runs, so a value that
+# fails to unmarshal fails the field the directive is on.
+directive @strictArg(value: Strict!) on FIELD_DEFINITION
+
+extend type Query {
+  strictDirective: String @strictArg(value: "good")
+  badStrictDirective: String @strictArg(value: "bad")
+}
