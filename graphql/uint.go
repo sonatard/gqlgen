@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"io"
@@ -70,30 +71,31 @@ func interfaceToUnsignedNumber[N number](v any) (N, error) {
 	case uint, uint8, uint16, uint32, uint64:
 		return safeCastUnsignedNumber[N](reflect.ValueOf(v).Uint())
 	case string:
-		uv, err := strconv.ParseUint(v, 10, 64)
-		if err != nil {
-			var strconvErr *strconv.NumError
-			if errors.As(err, &strconvErr) && isSignedInteger(v) {
-				return 0, newUintSignError(v)
-			}
-			return 0, err
-		}
-		return safeCastUnsignedNumber[N](uv)
+		return parseUnsignedNumber[N](v)
 	case json.Number:
-		uv, err := strconv.ParseUint(string(v), 10, 64)
-		if err != nil {
-			var strconvErr *strconv.NumError
-			if errors.As(err, &strconvErr) && isSignedInteger(string(v)) {
-				return 0, newUintSignError(string(v))
-			}
-			return 0, err
+		return parseUnsignedNumber[N](string(v))
+	case jsontext.Value:
+		if !isJSONNumber(v) {
+			return 0, fmt.Errorf("%T is not an %T", v, N(0))
 		}
-		return safeCastUnsignedNumber[N](uv)
+		return parseUnsignedNumber[N](string(v))
 	case nil:
 		return 0, nil
 	default:
 		return 0, fmt.Errorf("%T is not an %T", v, N(0))
 	}
+}
+
+func parseUnsignedNumber[N number](s string) (N, error) {
+	uv, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		var strconvErr *strconv.NumError
+		if errors.As(err, &strconvErr) && isSignedInteger(s) {
+			return 0, newUintSignError(s)
+		}
+		return 0, err
+	}
+	return safeCastUnsignedNumber[N](uv)
 }
 
 type UintSignError struct {

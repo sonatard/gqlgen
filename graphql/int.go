@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"encoding/json"
+	"encoding/json/jsontext"
 	"fmt"
 	"io"
 	"math"
@@ -68,22 +69,34 @@ func interfaceToSignedNumber[N number](v any) (N, error) {
 	case int, int8, int16, int32, int64:
 		return safeCastSignedNumber[N](reflect.ValueOf(v).Int())
 	case string:
-		iv, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return 0, err
-		}
-		return safeCastSignedNumber[N](iv)
+		return parseSignedNumber[N](v)
 	case json.Number:
-		iv, err := strconv.ParseInt(string(v), 10, 64)
-		if err != nil {
-			return 0, err
+		return parseSignedNumber[N](string(v))
+	case jsontext.Value:
+		if !isJSONNumber(v) {
+			return 0, fmt.Errorf("%T is not an %T", v, N(0))
 		}
-		return safeCastSignedNumber[N](iv)
+		return parseSignedNumber[N](string(v))
 	case nil:
 		return 0, nil
 	default:
 		return 0, fmt.Errorf("%T is not an %T", v, N(0))
 	}
+}
+
+func parseSignedNumber[N number](s string) (N, error) {
+	iv, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return safeCastSignedNumber[N](iv)
+}
+
+// isJSONNumber reports whether v holds a JSON number. In the JSONv2 mode,
+// numbers in variables arrive as jsontext.Value, as they arrive as json.Number
+// in the JSONv1 mode.
+func isJSONNumber(v jsontext.Value) bool {
+	return v.Kind() == '0'
 }
 
 // IntegerError is an error type that allows users to identify errors associated

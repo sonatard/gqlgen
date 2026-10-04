@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"encoding/json"
+	"encoding/json/jsontext"
 )
 
 // CoerceList applies coercion from a single value to a list.
@@ -17,6 +18,8 @@ func CoerceList(v any) []any {
 	case []string:
 		return toAnySlice(v)
 	case []json.Number:
+		return toAnySlice(v)
+	case []jsontext.Value:
 		return toAnySlice(v)
 	case []bool:
 		return toAnySlice(v)
