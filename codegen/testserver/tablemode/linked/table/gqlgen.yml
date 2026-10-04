@@ -1,0 +1,9 @@
+schema:
+  - ../schema.graphql
+skip_validation: true
+exec:
+  filename: generated.go
+  package: table
+  mode: table
+autobind:
+  - github.com/99designs/gqlgen/codegen/testserver/tablemode/linked/model
