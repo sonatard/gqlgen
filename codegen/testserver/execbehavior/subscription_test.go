@@ -65,6 +65,14 @@ func newSubscriptionSchema() graphql.ExecutableSchema {
 	r.WrongTypeEvents = func(ctx context.Context) (<-chan graphql.Event[*int], error) {
 		return make(chan graphql.Event[*int]), nil
 	}
+	nilAnimal := func(ctx context.Context) (<-chan Animal, error) {
+		ch := make(chan Animal, 1)
+		ch <- nil
+		close(ch)
+		return ch, nil
+	}
+	r.NilAnimal = nilAnimal
+	r.NullableNilAnimal = nilAnimal
 
 	once := func(field string) func() graphql.Marshaler {
 		sent := false
@@ -157,6 +165,22 @@ func TestSubscription(t *testing.T) {
 			want: `[{"errors":[{"message":"cannot return null for non-null field ` +
 				`Subscription.nilEvents (Int!): the resolver returned nil",` +
 				`"path":["nilEvents"]}],"data":null}]`,
+		},
+		{
+			// KNOWN BUG: the event is sent as null, with an error that has no path and does
+			// not name the field.
+			// Expected: data is null and the error has the path of the field, because the
+			// spec propagates a null in a non-null field to the nearest nullable parent,
+			// and asks an error of a field to give its path.
+			name:  "nil event for a non-null interface",
+			query: `subscription { nilAnimal { name } }`,
+			want: `[{"errors":[{"message":"cannot return null for non-null position (Animal!): ` +
+				`the value was nil"}],"data":{"nilAnimal":null}}]`,
+		},
+		{
+			name:  "nil event for a nullable interface",
+			query: `subscription { nullableNilAnimal { name } }`,
+			want:  `[{"data":{"nullableNilAnimal":null}}]`,
 		},
 		{
 			name:  "resolver panic",
