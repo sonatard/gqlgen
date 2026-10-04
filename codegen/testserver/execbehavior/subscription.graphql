@@ -23,4 +23,6 @@ type Subscription {
   wrongType: Int @replaceStream(with: "wrong")
   wrongTypeEvents: Int @subscriptionContext @replaceStream(with: "wrong")
   silentEvents: Int @subscriptionContext
+  nilAnimal: Animal!
+  nullableNilAnimal: Animal
 }
