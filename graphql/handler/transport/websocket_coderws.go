@@ -3,7 +3,6 @@ package transport
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"slices"
@@ -11,6 +10,8 @@ import (
 	"time"
 
 	coderws "github.com/coder/websocket"
+
+	"github.com/99designs/gqlgen/graphql/handler/internal/respjson"
 )
 
 // CoderWebsocketImplementation adapts github.com/coder/websocket to the gqlgen
@@ -19,7 +20,10 @@ type CoderWebsocketImplementation struct {
 	AcceptOptions coderws.AcceptOptions
 }
 
-var _ WebsocketImplementation = CoderWebsocketImplementation{}
+var (
+	_ WebsocketImplementation = CoderWebsocketImplementation{}
+	_ WebsocketMessageWriter  = (*coderWebsocketConn)(nil)
+)
 
 func (u CoderWebsocketImplementation) Accept(
 	w http.ResponseWriter,
@@ -90,11 +94,15 @@ func (c *coderWebsocketConn) NextReader() (int, io.Reader, error) {
 }
 
 func (c *coderWebsocketConn) WriteJSON(v any) error {
-	data, err := json.Marshal(v)
+	data, err := respjson.Marshal(nil, v)
 	if err != nil {
 		return err
 	}
 
+	return c.WriteMessage(data)
+}
+
+func (c *coderWebsocketConn) WriteMessage(data []byte) error {
 	return c.conn.Write(context.Background(), coderws.MessageText, data)
 }
 
