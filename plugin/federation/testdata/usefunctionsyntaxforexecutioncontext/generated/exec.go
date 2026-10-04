@@ -5804,7 +5804,7 @@ func marshalNWorldWithMultipleKeys2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋplugin
 }
 
 func unmarshalN_Any2map(ctx context.Context, ec *executionContext, v any) (map[string]any, error) {
-	res, err := graphql.UnmarshalMap(v)
+	res, err := graphql.UnmarshalMapContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -5816,13 +5816,13 @@ func marshalN_Any2map(ctx context.Context, ec *executionContext, sel ast.Selecti
 		return graphql.Null
 	}
 	_ = sel
-	res := graphql.MarshalMap(v)
+	res := graphql.MarshalMapContext(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
-	return res
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func unmarshalN_Any2ᚕmapᚄ(ctx context.Context, ec *executionContext, v any) ([]map[string]any, error) {

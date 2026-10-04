@@ -69,6 +69,7 @@ func (e *Executor) CreateOperationContext(
 ) (*graphql.OperationContext, gqlerror.List) {
 	opCtx := &graphql.OperationContext{
 		JSONVersion:            e.jsonVersion,
+		ResponseJSONOptions:    e.responseJSONOptions,
 		DisableIntrospection:   true,
 		RecoverFunc:            e.recoverFunc,
 		ResolverMiddleware:     e.ext.fieldMiddleware,
@@ -271,9 +272,10 @@ func (e *Executor) JSONVersion() graphql.JSONVersion {
 }
 
 // SetResponseJSONOptions adds encoding/json/v2 options to the ones responses
-// are written with in the JSONv2 mode, for example json.Deterministic(true)
-// or jsontext.EscapeForHTML(true). They have no effect in the JSONv1 mode,
-// where responses are written with encoding/json.
+// and the built-in Any and Map scalars are written with in the JSONv2 mode,
+// for example json.Deterministic(true) or jsontext.EscapeForHTML(true). They
+// have no effect in the JSONv1 mode, where responses are written with
+// encoding/json.
 func (e *Executor) SetResponseJSONOptions(opts json.Options) {
 	e.responseJSONOptions = opts
 }

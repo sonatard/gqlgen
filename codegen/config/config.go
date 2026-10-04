@@ -1155,9 +1155,9 @@ func (c *Config) injectBuiltins() {
 			},
 		},
 		"Time":   {Model: StringList{"github.com/99designs/gqlgen/graphql.Time"}},
-		"Map":    {Model: StringList{"github.com/99designs/gqlgen/graphql.Map"}},
+		"Map":    {Model: StringList{"github.com/99designs/gqlgen/graphql.MapContext"}},
 		"Upload": {Model: StringList{"github.com/99designs/gqlgen/graphql.Upload"}},
-		"Any":    {Model: StringList{"github.com/99designs/gqlgen/graphql.Any"}},
+		"Any":    {Model: StringList{"github.com/99designs/gqlgen/graphql.AnyContext"}},
 	}
 
 	for typeName, entry := range extraBuiltins {

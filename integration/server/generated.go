@@ -3480,7 +3480,7 @@ func (ec *executionContext) unmarshalOMap2map(ctx context.Context, v any) (map[s
 	if v == nil {
 		return nil, nil
 	}
-	res, err := graphql.UnmarshalMap(v)
+	res, err := graphql.UnmarshalMapContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -3489,9 +3489,8 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 	_ = sel
-	_ = ctx
-	res := graphql.MarshalMap(v)
-	return res
+	res := graphql.MarshalMapContext(v)
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalOMap2ᚕmap(ctx context.Context, v any) ([]map[string]any, error) {

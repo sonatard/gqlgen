@@ -2774,7 +2774,7 @@ func (ec *executionContext) marshalNInt2githubᚗcomᚋ99designsᚋgqlgenᚋ_exa
 }
 
 func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v any) (map[string]any, error) {
-	res, err := graphql.UnmarshalMap(v)
+	res, err := graphql.UnmarshalMapContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -2786,13 +2786,13 @@ func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 	_ = sel
-	res := graphql.MarshalMap(v)
+	res := graphql.MarshalMapContext(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
-	return res
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋ99designsᚋgqlgenᚋ_examplesᚋtodoᚐRole(ctx context.Context, v any) (Role, error) {

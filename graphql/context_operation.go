@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"encoding/json/v2"
 	"errors"
 	"net/http"
 	"strings"
@@ -23,6 +24,7 @@ type OperationContext struct {
 
 	Operation              *ast.OperationDefinition
 	JSONVersion            JSONVersion
+	ResponseJSONOptions    json.Options
 	DisableIntrospection   bool
 	RecoverFunc            RecoverFunc
 	ResolverMiddleware     FieldMiddleware

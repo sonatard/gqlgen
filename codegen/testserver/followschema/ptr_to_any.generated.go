@@ -140,7 +140,7 @@ func (ec *executionContext) unmarshalOAny2interface(ctx context.Context, v any) 
 	if v == nil {
 		return nil, nil
 	}
-	res, err := graphql.UnmarshalAny(v)
+	res, err := graphql.UnmarshalAnyContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -149,9 +149,8 @@ func (ec *executionContext) marshalOAny2interface(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 	_ = sel
-	_ = ctx
-	res := graphql.MarshalAny(v)
-	return res
+	res := graphql.MarshalAnyContext(v)
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalOAny2ᚖinterface(ctx context.Context, v any) (*any, error) {

@@ -148,7 +148,7 @@ var builtins = config.TypeMap{
 		},
 	},
 	"_Any": {
-		Model: config.StringList{"github.com/99designs/gqlgen/graphql.Map"},
+		Model: config.StringList{"github.com/99designs/gqlgen/graphql.MapContext"},
 	},
 	"federation__Scope": {
 		Model: config.StringList{"github.com/99designs/gqlgen/graphql.String"},

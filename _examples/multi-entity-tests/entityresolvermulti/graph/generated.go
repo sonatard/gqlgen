@@ -2881,7 +2881,7 @@ func (ec *executionContext) marshalNVariation2ᚖentityresolvermultiᚋgraphᚋm
 }
 
 func (ec *executionContext) unmarshalN_Any2map(ctx context.Context, v any) (map[string]any, error) {
-	res, err := graphql.UnmarshalMap(v)
+	res, err := graphql.UnmarshalMapContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -2893,13 +2893,13 @@ func (ec *executionContext) marshalN_Any2map(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 	_ = sel
-	res := graphql.MarshalMap(v)
+	res := graphql.MarshalMapContext(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
-	return res
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalN_Any2ᚕmapᚄ(ctx context.Context, v any) ([]map[string]any, error) {
@@ -3367,7 +3367,7 @@ func (ec *executionContext) unmarshalO_RequiresMap2map(ctx context.Context, v an
 	if v == nil {
 		return nil, nil
 	}
-	res, err := graphql.UnmarshalMap(v)
+	res, err := graphql.UnmarshalMapContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -3376,9 +3376,8 @@ func (ec *executionContext) marshalO_RequiresMap2map(ctx context.Context, sel as
 		return graphql.Null
 	}
 	_ = sel
-	_ = ctx
-	res := graphql.MarshalMap(v)
-	return res
+	res := graphql.MarshalMapContext(v)
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {
