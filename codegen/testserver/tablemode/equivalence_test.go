@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/99designs/gqlgen/codegen/testserver/tablemode/functions"
 	"github.com/99designs/gqlgen/codegen/testserver/tablemode/table"
@@ -25,6 +26,9 @@ type request struct {
 	contains []string
 	// complexityLimit enables the fixed complexity limit extension when it is set.
 	complexityLimit int
+	// quiet recovers panics without printing their stack, for requests that are sent
+	// in bulk.
+	quiet bool
 }
 
 var requests = []request{
@@ -243,6 +247,11 @@ func run(t *testing.T, es graphql.ExecutableSchema, req request) string {
 	exec.Use(extension.Introspection{})
 	if req.complexityLimit > 0 {
 		exec.Use(extension.FixedComplexityLimit(req.complexityLimit))
+	}
+	if req.quiet {
+		exec.SetRecoverFunc(func(context.Context, any) error {
+			return gqlerror.Errorf("internal system error")
+		})
 	}
 
 	ctx := graphql.StartOperationTrace(context.Background())
