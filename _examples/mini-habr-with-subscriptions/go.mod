@@ -41,3 +41,5 @@ require (
 )
 
 replace github.com/99designs/gqlgen => ../../
+
+replace github.com/vektah/gqlparser/v2 => github.com/sonatard/gqlparser/v2 v2.4.2-0.20261004075823-0342c994caea
