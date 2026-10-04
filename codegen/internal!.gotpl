@@ -31,7 +31,11 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 						break
 						}
 						{{ if $field.Args }}
+							{{- if $.Config.Exec.IsTable }}
+							args, err := {{ $object.TableVar }}.ParseArgs(ctx, ec, {{ $field.Name | quote }}, rawArgs)
+							{{- else }}
 							args, err := {{$.ECDot}}{{ $field.ArgsFunc }}(ctx, {{$.ECArg}}rawArgs)
+							{{- end }}
 							if err != nil {
 							return 0, false
 							}
@@ -55,7 +59,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		return graphql.NewInputUnmarshalerIndex(
 		{{- range $input := .Inputs -}}
 			{{ if not $input.HasUnmarshal }}
-				{{- if $.Config.UseFunctionSyntaxForExecutionContext }}
+				{{- if $.Config.Exec.IsTable }}
+				graphql.NewInputUnmarshaler({{ $input.Name | quote }}, graphql.BindUnmarshaler(ec, exec.Input{{ if $input.PointersInUnmarshalInput }}Pointer{{ end }}Func[*executionContext, {{ $input.Type | ref }}](&{{ $input.TableVar }}))),
+				{{- else if $.Config.UseFunctionSyntaxForExecutionContext }}
 				graphql.NewInputUnmarshaler({{ $input.Name | quote }}, graphql.BindUnmarshaler(ec, unmarshalInput{{ $input.Name }})),
 				{{- else }}
 				graphql.NewInputUnmarshaler({{ $input.Name | quote }}, ec.unmarshalInput{{ $input.Name }}),
@@ -76,10 +82,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				ctx = graphql.WithLazyInputUnmarshalerIndex(ctx, inputUnmarshalers)
 				{{ if .AllDirectives.LocationDirectives "QUERY" -}}
 					data = {{$.ECDot}}_queryMiddleware(ctx, {{$.ECArg}}opCtx.Operation, func(ctx context.Context) (any, error){
-						return {{$.ECDot}}_{{.QueryRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet), nil
+						return {{ $.ObjectMarshal .QueryRoot.Name "opCtx.Operation.SelectionSet" "" }}, nil
 					})
 				{{- else -}}
-					data = {{$.ECDot}}_{{.QueryRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet)
+					data = {{ $.ObjectMarshal .QueryRoot.Name "opCtx.Operation.SelectionSet" "" }}
 				{{- end }}
 			} else {
 				if atomic.LoadInt32(&ec.PendingDeferred) > 0 {
@@ -112,10 +118,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			ctx = graphql.WithLazyInputUnmarshalerIndex(ctx, inputUnmarshalers)
 			{{ if .AllDirectives.LocationDirectives "MUTATION" -}}
 				data := {{$.ECDot}}_mutationMiddleware(ctx, {{$.ECArg}}opCtx.Operation, func(ctx context.Context) (any, error){
-					return {{$.ECDot}}_{{.MutationRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet), nil
+					return {{ $.ObjectMarshal .MutationRoot.Name "opCtx.Operation.SelectionSet" "" }}, nil
 				})
 			{{- else -}}
-				data := {{$.ECDot}}_{{.MutationRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet)
+				data := {{ $.ObjectMarshal .MutationRoot.Name "opCtx.Operation.SelectionSet" "" }}
 			{{- end }}
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
@@ -228,6 +234,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // childFields_* functions provide shared child field context lookups.
 // Each function is generated once per unique object type, deduplicating the
 // switch statements that were previously inlined in every fieldContext_* function.
+{{- if not $.Config.Exec.IsTable }}
 {{- range $ct := .UniqueChildFieldTypes }}
 
 func {{$.FuncReceiver}}childFields_{{ $ct.TypeName }}(ctx context.Context, {{$.ECFuncParam}}field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -239,6 +246,25 @@ func {{$.FuncReceiver}}childFields_{{ $ct.TypeName }}(ctx context.Context, {{$.E
 	}
 	return nil, fmt.Errorf("no field named %q was found under type {{ $ct.TypeName }}", field.Name)
 }
+{{- end }}
+{{- end }}
+
+{{- if $.Config.Exec.IsTable }}
+{{- range $t := .TableOutTypes }}
+var out{{ $t.MarshalFunc | ucFirst }} = exec.OutOf({{ $t.MarshalFunc }})
+{{- end }}
+{{- range $t := .TableInTypes }}
+var in{{ $t.UnmarshalFunc | ucFirst }} = exec.InOf({{ $t.UnmarshalFunc }})
+{{- end }}
+{{- range $name, $directive := .TableDirectiveDefs }}
+
+var {{ $directive.TableVar }} = exec.DirectiveDef[*executionContext]{Name: {{ $directive.Name | quote }}
+{{- if $directive.Args }}, Args: {{ template "tableArgs" $directive.Args }}{{ end }},
+	Call: func(ctx context.Context, ec *executionContext, obj any, n graphql.Resolver, args map[string]any) (any, error) {
+		{{- template "callDirective" $directive -}}
+	},
+}
+{{- end }}
 {{- end }}
 
 {{ template "globalMiddleware" . }}

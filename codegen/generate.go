@@ -26,6 +26,11 @@ func GenerateCode(data *Data) error {
 	if !data.Config.Exec.IsDefined() {
 		return errors.New("missing exec config")
 	}
+	if data.Config.Exec.IsTable() {
+		if err := checkTableMode(data); err != nil {
+			return err
+		}
+	}
 
 	switch data.Config.Exec.Layout {
 	case config.ExecLayoutSingleFile:

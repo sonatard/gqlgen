@@ -220,12 +220,19 @@ func (d *Data) Directives() DirectiveList {
 	return res
 }
 
+// FunctionSyntax reports whether the generated functions take the execution context
+// as a parameter instead of being its methods. Table mode always uses it, so that the
+// type functions and the combinators that replace some of them are called alike.
+func (d *Data) FunctionSyntax() bool {
+	return d.Config.UseFunctionSyntaxForExecutionContext || d.Config.Exec.IsTable()
+}
+
 // FuncReceiver returns the receiver clause for a generated function declaration.
 //
 //	function syntax:  ""
 //	receiver syntax:  "(ec *executionContext) "
 func (d *Data) FuncReceiver() string {
-	if d.Config.UseFunctionSyntaxForExecutionContext {
+	if d.FunctionSyntax() {
 		return ""
 	}
 	return "(ec *executionContext) "
@@ -236,7 +243,7 @@ func (d *Data) FuncReceiver() string {
 //	function syntax:  "ec *executionContext, "
 //	receiver syntax:  ""
 func (d *Data) ECFuncParam() string {
-	if d.Config.UseFunctionSyntaxForExecutionContext {
+	if d.FunctionSyntax() {
 		return "ec *executionContext, "
 	}
 	return ""
@@ -247,7 +254,7 @@ func (d *Data) ECFuncParam() string {
 //	function syntax:  ""
 //	receiver syntax:  "ec."
 func (d *Data) ECDot() string {
-	if d.Config.UseFunctionSyntaxForExecutionContext {
+	if d.FunctionSyntax() {
 		return ""
 	}
 	return "ec."
@@ -258,7 +265,7 @@ func (d *Data) ECDot() string {
 //	function syntax:  "ec, "
 //	receiver syntax:  ""
 func (d *Data) ECArg() string {
-	if d.Config.UseFunctionSyntaxForExecutionContext {
+	if d.FunctionSyntax() {
 		return "ec, "
 	}
 	return ""

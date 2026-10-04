@@ -177,6 +177,41 @@ func (d *Directive) ResolveArgs(obj string, next int) string {
 	return strings.Join(args, ", ")
 }
 
+// TableVar returns the name of the package variable that holds the exec.DirectiveDef
+// generated for the directive in table mode.
+func (d *Directive) TableVar() string {
+	return "directive" + d.CallName()
+}
+
+// TableUse returns the Go expression that applies the directive, with the argument
+// values written in the schema, in table mode.
+func (d *Directive) TableUse() string {
+	var args []string
+	for _, arg := range d.Args {
+		v := arg.Value
+		if v == nil {
+			v = arg.Default
+		}
+		if v == nil {
+			continue
+		}
+		args = append(args, fmt.Sprintf("%q: %s", arg.Name, templates.Dump(v)))
+	}
+	if len(args) == 0 {
+		return d.TableVar() + ".With(nil)"
+	}
+	return d.TableVar() + ".With(map[string]any{" + strings.Join(args, ", ") + "})"
+}
+
+// tableUses returns the Go expression for the list of directives dirs in table mode.
+func tableUses(dirs []*Directive) string {
+	uses := make([]string, len(dirs))
+	for i, d := range dirs {
+		uses[i] = d.TableUse()
+	}
+	return "exec.Dirs(" + strings.Join(uses, ", ") + ")"
+}
+
 func (d *Directive) CallName() string {
 	return ucFirst(d.Name)
 }

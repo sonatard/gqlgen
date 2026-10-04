@@ -773,6 +773,99 @@ func (f *Field) ShortInvocation() string {
 	return fmt.Sprintf("%s().%s(%s)", caser.String(f.Object.Name), f.GoFieldName, f.CallArgs())
 }
 
+// TableObj returns the expression of the field's object in table mode, where the object
+// is passed as obj of type any.
+func (f *Field) TableObj() string {
+	return "obj.(" + templates.CurrentImports.LookupType(f.Object.Reference()) + ")"
+}
+
+// TableGetExpr returns the expression that reads the field from obj in table mode, for
+// fields bound to a struct field, or to a method that takes no context or arguments and
+// returns no error. It returns "" for other fields.
+func (f *Field) TableGetExpr() string {
+	if f.IsBatch() || f.HasHaser || f.VOkFunc || f.IsResolver || f.GoReceiverName != "obj" {
+		return ""
+	}
+	switch {
+	case f.IsVariable():
+		return f.TableObj() + "." + f.GoFieldName
+	case f.IsMethod() && f.NoErr && !f.MethodHasContext && len(f.Args) == 0:
+		return f.TableObj() + "." + f.GoFieldName + "()"
+	}
+	return ""
+}
+
+// TableResolveBody returns the body of the closure that resolves the field in table
+// mode, written as a single statement that reads the object from obj and the arguments
+// from args. It returns "" when the field needs more than one statement; the template
+// then writes the body the functions mode uses.
+func (f *Field) TableResolveBody() string {
+	if f.IsBatch() || f.HasHaser || f.VOkFunc {
+		return ""
+	}
+	recv := f.GoReceiverName
+	if recv == "obj" {
+		recv = f.TableObj()
+	}
+	var body string
+	switch {
+	case f.IsResolver:
+		args := f.CallArgs()
+		if !f.Object.Root {
+			args = "ctx, " + f.TableObj() + strings.TrimPrefix(args, "ctx, obj")
+		}
+		caser := cases.Title(language.English, cases.NoLower)
+		body = "return ec.Resolvers." + caser.String(
+			f.Object.Name,
+		) + "()." + f.GoFieldName + "(" + args + ")"
+	case f.IsMethod():
+		call := recv + "." + f.GoFieldName + "(" + f.CallArgs() + ")"
+		if f.NoErr {
+			body = "return " + call + ", nil"
+		} else {
+			body = "return " + call
+		}
+	case f.IsVariable():
+		body = "return " + recv + "." + f.GoFieldName + ", nil"
+	default:
+		return ""
+	}
+	if strings.Contains(body, "\n") {
+		return ""
+	}
+	return strings.ReplaceAll(body, "fc.Args[", "args[")
+}
+
+// TableOut returns the name of the variable holding the exec.Out of the field's type in
+// table mode.
+func (f *Field) TableOut() string {
+	return tableOutVar(f.TypeReference)
+}
+
+// TableDirectives returns the Go expression for the directives of the field in table
+// mode.
+func (f *Field) TableDirectives() string {
+	return tableUses(f.ImplDirectives())
+}
+
+// TableInputInvocation returns the resolver call that sets an input field from data in
+// table mode, where the input being unmarshaled is the pointer it, of type any.
+func (f *Field) TableInputInvocation() string {
+	caser := cases.Title(language.English, cases.NoLower)
+	return fmt.Sprintf(
+		"%s().%s(ctx, it.(*%s), data)",
+		caser.String(f.Object.Name),
+		f.GoFieldName,
+		templates.CurrentImports.LookupType(f.Object.Type),
+	)
+}
+
+// TableIn returns the name of the variable holding the exec.In of the input field's
+// type in table mode.
+func (f *Field) TableIn() string {
+	return tableInVar(f.TypeReference)
+}
+
 func (f *Field) ArgsFunc() string {
 	if len(f.Args) == 0 {
 		return ""

@@ -193,6 +193,21 @@ func (o *Object) InvalidsIncrement(fieldSetVar string) string {
 	return fieldSetVar + ".Invalids++"
 }
 
+// TableInputDirectives returns the Go expression for the INPUT_OBJECT directives of
+// an input in table mode.
+func (o *Object) TableInputDirectives() string {
+	return tableUses(o.InputObjectDirectives())
+}
+
+// TableVar returns the name of the package variable that holds the table generated for
+// this object or input in table mode.
+func (o *Object) TableVar() string {
+	if o.Kind == ast.InputObject {
+		return "input" + o.Name
+	}
+	return "object" + o.Name
+}
+
 func (o *Object) IsReserved() bool {
 	return strings.HasPrefix(o.Name, "__")
 }

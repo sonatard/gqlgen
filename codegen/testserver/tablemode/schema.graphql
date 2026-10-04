@@ -1,0 +1,177 @@
+# This schema is generated twice, once per exec mode, so that tests can check that
+# table mode answers every request exactly like the functions mode does.
+
+directive @goModel(
+  model: String
+  models: [String!]
+) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+directive @goField(
+  forceResolver: Boolean
+  name: String
+  omittable: Boolean
+  type: String
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+directive @defer(if: Boolean = true, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @upper on FIELD_DEFINITION
+directive @auth(role: Role! = ADMIN) on OBJECT | FIELD_DEFINITION
+directive @length(min: Int!, max: Int) on INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
+directive @nullify on INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
+directive @validReview on INPUT_OBJECT
+directive @trace(label: String) on FIELD
+directive @logQuery on QUERY
+directive @logMutation on MUTATION
+
+scalar Time
+scalar Money
+scalar Map
+
+enum Role {
+  ADMIN
+  USER
+  GUEST
+}
+
+enum Episode {
+  NEWHOPE
+  EMPIRE
+  JEDI
+}
+
+enum LengthUnit {
+  METER
+  FOOT
+}
+
+interface Node {
+  id: ID!
+}
+
+interface Character implements Node {
+  id: ID!
+  name: String!
+  friends: [Character!]!
+  appearsIn: [Episode!]!
+}
+
+type Human implements Character & Node {
+  id: ID!
+  name: String! @upper
+  friends: [Character!]!
+  appearsIn: [Episode!]!
+  height(unit: LengthUnit = METER): Float!
+  mass: Float
+  starships: [Starship!]!
+  secret: String @auth(role: ADMIN)
+  nickname: String
+  tags: [String]
+  wallet: Money
+}
+
+type Droid implements Character & Node @auth(role: USER) {
+  id: ID!
+  name: String!
+  friends: [Character!]!
+  appearsIn: [Episode!]!
+  primaryFunction: String!
+  serial: Int
+}
+
+type Starship {
+  id: ID!
+  name: String!
+  length(unit: LengthUnit = METER): Float!
+  history: [[Int!]!]!
+}
+
+union SearchResult = Human | Droid | Starship
+
+type Review {
+  stars: Int!
+  commentary: String
+  time: Time
+  tags: [String!]!
+  episode: Episode
+}
+
+type NullChain {
+  required: String!
+  optional: String
+  child: NullChain
+  requiredChild: NullChain!
+}
+
+type Summary {
+  label: String!
+  count: Int!
+  extra: Map
+  query: Query!
+}
+
+input ReviewInput @validReview {
+  stars: Int!
+  commentary: String @length(min: 1, max: 20)
+  time: Time
+  tags: [String!] = ["fresh"]
+  nested: NestedInput
+  note: String @nullify
+  episode: Episode = JEDI
+  wallet: Money
+}
+
+input NestedInput {
+  value: String! = "default"
+  numbers: [Int!]
+  deeper: NestedInput
+}
+
+input MapInput @goModel(model: "map[string]interface{}") {
+  name: String = "unnamed"
+  size: Int
+  role: Role
+}
+
+input ResolvedInput {
+  label: String!
+  shout: String @goField(forceResolver: true)
+}
+
+input OmittableInput {
+  value: String @goField(omittable: true)
+  count: Int @goField(omittable: true)
+}
+
+type Query {
+  hero(episode: Episode): Character
+  human(id: ID!): Human
+  droid(id: ID!): Droid
+  node(id: ID!): Node
+  search(text: String! @length(min: 1)): [SearchResult!]!
+  starship(id: ID!): Starship
+  reviews(episode: Episode!, since: Time): [Review!]!
+  echoReview(input: ReviewInput!): Review!
+  echoReviews(inputs: [ReviewInput!]): [Review!]
+  echoMap(input: MapInput): Map!
+  echoResolved(input: ResolvedInput!): String!
+  echoOmittable(input: OmittableInput!): String!
+  echoNullified(value: String @nullify): String!
+  money(amount: Money!): Money!
+  roles: [Role!]!
+  withDefaults(
+    a: Int = 1
+    b: String = "x"
+    c: [Episode!] = [EMPIRE]
+    d: NestedInput = { value: "v", numbers: [1, 2] }
+  ): String!
+  nullChain: NullChain
+  failing: String!
+  failingOptional: String
+  panicking: String
+  summary: Summary!
+  secretNumber: Int @auth(role: ADMIN)
+}
+
+type Mutation {
+  createReview(episode: Episode!, review: ReviewInput!): Review
+  setRole(role: Role!): Role!
+}

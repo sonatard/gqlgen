@@ -1,5 +1,9 @@
 {{- range $type := .ReferencedTypes }}
 	{{ with $type.UnmarshalFunc }}
+		{{- $comb := $.TableUnmarshal $type }}
+		{{- if $comb }}
+		var {{ . }} = {{ $comb }}
+		{{- else }}
 		func {{$.FuncReceiver}}{{ . }}(ctx context.Context, {{$.ECFuncParam}}v any) ({{ $type.GO | ref }}, error) {
 			{{- if and $type.IsNilable (not $type.GQL.NonNull) (not $type.IsPtrToPtr) }}
 				if v == nil { return nil, nil }
@@ -33,7 +37,7 @@
 				{{- if $type.Unmarshaler }}
 					{{- if $type.HasEnumValues }}
 						tmp, err := {{ $type.Unmarshaler | call }}(v)
-						res := {{ ($type.EnumUnmarshalVar $.Config.UseFunctionSyntaxForExecutionContext) }}[tmp]
+						res := {{ ($type.EnumUnmarshalVar $.FunctionSyntax) }}[tmp]
 					{{- else if $type.CastType }}
 						{{- if $type.IsContext }}
 							tmp, err := {{ $type.Unmarshaler | call }}(ctx, v)
@@ -72,7 +76,11 @@
 					{{- end }}
 						return res, graphql.ErrorOnPath(ctx, err)
 				{{- else }}
+					{{- if $.Config.Exec.IsTable }}
+					res, err := exec.Input{{ if $type.PointersInUnmarshalInput }}Pointer{{ else }}Value{{ end }}[*executionContext, {{ if $type.IsPtr }}{{ $type.Elem.GO | ref }}{{ else }}{{ $type.GO | ref }}{{ end }}](ctx, ec, &input{{ $type.GQL.Name }}, v)
+					{{- else }}
 					res, err := {{$.ECDot}}unmarshalInput{{ $type.GQL.Name }}(ctx, {{$.ECArg}}v)
+					{{- end }}
 					{{- if and $type.IsNilable (not $type.IsMap) (not $type.PointersInUnmarshalInput) }}
 						return &res, graphql.ErrorOnPath(ctx, err)
 					{{- else if and (not $type.IsNilable) $type.PointersInUnmarshalInput }}
@@ -83,12 +91,17 @@
 				{{- end }}
 			{{- end }}
 		}
+		{{- end }}
 	{{- end }}
 
 	{{ with $type.MarshalFunc }}
 		{{- /* eventCtx: the Subscription root marshaler returns a per-event context tuple when the
 		   subscription_context_field option is on. Computed once here; reused below. */ -}}
 		{{- $eventCtx := and (eq $type.Definition.Name "Subscription") $.Config.SubscriptionContextField -}}
+		{{- $comb := $.TableMarshal $type }}
+		{{- if $comb }}
+		var {{ . }} = {{ $comb }}
+		{{- else }}
 		func {{$.FuncReceiver}}{{ . }}(ctx context.Context, {{$.ECFuncParam}}sel ast.SelectionSet, v {{ $type.GO | ref }}) {{- if $eventCtx }}(context.Context, {{- end}}graphql.Marshaler{{- if $eventCtx }}){{- end}} {
 			{{- if or $type.IsPtrToSlice $type.IsPtrToIntf }}
 				if v == nil {
@@ -204,7 +217,7 @@
 						{{- $v = "*v" }}
 					{{- end }}
 					{{- if $type.HasEnumValues }}
-						{{- $v = printf "%v[%v]" ($type.EnumMarshalVar $.Config.UseFunctionSyntaxForExecutionContext) $v }}
+						{{- $v = printf "%v[%v]" ($type.EnumMarshalVar $.FunctionSyntax) $v }}
 					{{- else if $type.CastType }}
 						{{- $v = printf "%v(%v)" ($type.CastType | ref) $v}}
 					{{- end }}
@@ -226,13 +239,16 @@
 						res := {{$.ECDot}}_{{$type.Definition.Name}}(ctx, {{$.ECArg}}sel)
 						return res(ctx)
 					{{- else }}
-						return {{$.ECDot}}_{{$type.Definition.Name}}(ctx, {{$.ECArg}}sel)
+						return {{ $.ObjectMarshal $type.Definition.Name "sel" "" }}
 					{{- end }}
 				{{- else }}
-					return {{$.ECDot}}_{{$type.Definition.Name}}(ctx, {{$.ECArg}}sel, {{ if not $type.IsNilable}}&{{end}} v)
+					{{- $v := "v" }}
+					{{- if not $type.IsNilable }}{{ $v = "&v" }}{{ end }}
+					return {{ $.ObjectMarshal $type.Definition.Name "sel" $v }}
 				{{- end }}
 			{{- end }}
 		}
+		{{- end }}
 	{{- end }}
 
 	{{- if and $type.HasEnumValues (not $type.IsSlice) }}
@@ -241,12 +257,12 @@
 		{{- $enum = $type.GO.Elem }}
 	{{- end }}
 	var (
-		{{ ($type.EnumUnmarshalVar $.Config.UseFunctionSyntaxForExecutionContext) }} = map[string]{{ $enum | ref }}{
+		{{ ($type.EnumUnmarshalVar $.FunctionSyntax) }} = map[string]{{ $enum | ref }}{
 		{{- range $value := $type.EnumValues }}
 			"{{ $value.Definition.Name }}": {{ $value.Object | obj }},
 		{{- end }}
 		}
-		{{ ($type.EnumMarshalVar $.Config.UseFunctionSyntaxForExecutionContext) }} = map[{{ $enum | ref }}]string{
+		{{ ($type.EnumMarshalVar $.FunctionSyntax) }} = map[{{ $enum | ref }}]string{
 		{{- range $value := $type.EnumValues }}
 			 {{ $value.Object | obj }}: "{{ $value.Definition.Name }}",
 		{{- end }}

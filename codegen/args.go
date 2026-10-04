@@ -40,6 +40,18 @@ func (f *FieldArgument) ImplDirectives() []*Directive {
 	return d
 }
 
+// TableIn returns the name of the variable holding the exec.In of the argument's type
+// in table mode.
+func (f *FieldArgument) TableIn() string {
+	return tableInVar(f.TypeReference)
+}
+
+// TableDirectives returns the Go expression for the directives of the argument in
+// table mode.
+func (f *FieldArgument) TableDirectives() string {
+	return tableUses(f.ImplDirectives())
+}
+
 func (f *FieldArgument) DirectiveObjName() string {
 	return "rawArgs"
 }
@@ -120,7 +132,11 @@ nextArg:
 
 func (d *Data) Args() map[string][]*FieldArgument {
 	ret := map[string][]*FieldArgument{}
+	// Table mode keeps the arguments of fields in the field tables.
 	for _, o := range d.Objects {
+		if d.Config.Exec.IsTable() {
+			break
+		}
 		for _, f := range o.Fields {
 			if len(f.Args) > 0 {
 				ret[f.ArgsFunc()] = f.Args

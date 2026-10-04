@@ -122,7 +122,13 @@ func {{$.FuncReceiver}}_subscriptionMiddleware(ctx context.Context, {{$.ECFuncPa
 {{ end }}
 
 {{ if .AllDirectives.LocationDirectives "FIELD" }}
+{{- if $.Config.Exec.IsTable }}
+// FieldMiddleware applies the FIELD directives of the query to a field. The graphql/exec
+// runtime calls it for every field.
+func (ec *executionContext) FieldMiddleware(ctx context.Context, obj any, next graphql.Resolver) graphql.Resolver {
+{{- else }}
 func {{$.FuncReceiver}}_fieldMiddleware(ctx context.Context, {{$.ECFuncParam}}obj any, next graphql.Resolver) graphql.Resolver {
+{{- end }}
 	fc := graphql.GetFieldContext(ctx)
 	for _, d := range fc.Field.Directives {
 		switch d.Name {
@@ -147,3 +153,16 @@ func {{$.FuncReceiver}}_fieldMiddleware(ctx context.Context, {{$.ECFuncParam}}ob
 }
 {{ end }}
 {{ end }}
+
+{{/* tableArgs emits the []exec.Arg table of a list of arguments in table mode. */}}
+{{- define "tableArgs" -}}
+[]exec.Arg[*executionContext]{
+	{{- range $arg := . }}
+	{Name: {{ $arg.Name | quote }}
+	{{- if $arg.ImplDirectives }}
+		{{- if $arg.TypeReference.IsNilable }}, NilOK: true{{ end }}
+		{{- if $arg.CallArgumentDirectivesWithNull }}, WithNull: true{{ end }}, Directives: {{ $arg.TableDirectives }}
+	{{- end }}, Type: {{ $arg.TableIn }}},
+	{{- end }}
+}
+{{- end }}

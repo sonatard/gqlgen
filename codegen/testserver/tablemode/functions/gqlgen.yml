@@ -1,0 +1,14 @@
+schema:
+  - ../schema.graphql
+skip_validation: true
+exec:
+  filename: generated.go
+  package: functions
+  mode: functions
+autobind:
+  - github.com/99designs/gqlgen/codegen/testserver/tablemode/models
+models:
+  Money:
+    model: github.com/99designs/gqlgen/codegen/testserver/tablemode/models.Money
+  ID:
+    model: github.com/99designs/gqlgen/graphql.ID

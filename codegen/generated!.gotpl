@@ -15,6 +15,7 @@
 {{ reserveImport "github.com/vektah/gqlparser/v2" "gqlparser" }}
 {{ reserveImport "github.com/vektah/gqlparser/v2/ast" }}
 {{ reserveImport "github.com/99designs/gqlgen/graphql" }}
+{{ reserveImport "github.com/99designs/gqlgen/graphql/exec" }}
 {{ reserveImport "github.com/99designs/gqlgen/graphql/introspection" }}
 
 {{ range $object := .Objects -}}

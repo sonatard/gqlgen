@@ -402,6 +402,19 @@ func TestConfigCheck(t *testing.T) {
 					"exec and federation define the same import path (github.com/99designs/gqlgen/codegen/config/generated) with different package names (generated vs federation)",
 				)
 			})
+
+			t.Run("invalid exec mode", func(t *testing.T) {
+				config := Config{
+					Exec: ExecConfig{
+						Layout:   execLayout,
+						Mode:     "fast",
+						Filename: "generated/exec.go",
+						DirName:  "generated",
+					},
+				}
+
+				require.EqualError(t, config.check(), "config.exec: invalid exec mode fast")
+			})
 		})
 	}
 }

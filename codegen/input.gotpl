@@ -4,6 +4,9 @@
 	{{- if .PointersInUnmarshalInput }}
 	  {{- $it = "&it" }}
 	{{- end }}
+	{{- if $.Config.Exec.IsTable }}
+	{{- template "tableInput" (dict "Data" $ "Input" $input "It" $it) }}
+	{{- else }}
 	func {{$.FuncReceiver}}unmarshalInput{{ .Name }}(ctx context.Context, {{$.ECFuncParam}}obj any) ({{ if .PointersInUnmarshalInput }}*{{ end }}{{.Type | ref}}, error) {
 		var it {{.Type | ref}}
 		if obj == nil {
@@ -114,6 +117,7 @@
 		return {{$it}}, nil
 		{{- end }}
 	}
+	{{- end }}
 
 	{{- if not $.Config.OmitTypedInputUnmarshalers }}
 
@@ -132,3 +136,33 @@
 	{{- end }}
 {{ end }}
 
+
+{{- define "tableInput" }}
+{{- $input := .Input }}
+{{- $T := $input.Type | ref }}
+var {{ $input.TableVar }} = exec.Input[*executionContext]{Name: {{ $input.Name | quote }}, GoType: {{ $T | quote }}{{ if $input.IsMap }}, IsMap: true{{ end }}}
+
+func init() {
+	{{ $input.TableVar }}.Fields = []exec.InputField[*executionContext]{
+	{{- range $field := $input.Fields }}
+		{{- $V := $field.TypeReference.GO | ref }}
+		{Name: {{ $field.Name | quote }}
+		{{- if notNil "Default" $field }}, Default: {{ $field.Default | dump }}{{ end }}
+		{{- if $field.ImplDirectives }}
+			{{- if and $field.TypeReference.IsNilable (not $field.IsResolver) }}, NilOK: true{{ end }}, Directives: {{ $field.TableDirectives }}
+		{{- end }}, Type: {{ $field.TableIn }}
+		{{- if $field.IsResolver }}, SetWith: func(ctx context.Context, ec *executionContext, it, v any) error {
+				data, _ := v.({{ $V }})
+				return ec.Resolvers.{{ $field.TableInputInvocation }}
+			}},
+		{{- else if $input.IsMap }}, Set: func(it, v any) { x, _ := v.({{ $V }}); (*it.(*map[string]any))[{{ $field.Name | quote }}] = x }},
+		{{- else if $field.TypeReference.IsOmittable }}, Set: func(it, v any) { x, _ := v.({{ $V }}); it.(*{{ $T }}).{{ $field.GoFieldName }} = graphql.OmittableOf(x) }},
+		{{- else }}, Set: func(it, v any) { it.(*{{ $T }}).{{ $field.GoFieldName }}, _ = v.({{ $V }}) }},
+		{{- end }}
+	{{- end }}
+	}
+	{{- if $input.InputObjectDirectives }}
+	{{ $input.TableVar }}.Directives = {{ $input.TableInputDirectives }}
+	{{- end }}
+}
+{{- end }}

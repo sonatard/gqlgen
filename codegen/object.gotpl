@@ -1,5 +1,8 @@
 
 {{- range $object := .Objects }}
+{{- if $.Config.Exec.IsTable }}
+{{- template "tableObject" (dict "Data" $ "Object" $object) }}
+{{- else }}
 
 var {{ $object.Name|lcFirst}}Implementors = {{$object.Implementors}}
 
@@ -129,4 +132,49 @@ func {{$.FuncReceiver}}_{{$object.Name}}(ctx context.Context, {{$.ECFuncParam}}s
 }
 {{- end }}
 
+{{- end }}
+{{- end }}
+
+{{- define "tableObject" }}
+{{- $data := .Data }}
+{{- $object := .Object }}
+
+var {{ $object.TableVar }} = exec.Object[*executionContext]{Name: {{ $object.Name | quote }}, Implementors: {{ $object.Implementors }}
+{{- if $object.Root }}, Root: true{{ end }}
+{{- if $data.Config.OmitPanicHandler }}, OmitPanicHandler: true{{ end }}}
+
+func init() {
+	{{ $object.TableVar }}.Init([]exec.Field[*executionContext]{
+	{{- range $field := $object.Fields }}
+		{{- $def := $field.TypeReference.Definition }}
+		{Name: {{ $field.Name | quote }}
+		{{- if $field.TypeReference.GQL.NonNull }}, NonNull: true{{ end }}
+		{{- if $field.IsConcurrent }}, Concurrent: true{{ end }}
+		{{- if or $field.IsMethod $field.IsResolver }}, IsMethod: true{{ end }}
+		{{- if $field.IsResolver }}, IsResolver: true{{ end }}
+		{{- if not $def.Fields }}, Leaf: {{ $def.Name | quote }}
+		{{- else if ne $def.Kind "OBJECT" }}, Abstract: "{{ $def.Kind }}"
+		{{- else }}, Children: &object{{ $def.Name }}
+		{{- end }}
+		{{- if $field.Args }}, Args: {{ template "tableArgs" $field.Args }}{{ end }}
+		{{- if $field.HasDirectives }}, Directives: {{ $field.TableDirectives }}{{ end }}, Out: {{ $field.TableOut }}
+		{{- $get := $field.TableGetExpr }}
+		{{- if $field.TypeReference.IsRoot }}, RootValue: true
+			{{- if $field.TypeReference.IsPtr }}{{ $get = printf "&%s{}" ($field.TypeReference.Elem.GO | ref) }}
+			{{- else }}{{ $get = printf "%s{}" ($field.TypeReference.GO | ref) }}{{ end }}
+		{{- end }}
+		{{- $body := $field.TableResolveBody }}
+		{{- if $get }}, Get: func(obj any) any { return {{ $get }} }},
+		{{- else if $body }}, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) { {{ $body }} }},
+		{{- else if $object.Root }}, Resolve: func(ctx context.Context, ec *executionContext, _ any, args map[string]any) (any, error) {
+			{{- template "fieldDefinition" $field }}
+		}},
+		{{- else }}, Resolve: func(ctx context.Context, ec *executionContext, o any, args map[string]any) (any, error) {
+			obj := o.({{ $object.Reference | ref }})
+			{{- template "fieldDefinition" $field }}
+		}},
+		{{- end }}
+	{{- end }}
+	})
+}
 {{- end }}
