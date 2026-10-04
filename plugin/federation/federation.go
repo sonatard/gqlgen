@@ -1210,7 +1210,7 @@ func buildEntityResolverInputDefinitionSDL(resolver *EntityResolver) string {
 
 func (f *Federation) addMapType(cfg *config.Config) {
 	cfg.Models[mapTypeName] = config.TypeMapEntry{
-		Model: config.StringList{"github.com/99designs/gqlgen/graphql.Map"},
+		Model: config.StringList{"github.com/99designs/gqlgen/graphql.MapContext"},
 	}
 	cfg.Schema.Types[mapTypeName] = &ast.Definition{
 		Kind:        ast.Scalar,

@@ -25,9 +25,9 @@ func TestJSONVersion(t *testing.T) {
 		ctx := graphql.StartOperationTrace(context.Background())
 		opCtx, errs := exec.CreateOperationContext(ctx, &graphql.RawParams{Query: "{name}"})
 		require.Empty(t, errs)
-		require.Equal(t, opCtx.JSONVersion,
+		require.Equal(t, opCtx.JSONMode.Version,
 			graphql.GetJSONVersion(graphql.WithOperationContext(ctx, opCtx)))
-		return opCtx.JSONVersion
+		return opCtx.JSONMode.Version
 	}
 
 	t.Run("defaults to v1", func(t *testing.T) {
