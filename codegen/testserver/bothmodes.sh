@@ -1,9 +1,8 @@
 #!/bin/sh
 # bothmodes.sh generates the executor of a test server in both exec modes, so that the
 # same tests run against each: go test uses the functions mode, and go test -tags
-# exectable uses table mode. Run it from the directory of the test server, which must
-# also be the directory the executor is generated into, with the arguments of gqlgen,
-# the config first.
+# exectable uses table mode. Run it from the directory of the config with the arguments
+# of gqlgen, the config first. The executor may be generated into another directory.
 #
 # The config of table mode is derived from the given one: exec.mode is table, the files
 # of the executor are named *.table.go, and the resolver section is dropped, since the
@@ -45,17 +44,36 @@ constrain() {
 	done
 }
 
+# exec_setting prints the value of the exec setting $1 in the config.
+exec_setting() {
+	awk -v key="$1:" '
+		/^[^ ]/ { exec_section = $0 == "exec:" }
+		exec_section && $1 == key { gsub(/"/, "", $2); print $2; exit }
+	' "$config"
+}
+
+# The functions mode writes its executor into exec.filename, or with the follow-schema
+# layout into *.generated.go files in exec.dir.
+if [ "$(exec_setting layout)" = follow-schema ]; then
+	dir=$(exec_setting dir)
+	functions_files="$dir/*.generated.go"
+else
+	filename=$(exec_setting filename)
+	dir=$(dirname "${filename:-generated.go}")
+	functions_files=${filename:-generated.go}
+fi
+
 # Table mode goes first: the follow-schema layout writes its root file as
 # root_.generated.go whatever the file names are, so it is renamed before the
 # functions mode writes its own.
 $gqlgen -config "$table_config" "$@"
-if grep -q '^  layout: follow-schema$' "$table_config"; then
-	mv -f root_.generated.go root_.table.go
+if [ -f "$dir/root_.generated.go" ] && grep -q '^  layout: follow-schema$' "$table_config"; then
+	mv -f "$dir/root_.generated.go" "$dir/root_.table.go"
 fi
-constrain exectable ./*.table.go
+constrain exectable "$dir"/*.table.go
 
 $gqlgen -config "$config" "$@"
-for f in generated.go ./*.generated.go; do
+for f in $functions_files; do
 	if [ -f "$f" ]; then
 		constrain '!exectable' "$f"
 	fi
