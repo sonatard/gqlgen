@@ -47,6 +47,12 @@ jobs:
         set -euo pipefail
         go mod download
         gotestsum --jsonfile go_test.json --junitfile report.xml --format-icons=hivis --format=pkgname-and-test-fails -- -race ./... -trimpath
+    - name: Table mode tests
+      shell: bash
+      if: success() || failure() # always run even if the previous step fails
+      run: |
+        # The test servers are also generated in table mode, behind the exectable build tag.
+        gotestsum --junitfile go_table_report.xml --format-icons=hivis --format=pkgname-and-test-fails -- -race -tags exectable ./codegen/testserver/... -trimpath
     - name: Example tests
       shell: bash
       if: success() || failure() # always run even if the previous step fails
@@ -79,6 +85,7 @@ jobs:
       with:
         report_paths: |
           report.xml
+          go_table_report.xml
           go_examples_report.xml
           go_proptests_report.xml
     - name: robherley/go-test-action announcement
@@ -114,5 +121,6 @@ jobs:
         show: "fail, skip"
         paths: |
           report.xml
+          go_table_report.xml
           go_examples_report.xml
           go_proptests_report.xml
