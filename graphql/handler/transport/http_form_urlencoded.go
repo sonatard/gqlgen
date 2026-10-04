@@ -44,7 +44,7 @@ func (h UrlEncodedForm) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 		w.WriteHeader(http.StatusBadRequest)
 		gqlErr := gqlerror.Errorf("could not get form body: %+v", err)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -53,7 +53,7 @@ func (h UrlEncodedForm) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		gqlErr := gqlerror.Errorf("could not cleanup body: %+v", err)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -67,13 +67,13 @@ func (h UrlEncodedForm) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 	if opErr != nil {
 		w.WriteHeader(statusFor(opErr))
 		resp := exec.DispatchError(graphql.WithOperationContext(ctx, rc), opErr)
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
 	var responses graphql.ResponseHandler
 	responses, ctx = exec.DispatchOperation(ctx, rc)
-	writeJson(w, responses(ctx))
+	writeJson(w, exec, responses(ctx))
 }
 
 func (h UrlEncodedForm) parseBody(bodyString string) (*graphql.RawParams, error) {

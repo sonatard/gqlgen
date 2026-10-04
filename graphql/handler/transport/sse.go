@@ -2,7 +2,6 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +14,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler/internal/respjson"
 )
 
 type (
@@ -72,7 +72,7 @@ func (t SSE) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecut
 		gqlErr := gqlerror.Errorf("could not get json request body: %+v", err)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
 		log.Printf("could not get json request body: %+v", err.Error())
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -86,7 +86,7 @@ func (t SSE) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecut
 		)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
 		log.Printf("decoding error: %+v body:%s", err.Error(), bodyString)
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -128,7 +128,7 @@ func (t SSE) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecut
 	if opErr != nil {
 		resp := exec.DispatchError(ctx, opErr)
 		if !writeEvent(ctx, func(w io.Writer) {
-			writeJsonWithSSE(w, resp)
+			writeJsonWithSSE(w, exec, resp)
 		}) {
 			return
 		}
@@ -141,7 +141,7 @@ func (t SSE) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecut
 				break
 			}
 			if !writeEvent(dispatchCtx, func(w io.Writer) {
-				writeJsonWithSSE(w, response)
+				writeJsonWithSSE(w, exec, response)
 			}) {
 				return
 			}
@@ -215,8 +215,8 @@ func (c *sseConnection) writeAndFlush(w io.Writer, write func(io.Writer)) {
 	c.mu.Unlock()
 }
 
-func writeJsonWithSSE(w io.Writer, response *graphql.Response) {
-	b, err := json.Marshal(response)
+func writeJsonWithSSE(w io.Writer, exec graphql.GraphExecutor, response *graphql.Response) {
+	b, err := respjson.Marshal(exec, response)
 	if err != nil {
 		panic(err)
 	}

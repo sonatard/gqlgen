@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"encoding/json/v2"
 
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -25,10 +26,11 @@ type Executor struct {
 	recoverFunc    graphql.RecoverFunc
 	queryCache     graphql.Cache[*ast.QueryDocument]
 
-	parserTokenLimit  int
-	disableSuggestion bool
-	defaultRulesFn    func() *rules.Rules
-	jsonVersion       graphql.JSONVersion
+	parserTokenLimit    int
+	disableSuggestion   bool
+	defaultRulesFn      func() *rules.Rules
+	jsonVersion         graphql.JSONVersion
+	responseJSONOptions json.Options
 }
 
 // jsonVersioned is implemented by generated ExecutableSchemas whose gqlgen.yml
@@ -266,6 +268,20 @@ func (e *Executor) SetJSONVersion(v graphql.JSONVersion) {
 // JSONVersion returns the JSON version the executor uses.
 func (e *Executor) JSONVersion() graphql.JSONVersion {
 	return e.jsonVersion
+}
+
+// SetResponseJSONOptions adds encoding/json/v2 options to the ones responses
+// are written with in the JSONv2 mode, for example json.Deterministic(true)
+// or jsontext.EscapeForHTML(true). They have no effect in the JSONv1 mode,
+// where responses are written with encoding/json.
+func (e *Executor) SetResponseJSONOptions(opts json.Options) {
+	e.responseJSONOptions = opts
+}
+
+// ResponseJSONOptions returns the options set with SetResponseJSONOptions, or
+// nil if none were.
+func (e *Executor) ResponseJSONOptions() json.Options {
+	return e.responseJSONOptions
 }
 
 // parseQuery decodes the incoming query and validates it, pulling from cache if present.
