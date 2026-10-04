@@ -460,6 +460,46 @@
             "possibleTypes": []
           },
           {
+            "kind": "INPUT_OBJECT",
+            "name": "Coordinates",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [],
+            "inputFields": [
+              {
+                "name": "lat",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Float",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "lng",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "Float",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
             "kind": "SCALAR",
             "name": "CtxMaybe",
             "description": null,
@@ -1874,6 +1914,64 @@
                         "name": "CheckedInput",
                         "ofType": null
                       }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "coordinates",
+                "description": null,
+                "args": [
+                  {
+                    "name": "at",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "Coordinates",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "nullableCoordinates",
+                "description": null,
+                "args": [
+                  {
+                    "name": "at",
+                    "description": null,
+                    "type": {
+                      "kind": "INPUT_OBJECT",
+                      "name": "Coordinates",
+                      "ofType": null
                     },
                     "defaultValue": null
                   }
