@@ -59,7 +59,7 @@ func (me graphqlwsMessageExchanger) NextMessage() (message, error) {
 	}
 
 	var graphqlwsMessage graphqlwsMessage
-	if err := jsonDecode(r, &graphqlwsMessage); err != nil {
+	if err := jsonDecode(me.exec, r, &graphqlwsMessage); err != nil {
 		return message{}, errInvalidMsg
 	}
 

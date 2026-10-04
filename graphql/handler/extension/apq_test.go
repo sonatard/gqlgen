@@ -39,6 +39,35 @@ func TestAPQIntegration(t *testing.T) {
 	require.Equal(t, "30166fc3298853f22709fce1e4a00e98f1b6a3160eaaaf9cb3b7db6a16073b07", stats.Hash)
 }
 
+func TestAPQIntegrationJSONv2(t *testing.T) {
+	// In the JSONv2 mode the version arrives as a jsontext.Value.
+	h := testserver.New()
+	h.SetJSONVersion(graphql.JSONv2)
+	h.Use(&extension.AutomaticPersistedQuery{Cache: graphql.MapCache[string]{}})
+	h.AddTransport(&transport.POST{})
+
+	resp := doRequest(
+		h,
+		http.MethodPost,
+		"/graphql",
+		`{"query":"{ name }","extensions":{"persistedQuery":{"version":1,"sha256Hash":"30166fc3298853f22709fce1e4a00e98f1b6a3160eaaaf9cb3b7db6a16073b07"}}}`,
+	)
+	require.Equal(t, http.StatusOK, resp.Code, resp.Body.String())
+	require.JSONEq(t, `{"data":{"name":"test"}}`, resp.Body.String())
+
+	resp = doRequest(
+		h,
+		http.MethodPost,
+		"/graphql",
+		`{"extensions":{"persistedQuery":{"version":2,"sha256Hash":"30166fc3298853f22709fce1e4a00e98f1b6a3160eaaaf9cb3b7db6a16073b07"}}}`,
+	)
+	require.JSONEq(
+		t,
+		`{"errors":[{"message":"unsupported APQ version"}],"data":null}`,
+		resp.Body.String(),
+	)
+}
+
 func TestAPQ(t *testing.T) {
 	const query = "{ me { name } }"
 	const hash = "b8d9506e34c83b0e53c2aa463624fcea354713bc38f95276e6f0bd893ffb5b88"

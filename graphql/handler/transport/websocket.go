@@ -3,7 +3,6 @@ package transport
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -234,7 +233,7 @@ func (c *wsConnection) init() bool {
 	case initMessageType:
 		if len(m.payload) > 0 {
 			c.initPayload = make(InitPayload)
-			err := json.Unmarshal(m.payload, &c.initPayload)
+			err := jsonUnmarshal(c.exec, m.payload, &c.initPayload)
 			if err != nil {
 				return false
 			}
@@ -434,7 +433,7 @@ func (c *wsConnection) closeOnCancel(ctx context.Context) {
 func (c *wsConnection) subscribe(start time.Time, msg *message) {
 	ctx := graphql.StartOperationTrace(c.ctx)
 	params := &graphql.RawParams{}
-	if err := jsonDecode(bytes.NewReader(msg.payload), params); err != nil {
+	if err := jsonDecode(c.exec, bytes.NewReader(msg.payload), params); err != nil {
 		c.sendError(msg.id, &gqlerror.Error{Message: "invalid json"})
 		c.complete(msg.id)
 		return
