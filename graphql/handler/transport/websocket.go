@@ -136,9 +136,9 @@ func (t Websocket) Do(w http.ResponseWriter, r *http.Request, exec graphql.Graph
 		// clients are required to send a subprotocol, to be backward compatible with the previous
 		// implementation we select
 		// "graphql-ws" by default
-		me = graphqlwsMessageExchanger{c: ws}
+		me = graphqlwsMessageExchanger{c: ws, exec: exec}
 	case graphqltransportwsSubprotocol:
-		me = graphqltransportwsMessageExchanger{c: ws}
+		me = graphqltransportwsMessageExchanger{c: ws, exec: exec}
 	}
 
 	readLimit := int64(defaultPayloadReadLimit)
@@ -385,7 +385,7 @@ func (c *wsConnection) keepAlivePongOnly(ctx context.Context) {
 			c.pongOnlyTicker.Stop()
 			return
 		case <-c.pongOnlyTicker.C:
-			c.write(&message{t: pongMessageType, payload: json.RawMessage{}})
+			c.write(&message{t: pongMessageType})
 		}
 	}
 }
@@ -409,7 +409,7 @@ func (c *wsConnection) ping(ctx context.Context) {
 			c.pingPongTicker.Stop()
 			return
 		case <-c.pingPongTicker.C:
-			c.write(&message{t: pingMessageType, payload: json.RawMessage{}})
+			c.write(&message{t: pingMessageType})
 			// The initial deadline for this method is set in run()
 			// if we have not yet received a pong, don't reset the deadline.
 			c.mu.Lock()

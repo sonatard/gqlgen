@@ -3,6 +3,8 @@ package transport
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 // https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md
@@ -36,7 +38,8 @@ var allGraphqlwsMessageTypes = []graphqlwsMessageType{
 
 type (
 	graphqlwsMessageExchanger struct {
-		c WebsocketConn
+		c    WebsocketConn
+		exec graphql.GraphExecutor
 	}
 
 	graphqlwsMessage struct {
@@ -73,7 +76,7 @@ func (me graphqlwsMessageExchanger) Send(m *message) error {
 		return nil
 	}
 
-	return me.c.WriteJSON(msg)
+	return writeWebsocketJSON(me.c, me.exec, msg)
 }
 
 func (t *graphqlwsMessageType) UnmarshalText(text []byte) (err error) {

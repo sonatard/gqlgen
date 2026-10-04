@@ -4,6 +4,9 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler/internal/respjson"
 )
 
 // WebsocketAcceptOptions contains gqlgen websocket transport options that an
@@ -37,6 +40,15 @@ type WebsocketConn interface {
 	Subprotocol() string
 }
 
+// WebsocketMessageWriter is an optional interface implemented by websocket
+// connections that can write a message that is already encoded as JSON. When
+// a connection implements it, the transport encodes each message itself, with
+// the JSON package the JSON mode selects, instead of passing the message to
+// WriteJSON.
+type WebsocketMessageWriter interface {
+	WriteMessage(data []byte) error
+}
+
 // WebsocketReadLimiter is an optional interface implemented by websocket
 // connections that can enforce a maximum read size. If an adapter does not
 // implement this interface, the transport does not enforce PayloadReadLimit.
@@ -60,3 +72,18 @@ const (
 	// WebsocketCloseProtocolError is the RFC 6455 protocol error status code.
 	WebsocketCloseProtocolError = 1002
 )
+
+// writeWebsocketJSON writes msg to c. It encodes msg in exec's JSON mode when c
+// can write an encoded message, and leaves the encoding to c.WriteJSON
+// otherwise.
+func writeWebsocketJSON(c WebsocketConn, exec graphql.GraphExecutor, msg any) error {
+	w, ok := c.(WebsocketMessageWriter)
+	if !ok {
+		return c.WriteJSON(msg)
+	}
+	data, err := respjson.Marshal(exec, msg)
+	if err != nil {
+		return err
+	}
+	return w.WriteMessage(data)
+}

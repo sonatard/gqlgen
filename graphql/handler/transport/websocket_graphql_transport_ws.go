@@ -3,6 +3,8 @@ package transport
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
@@ -32,7 +34,8 @@ var allGraphqltransportwsMessageTypes = []graphqltransportwsMessageType{
 
 type (
 	graphqltransportwsMessageExchanger struct {
-		c WebsocketConn
+		c    WebsocketConn
+		exec graphql.GraphExecutor
 	}
 
 	graphqltransportwsMessage struct {
@@ -69,7 +72,7 @@ func (me graphqltransportwsMessageExchanger) Send(m *message) error {
 		return nil
 	}
 
-	return me.c.WriteJSON(msg)
+	return writeWebsocketJSON(me.c, me.exec, msg)
 }
 
 func (t *graphqltransportwsMessageType) UnmarshalText(text []byte) (err error) {
