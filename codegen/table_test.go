@@ -18,7 +18,7 @@ func TestCheckTableMode(t *testing.T) {
 
 	data := newData()
 	data.SubscriptionRoot = &Object{}
-	require.ErrorContains(t, checkTableMode(data), "does not support subscriptions")
+	require.NoError(t, checkTableMode(data))
 
 	data = newData()
 	data.Config.Federation = config.PackageConfig{Filename: "federation.go"}

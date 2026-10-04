@@ -16,11 +16,6 @@ import (
 // checkTableMode returns an error when the schema uses a feature that exec.mode table
 // does not support yet.
 func checkTableMode(data *Data) error {
-	if data.SubscriptionRoot != nil {
-		return errors.New(
-			"exec.mode table does not support subscriptions yet; use exec.mode functions",
-		)
-	}
 	if data.Config.Federation.IsDefined() {
 		return errors.New(
 			"exec.mode table does not support federation yet; use exec.mode functions",

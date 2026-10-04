@@ -158,6 +158,7 @@ func init() {
 		{{- end }}
 		{{- if $field.Args }}, Args: {{ template "tableArgs" $field.Args }}{{ end }}
 		{{- if $field.HasDirectives }}, Directives: {{ $field.TableDirectives }}{{ end }}, Out: {{ $field.TableOut }}
+		{{- if $object.Stream }}, Stream: exec.{{ if $field.UsesSubscriptionContext }}Event{{ end }}StreamOf[{{ $field.TypeReference.GO | ref }}](){{ end }}
 		{{- $get := $field.TableGetExpr }}
 		{{- if $field.TypeReference.IsRoot }}, RootValue: true
 			{{- if $field.TypeReference.IsPtr }}{{ $get = printf "&%s{}" ($field.TypeReference.Elem.GO | ref) }}
@@ -177,4 +178,20 @@ func init() {
 	{{- end }}
 	})
 }
+{{- if $object.Stream }}
+
+{{- /* The subscription keeps the function of the functions mode, which the generated
+   Exec, the subscription middleware and the marshaler of the root type call. */}}
+{{- if $object.HasSubscriptionContextField }}
+
+func _{{ $object.Name }}(ctx context.Context, {{ $data.ECFuncParam }}sel ast.SelectionSet) func(ctx context.Context) (context.Context, graphql.Marshaler) {
+	return {{ $object.TableVar }}.SubscribeWithEventContext(ctx, ec, sel)
+}
+{{- else }}
+
+func _{{ $object.Name }}(ctx context.Context, {{ $data.ECFuncParam }}sel ast.SelectionSet) func(ctx context.Context) graphql.Marshaler {
+	return {{ $object.TableVar }}.Subscribe(ctx, ec, sel)
+}
+{{- end }}
+{{- end }}
 {{- end }}

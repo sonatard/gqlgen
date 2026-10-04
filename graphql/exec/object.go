@@ -41,7 +41,8 @@ type Object[EC Context] struct {
 	Name         string
 	Implementors []string
 	// Root is set for the query and mutation types. Their fields run inside the root
-	// field middleware.
+	// field middleware. The subscription type is resolved by Subscribe instead of
+	// Marshal.
 	Root bool
 	// OmitPanicHandler is set when the generated code was configured not to recover
 	// panics in resolvers.
@@ -89,6 +90,9 @@ type Field[EC Context] struct {
 	// Out marshals the value of the field's Go type. A value of another type that
 	// implements graphql.Marshaler is used as it is.
 	Out *Out[EC]
+	// Stream is set for the fields of the subscription type. It receives the events
+	// from the channel the resolver returns, and Out marshals each of them.
+	Stream *Stream
 }
 
 // ChildFields builds the field context of a field selected under an object. Object
@@ -328,24 +332,7 @@ func (o *Object[EC]) resolveField(
 		return f.marshal(ctx, ec, field.Selections, fc, f.Get(obj))
 	}
 
-	next := func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		if f.Get != nil {
-			return f.Get(obj), nil
-		}
-		var args map[string]any
-		if len(f.Args) > 0 {
-			// Middleware may have replaced the field context.
-			args = graphql.GetFieldContext(rctx).Args
-		}
-		return f.Resolve(rctx, ec, obj, args)
-	}
-	next = Chain(ec, obj, f.Directives, next)
-	if fm, ok := any(ec).(fieldMiddleware); ok {
-		next = fm.FieldMiddleware(ctx, obj, next)
-	}
-
-	res, err := oc.ResolverMiddleware(ctx, next)
+	res, ctx, err := f.resolve(ctx, ec, obj)
 	if err != nil {
 		oc.Error(ctx, graphql.AddFieldLocationToError(ctx, err))
 		if fc.NonNull && !f.NonNull {
@@ -365,6 +352,31 @@ func (o *Object[EC]) resolveField(
 		return graphql.Null
 	}
 	return f.marshal(ctx, ec, field.Selections, fc, res)
+}
+
+// resolve runs the resolver of f on obj inside the field's directives, the FIELD
+// directives of the query and the resolver middleware. It also returns the context that
+// the middleware passed to the resolver, which the children of the field use.
+func (f *Field[EC]) resolve(ctx context.Context, ec EC, obj any) (any, context.Context, error) {
+	next := func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		if f.Get != nil {
+			return f.Get(obj), nil
+		}
+		var args map[string]any
+		if len(f.Args) > 0 {
+			// Middleware may have replaced the field context.
+			args = graphql.GetFieldContext(rctx).Args
+		}
+		return f.Resolve(rctx, ec, obj, args)
+	}
+	next = Chain(ec, obj, f.Directives, next)
+	if fm, ok := any(ec).(fieldMiddleware); ok {
+		next = fm.FieldMiddleware(ctx, obj, next)
+	}
+
+	res, err := ec.OpCtx().ResolverMiddleware(ctx, next)
+	return res, ctx, err
 }
 
 // marshal marshals the resolved value res of f.

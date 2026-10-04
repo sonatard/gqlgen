@@ -354,7 +354,6 @@ code is much smaller: the `_examples/starwars` executor goes from 5,830 to 1,296
 Table mode does not support these features yet. Generation fails with an error that names
 the feature when the schema uses one of them; use the default mode for such schemas.
 
-- subscriptions
 - Apollo Federation
 - batch resolvers
 
@@ -364,7 +363,7 @@ What changes for code that uses the generated package:
   `NewExecutableSchema` stay the same, so resolvers and directive implementations do not change.
 - The generated package no longer has the per-field functions such as `ec._Query_hero`,
   `ec.fieldContext_Query_hero` and `ec.field_Query_hero_args`, nor the per-object marshalers
-  such as `ec._Human`.
+  such as `ec._Human`. The subscription type keeps its function, such as `_Subscription`.
 - The remaining generated functions take the execution context as a parameter, as with
   `use_function_syntax_for_execution_context`, which has no effect in table mode.
 
