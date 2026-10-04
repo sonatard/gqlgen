@@ -67,6 +67,10 @@ type Stub struct {
 		FailingRoot         func(ctx context.Context) (*string, error)
 		Viewer              func(ctx context.Context) (*Viewer, error)
 		ValueViewer         func(ctx context.Context) (*ValueViewer, error)
+		AnyArgAbsent        func(ctx context.Context) (*string, error)
+		AnyArgNull          func(ctx context.Context) (*string, error)
+		AnyArgMap           func(ctx context.Context) (*string, error)
+		DefaultMap          func(ctx context.Context, input DefaultMapInput) (*string, error)
 		GenerationOnly      func(ctx context.Context, arg string, input GenerationOnlyInput) (string, error)
 		LimitedItems        func(ctx context.Context, count int) ([]*LimitedItem, error)
 		WrongTypes          func(ctx context.Context) (*WrongTypes, error)
@@ -87,6 +91,8 @@ type Stub struct {
 		WrongType         func(ctx context.Context) (<-chan *int, error)
 		WrongTypeEvents   func(ctx context.Context) (<-chan graphql.Event[*int], error)
 		SilentEvents      func(ctx context.Context) (<-chan graphql.Event[*int], error)
+		NilAnimal         func(ctx context.Context) (<-chan Animal, error)
+		NullableNilAnimal func(ctx context.Context) (<-chan Animal, error)
 	}
 }
 
@@ -270,6 +276,18 @@ func (r *stubQuery) Viewer(ctx context.Context) (*Viewer, error) {
 func (r *stubQuery) ValueViewer(ctx context.Context) (*ValueViewer, error) {
 	return r.QueryResolver.ValueViewer(ctx)
 }
+func (r *stubQuery) AnyArgAbsent(ctx context.Context) (*string, error) {
+	return r.QueryResolver.AnyArgAbsent(ctx)
+}
+func (r *stubQuery) AnyArgNull(ctx context.Context) (*string, error) {
+	return r.QueryResolver.AnyArgNull(ctx)
+}
+func (r *stubQuery) AnyArgMap(ctx context.Context) (*string, error) {
+	return r.QueryResolver.AnyArgMap(ctx)
+}
+func (r *stubQuery) DefaultMap(ctx context.Context, input DefaultMapInput) (*string, error) {
+	return r.QueryResolver.DefaultMap(ctx, input)
+}
 func (r *stubQuery) GenerationOnly(ctx context.Context, arg string, input GenerationOnlyInput) (string, error) {
 	return r.QueryResolver.GenerationOnly(ctx, arg, input)
 }
@@ -326,4 +344,10 @@ func (r *stubSubscription) WrongTypeEvents(ctx context.Context) (<-chan graphql.
 }
 func (r *stubSubscription) SilentEvents(ctx context.Context) (<-chan graphql.Event[*int], error) {
 	return r.SubscriptionResolver.SilentEvents(ctx)
+}
+func (r *stubSubscription) NilAnimal(ctx context.Context) (<-chan Animal, error) {
+	return r.SubscriptionResolver.NilAnimal(ctx)
+}
+func (r *stubSubscription) NullableNilAnimal(ctx context.Context) (<-chan Animal, error) {
+	return r.SubscriptionResolver.NullableNilAnimal(ctx)
 }

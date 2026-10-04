@@ -2,6 +2,8 @@
 # The stream ends when the channel is closed or the context is canceled. The events of
 # fields marked @subscriptionContext carry their own context, and the other fields are
 # adapted to the same shape.
+#
+# Uses Animal from abstract_types.graphql.
 directive @subscriptionContext on FIELD_DEFINITION
 
 # replaceStream replaces the channel of the field with what "with" names: "stream" or
@@ -23,4 +25,6 @@ type Subscription {
   wrongType: Int @replaceStream(with: "wrong")
   wrongTypeEvents: Int @subscriptionContext @replaceStream(with: "wrong")
   silentEvents: Int @subscriptionContext
+  nilAnimal: Animal!
+  nullableNilAnimal: Animal
 }
