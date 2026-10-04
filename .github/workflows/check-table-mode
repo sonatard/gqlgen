@@ -1,0 +1,82 @@
+#!/bin/bash
+# check-table-mode regenerates the examples and the integration server with exec.mode
+# set to table, then type-checks the examples, runs their tests and runs the integration
+# spec against the table-mode server. It rewrites the configs and the generated code in
+# the working tree, so it is meant for CI.
+
+set -euo pipefail
+export GO111MODULE=on
+
+# Examples that use features table mode does not support yet: batch resolvers
+# (batchresolver) and Apollo Federation (the others).
+unsupported='^_examples/(batchresolver|embedding/subdir|federation/.*|multi-entity-tests/.*)$'
+
+# config_of prints the configs that the go:generate lines of directory $1 use.
+config_of() {
+	local configs
+	configs=$(grep -h 'go:generate go run' "$1"/*.go | grep -o -- '-config [^ ]*' | awk '{print $2}' || true)
+	if [[ -n "$configs" ]]; then
+		for c in $configs; do echo "$1/$c"; done
+		return
+	fi
+	# gqlgen looks for a config in the directory and its parents.
+	local dir=$1
+	while [[ "$dir" != . ]]; do
+		for c in gqlgen.yml gqlgen.yaml .gqlgen.yml .gqlgen.yaml; do
+			if [[ -f "$dir/$c" ]]; then
+				echo "$dir/$c"
+				return
+			fi
+		done
+		dir=$(dirname "$dir")
+	done
+	echo "no config for $1" >&2
+	exit 1
+}
+
+# to_table sets exec.mode to table in config $1, indented like the exec section.
+to_table() {
+	if grep -q '^[[:space:]][[:space:]]*mode:' "$1"; then
+		# mode is only a setting of the exec section.
+		sed -i.bak 's/^\([[:space:]]*\)mode:.*$/\1mode: table/' "$1"
+		rm -f "$1.bak"
+	elif grep -q '^exec:' "$1"; then
+		local indent
+		indent=$(awk '/^exec:/ { getline; match($0, /^ */); print substr($0, 1, RLENGTH); exit }' "$1")
+		sed -i.bak "s/^exec:\$/exec:\\
+${indent}mode: table/" "$1"
+		rm -f "$1.bak"
+	else
+		printf '\nexec:\n  mode: table\n' >>"$1"
+	fi
+}
+
+dirs=$(grep -rl --include='*.go' -E 'go:generate go run .*(testdata/gqlgen.go|github.com/99designs/gqlgen$)' _examples integration |
+	xargs -n1 dirname | sort -u | grep -Ev "$unsupported")
+for d in $dirs; do
+	# A failure of config_of in the list of a for loop would not stop the script.
+	configs=$(config_of "$d") || exit 1
+	for c in $configs; do
+		to_table "$c"
+	done
+done
+for d in $dirs; do
+	echo "### generating $d in table mode"
+	(cd "$d" && go generate .)
+	# mini-habr keeps its go:generate in tools/ and generates into the sibling graph/.
+	if ! grep -rqs --include='*.go' 'exec.Object\[' "$d" "$(dirname "$d")/graph"; then
+		echo "$d was not generated in table mode"
+		exit 1
+	fi
+done
+
+echo "### testing the examples"
+for m in _examples _examples/large-project-structure/main _examples/mini-habr-with-subscriptions _examples/websocket-initfunc/server; do
+	excluded=$(cd "$m" && go list ./... | grep -E 'batchresolver|embedding/subdir|federation|multi-entity-tests' || true)
+	# With no exclusion, the fixed string ^ matches no package path.
+	packages=$(cd "$m" && go list ./... | grep -vxF -e "${excluded:-^}")
+	(cd "$m" && go vet $packages && go test -race $packages)
+done
+
+echo "### running the integration spec against the table-mode server"
+.github/workflows/check-integration
