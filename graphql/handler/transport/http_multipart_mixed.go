@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -14,6 +13,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler/internal/respjson"
 )
 
 // MultipartMixed is a transport that supports the multipart/mixed spec
@@ -158,7 +158,7 @@ func (t MultipartMixed) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 
 func writeIncrementalJson(w io.Writer, responses []*graphql.Response, hasNext bool) {
 	// TODO: Remove this wrapper on response once gqlgen supports the 2023 spec
-	b, err := json.Marshal(struct {
+	b, err := respjson.Marshal(struct {
 		Incremental []*graphql.Response `json:"incremental"`
 		HasNext     bool                `json:"hasNext"`
 	}{

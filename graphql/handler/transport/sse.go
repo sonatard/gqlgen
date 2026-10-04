@@ -2,7 +2,6 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +14,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler/internal/respjson"
 )
 
 type (
@@ -216,7 +216,7 @@ func (c *sseConnection) writeAndFlush(w io.Writer, write func(io.Writer)) {
 }
 
 func writeJsonWithSSE(w io.Writer, response *graphql.Response) {
-	b, err := json.Marshal(response)
+	b, err := respjson.Marshal(response)
 	if err != nil {
 		panic(err)
 	}

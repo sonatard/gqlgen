@@ -16,6 +16,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
+	"github.com/99designs/gqlgen/graphql/handler/internal/respjson"
 )
 
 type (
@@ -256,7 +257,7 @@ func (c *wsConnection) init() bool {
 		}
 
 		if initAckPayload != nil {
-			initJsonAckPayload, err := json.Marshal(*initAckPayload)
+			initJsonAckPayload, err := respjson.Marshal(*initAckPayload)
 			if err != nil {
 				panic(err)
 			}
@@ -511,7 +512,7 @@ func (c *wsConnection) subscribe(start time.Time, msg *message) {
 }
 
 func (c *wsConnection) sendResponse(id string, response *graphql.Response) {
-	b, err := json.Marshal(response)
+	b, err := respjson.Marshal(response)
 	if err != nil {
 		panic(err)
 	}
@@ -531,7 +532,7 @@ func (c *wsConnection) sendError(id string, errors ...*gqlerror.Error) {
 	for i, err := range errors {
 		errs[i] = err
 	}
-	b, err := json.Marshal(errs)
+	b, err := respjson.Marshal(errs)
 	if err != nil {
 		panic(err)
 	}
@@ -539,7 +540,7 @@ func (c *wsConnection) sendError(id string, errors ...*gqlerror.Error) {
 }
 
 func (c *wsConnection) sendConnectionError(format string, args ...any) {
-	b, err := json.Marshal(&gqlerror.Error{Message: fmt.Sprintf(format, args...)})
+	b, err := respjson.Marshal(&gqlerror.Error{Message: fmt.Sprintf(format, args...)})
 	if err != nil {
 		panic(err)
 	}

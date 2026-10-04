@@ -1,17 +1,17 @@
 package transport
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler/internal/respjson"
 )
 
 func writeJson(w io.Writer, response *graphql.Response) {
-	b, err := json.Marshal(response)
+	b, err := respjson.Marshal(response)
 	if err != nil {
 		panic(fmt.Errorf("unable to marshal %s: %w", string(response.Data), err))
 	}
