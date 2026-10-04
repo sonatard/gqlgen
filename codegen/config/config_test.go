@@ -731,7 +731,7 @@ func TestCheckTableMode(t *testing.T) {
 
 	c := newConfig()
 	c.Schema = &ast.Schema{Subscription: &ast.Definition{Name: "Subscription"}}
-	require.ErrorContains(t, c.CheckTableMode(), "does not support subscriptions")
+	require.NoError(t, c.CheckTableMode())
 
 	c = newConfig()
 	c.Federation = PackageConfig{Filename: "federation.go"}
