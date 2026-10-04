@@ -4,7 +4,8 @@ package client
 
 import (
 	"bytes"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -41,7 +42,7 @@ type (
 	// Response is a GraphQL layer response from a handler.
 	Response struct {
 		Data       any
-		Errors     json.RawMessage
+		Errors     jsonv1.RawMessage
 		Extensions map[string]any
 	}
 )
@@ -101,7 +102,7 @@ func (p *Client) RawPost(query string, options ...Option) (*Response, error) {
 	// decode it into map string first, let mapstructure do the final decode
 	// because it can be much stricter about unknown fields.
 	respDataRaw := &Response{}
-	err = json.Unmarshal(w.Body.Bytes(), &respDataRaw)
+	err = json.Unmarshal(w.Body.Bytes(), &respDataRaw, jsonv1.DefaultOptionsV1())
 	if err != nil {
 		return nil, fmt.Errorf("decode: %w", err)
 	}
@@ -132,7 +133,7 @@ func (p *Client) newRequest(query string, options ...Option) (*http.Request, err
 	case boundaryRegex.MatchString(contentType):
 		break
 	case contentType == "application/json":
-		requestBody, err := json.Marshal(bd)
+		requestBody, err := json.Marshal(bd, jsonv1.DefaultOptionsV1())
 		if err != nil {
 			return nil, fmt.Errorf("encode: %w", err)
 		}

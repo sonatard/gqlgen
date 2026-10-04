@@ -3,7 +3,8 @@ package client
 import (
 	"bufio"
 	"context"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"net/http/httptest"
 	"net/textproto"
@@ -16,12 +17,12 @@ type SSE struct {
 }
 
 type SSEResponse struct {
-	Data       any             `json:"data"`
-	Label      string          `json:"label"`
-	Path       []any           `json:"path"`
-	HasNext    bool            `json:"hasNext"`
-	Errors     json.RawMessage `json:"errors"`
-	Extensions map[string]any  `json:"extensions"`
+	Data       any               `json:"data"`
+	Label      string            `json:"label"`
+	Path       []any             `json:"path"`
+	HasNext    bool              `json:"hasNext"`
+	Errors     jsonv1.RawMessage `json:"errors"`
+	Extensions map[string]any    `json:"extensions"`
 }
 
 func errorSSE(err error) *SSE {
@@ -82,7 +83,11 @@ func (p *Client) SSE(ctx context.Context, query string, options ...Option) *SSE 
 					}
 				case "data":
 					var respDataRaw SSEResponse
-					if err = json.Unmarshal([]byte(kv[1]), &respDataRaw); err != nil {
+					if err = json.Unmarshal(
+						[]byte(kv[1]),
+						&respDataRaw,
+						jsonv1.DefaultOptionsV1(),
+					); err != nil {
 						return fmt.Errorf("decode: %w", err)
 					}
 

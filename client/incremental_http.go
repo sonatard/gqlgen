@@ -2,7 +2,9 @@ package client
 
 import (
 	"context"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -26,12 +28,12 @@ func (i *IncrementalHandler) Next(response any) error {
 }
 
 type IncrementalInitialResponse struct {
-	Data       any             `json:"data"`
-	Label      string          `json:"label"`
-	Path       []any           `json:"path"`
-	HasNext    bool            `json:"hasNext"`
-	Errors     json.RawMessage `json:"errors"`
-	Extensions map[string]any  `json:"extensions"`
+	Data       any               `json:"data"`
+	Label      string            `json:"label"`
+	Path       []any             `json:"path"`
+	HasNext    bool              `json:"hasNext"`
+	Errors     jsonv1.RawMessage `json:"errors"`
+	Extensions map[string]any    `json:"extensions"`
 }
 
 type IncrementalData struct {
@@ -40,12 +42,12 @@ type IncrementalData struct {
 	// list of fields, but not "id," and represents a mid-point between the
 	// 2022 and 2023 specs.
 
-	Data       any             `json:"data"`
-	Label      string          `json:"label"`
-	Path       []any           `json:"path"`
-	HasNext    bool            `json:"hasNext"`
-	Errors     json.RawMessage `json:"errors"`
-	Extensions map[string]any  `json:"extensions"`
+	Data       any               `json:"data"`
+	Label      string            `json:"label"`
+	Path       []any             `json:"path"`
+	HasNext    bool              `json:"hasNext"`
+	Errors     jsonv1.RawMessage `json:"errors"`
+	Extensions map[string]any    `json:"extensions"`
 }
 
 type IncrementalResponse struct {
@@ -53,7 +55,7 @@ type IncrementalResponse struct {
 
 	Incremental []IncrementalData `json:"incremental"`
 	HasNext     bool              `json:"hasNext"`
-	Errors      json.RawMessage   `json:"errors"`
+	Errors      jsonv1.RawMessage `json:"errors"`
 	Extensions  map[string]any    `json:"extensions"`
 }
 
@@ -146,7 +148,7 @@ func (p *Client) IncrementalHTTP(
 			}()
 
 			var data any
-			var rawErrors json.RawMessage
+			var rawErrors jsonv1.RawMessage
 
 			type nextPart struct {
 				*multipart.Part
@@ -186,7 +188,7 @@ func (p *Client) IncrementalHTTP(
 			} else {
 				data = IncrementalResponse{}
 			}
-			if err = json.NewDecoder(next.Part).Decode(&data); err != nil {
+			if err = decodeJSON(next.Part, &data); err != nil {
 				return err
 			}
 
@@ -200,4 +202,16 @@ func (p *Client) IncrementalHTTP(
 			return err
 		},
 	}
+}
+
+// decodeJSON reads the first JSON value from r into v the way
+// encoding/json's Decoder.Decode does, including reporting truncated input
+// as io.ErrUnexpectedEOF.
+func decodeJSON(r io.Reader, v any) error {
+	opts := jsonv1.DefaultOptionsV1()
+	err := json.UnmarshalDecode(jsontext.NewDecoder(r, opts), v, opts)
+	if err != nil && err.Error() == "unexpected end of JSON input" {
+		return io.ErrUnexpectedEOF
+	}
+	return err
 }

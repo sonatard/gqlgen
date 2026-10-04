@@ -2,7 +2,8 @@ package client
 
 import (
 	"bytes"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -56,7 +57,7 @@ func WithFiles() Option {
 		// Content-Disposition: form-data; name="operations"
 		//
 		// {"query":"mutation ($input: Input!) {}","variables":{"input":{"file":{}}}
-		requestBody, _ := json.Marshal(bd)
+		requestBody, _ := json.Marshal(bd, jsonv1.DefaultOptionsV1())
 		_ = bodyWriter.WriteField("operations", string(requestBody))
 
 		// --b7955bd2e1d17b67ac157b9e9ddb6238888caefc6f3541920a1debad284d

@@ -2,7 +2,8 @@ package client
 
 import (
 	"context"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -23,9 +24,9 @@ const (
 )
 
 type operationMessage struct {
-	Payload json.RawMessage `json:"payload,omitempty"`
-	ID      string          `json:"id,omitempty"`
-	Type    string          `json:"type"`
+	Payload jsonv1.RawMessage `json:"payload,omitempty"`
+	ID      string            `json:"id,omitempty"`
+	Type    string            `json:"type"`
 }
 
 type Subscription struct {
@@ -92,7 +93,7 @@ func (p *Client) WebsocketWithPayload(
 
 	initMessage := operationMessage{Type: connectionInitMsg}
 	if initPayload != nil {
-		initMessage.Payload, err = json.Marshal(initPayload)
+		initMessage.Payload, err = json.Marshal(initPayload, jsonv1.DefaultOptionsV1())
 		if err != nil {
 			_ = closeFn()
 			return errorSubscription(fmt.Errorf("parse payload: %w", err))
@@ -155,7 +156,7 @@ func (p *Client) WebsocketWithPayload(
 				}
 
 				var respDataRaw Response
-				err = json.Unmarshal(op.Payload, &respDataRaw)
+				err = json.Unmarshal(op.Payload, &respDataRaw, jsonv1.DefaultOptionsV1())
 				if err != nil {
 					return fmt.Errorf("decode: %w", err)
 				}
@@ -173,7 +174,7 @@ func (p *Client) WebsocketWithPayload(
 }
 
 func writeWebsocketJSON(c *websocket.Conn, msg operationMessage) error {
-	data, err := json.Marshal(msg)
+	data, err := json.Marshal(msg, jsonv1.DefaultOptionsV1())
 	if err != nil {
 		return err
 	}
@@ -195,7 +196,7 @@ func readWebsocketJSON(c *websocket.Conn) (operationMessage, error) {
 	}
 
 	var msg operationMessage
-	if err := json.Unmarshal(data, &msg); err != nil {
+	if err := json.Unmarshal(data, &msg, jsonv1.DefaultOptionsV1()); err != nil {
 		return operationMessage{}, err
 	}
 	return msg, nil
