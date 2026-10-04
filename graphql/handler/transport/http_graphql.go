@@ -46,7 +46,7 @@ func (h GRAPHQL) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphEx
 	if err != nil {
 		gqlErr := gqlerror.Errorf("could not get request body: %+v", err)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -55,7 +55,7 @@ func (h GRAPHQL) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphEx
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		gqlErr := gqlerror.Errorf("could not cleanup body: %+v", err)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -69,13 +69,13 @@ func (h GRAPHQL) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphEx
 	if opErr != nil {
 		w.WriteHeader(statusFor(opErr))
 		resp := exec.DispatchError(graphql.WithOperationContext(ctx, rc), opErr)
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
 	var responses graphql.ResponseHandler
 	responses, ctx = exec.DispatchOperation(ctx, rc)
-	writeJson(w, responses(ctx))
+	writeJson(w, exec, responses(ctx))
 }
 
 // Makes sure we strip "query=" keyword from body and

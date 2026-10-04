@@ -1,13 +1,13 @@
 package transport
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler/internal/respjson"
 )
 
 // SendError sends a best effort error to a raw response writer. It assumes the client can
@@ -15,7 +15,7 @@ import (
 // json error response
 func SendError(w http.ResponseWriter, code int, errors ...*gqlerror.Error) {
 	w.WriteHeader(code)
-	b, err := json.Marshal(&graphql.Response{Errors: errors})
+	b, err := respjson.Marshal(nil, &graphql.Response{Errors: errors})
 	if err != nil {
 		panic(err)
 	}
