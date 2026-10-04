@@ -5,6 +5,7 @@ import (
 	"context"
 	jsonv1 "encoding/json"
 	"encoding/json/v2"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -114,4 +115,59 @@ func TestOmittableContextMethodsFollowJSONVersion(t *testing.T) {
 		require.NoError(t, o.UnmarshalGQL([]byte(`{"a":1}`)))
 		assert.Equal(t, omittableInner{A: 1}, o.Value())
 	})
+}
+
+// TestOmittableKeepsEncodingJSONBehavior checks that encoding/json, which
+// calls MarshalJSONTo and UnmarshalJSONFrom as it is built on
+// encoding/json/v2, sees the same behavior as through MarshalJSON and
+// UnmarshalJSON: its options apply to the Omittable, not to the value in it.
+func TestOmittableKeepsEncodingJSONBehavior(t *testing.T) {
+	t.Run("UseNumber", func(t *testing.T) {
+		var s struct{ O Omittable[any] }
+		dec := jsonv1.NewDecoder(strings.NewReader(`{"O":1}`))
+		dec.UseNumber()
+		require.NoError(t, dec.Decode(&s))
+		// encoding/json without UseNumber reaching the value decodes a float64.
+		assert.IsType(t, float64(0), s.O.Value())
+	})
+
+	t.Run("DisallowUnknownFields", func(t *testing.T) {
+		var s struct{ O Omittable[omittableInner] }
+		dec := jsonv1.NewDecoder(strings.NewReader(`{"O":{"A":1,"B":2}}`))
+		dec.DisallowUnknownFields()
+		require.NoError(t, dec.Decode(&s))
+		assert.Equal(t, omittableInner{A: 1}, s.O.Value())
+	})
+
+	t.Run("string tag", func(t *testing.T) {
+		type S struct {
+			// The option applies to the Omittable, which is not a number.
+			O Omittable[int] `json:",string"` //nolint:staticcheck // checks it is ignored
+		}
+		b, err := jsonv1.Marshal(S{O: OmittableOf(5)})
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"O":5}`, string(b))
+
+		var s S
+		require.NoError(t, jsonv1.Unmarshal([]byte(`{"O":5}`), &s))
+		assert.Equal(t, 5, s.O.Value())
+	})
+
+	t.Run("SetEscapeHTML", func(t *testing.T) {
+		var b bytes.Buffer
+		enc := jsonv1.NewEncoder(&b)
+		enc.SetEscapeHTML(false)
+		require.NoError(t, enc.Encode(OmittableOf("<b>")))
+		assert.Equal(t, `"\u003cb\u003e"`+"\n", b.String())
+	})
+}
+
+func TestOmittableMarshalGQLContextWritesNullOnV2Error(t *testing.T) {
+	ctx := WithOperationContext(
+		context.Background(),
+		&OperationContext{JSONMode: &JSONMode{Version: JSONv2}},
+	)
+	var b bytes.Buffer
+	OmittableOf("\xff").MarshalGQLContext(ctx, &b)
+	assert.Equal(t, "null", b.String())
 }
