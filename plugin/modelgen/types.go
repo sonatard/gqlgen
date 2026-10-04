@@ -26,19 +26,15 @@ func buildType(typeString string) types.Type {
 // wants. This is roughly what gqlgen itself does, anyway:
 // https://github.com/99designs/gqlgen/blob/master/plugin/modelgen/models.go#L119
 func buildNamedType(fullName string) types.Type {
-	dotIndex := strings.LastIndex(fullName, ".")
-	if dotIndex == -1 { // builtinType
+	// type is pkg.Name
+	pkgPath, typeName, ok := strings.CutLast(fullName, ".")
+	if !ok { // builtinType
 		return types.Universe.Lookup(fullName).Type()
 	}
 
-	// type is pkg.Name
-	pkgPath := fullName[:dotIndex]
-	typeName := fullName[dotIndex+1:]
-
 	pkgName := pkgPath
-	slashIndex := strings.LastIndex(pkgPath, "/")
-	if slashIndex != -1 {
-		pkgName = pkgPath[slashIndex+1:]
+	if _, name, ok := strings.CutLast(pkgPath, "/"); ok {
+		pkgName = name
 	}
 
 	pkg := types.NewPackage(pkgPath, pkgName)

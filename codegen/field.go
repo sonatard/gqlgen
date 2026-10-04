@@ -826,13 +826,10 @@ func (f *Field) IsRoot() bool {
 
 func formatGoType(goType string) string {
 	if strings.Contains(goType, "/") {
-		lastDot := strings.LastIndex(goType, ".")
-		if lastDot == -1 {
+		packagePath, typeName, ok := strings.CutLast(goType, ".")
+		if !ok {
 			return goType
 		}
-
-		packagePath := goType[:lastDot]
-		typeName := goType[lastDot+1:]
 
 		alias := templates.CurrentImports.Lookup(packagePath)
 		if alias == "" {
