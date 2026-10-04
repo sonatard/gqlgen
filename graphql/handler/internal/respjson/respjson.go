@@ -25,7 +25,7 @@ type (
 // any options set with SetResponseJSONOptions in the JSONv2 mode. A nil exec,
 // or one that carries no mode, uses JSONv1.
 func Marshal(exec graphql.GraphExecutor, v any) ([]byte, error) {
-	if !isJSONv2(exec) {
+	if !IsJSONv2(exec) {
 		return jsonv1.Marshal(v)
 	}
 	if c, ok := exec.(optionsCarrier); ok {
@@ -36,7 +36,7 @@ func Marshal(exec graphql.GraphExecutor, v any) ([]byte, error) {
 	return json.Marshal(v)
 }
 
-func isJSONv2(exec graphql.GraphExecutor) bool {
+func IsJSONv2(exec graphql.GraphExecutor) bool {
 	v, ok := exec.(jsonVersioned)
 	return ok && v.JSONVersion() == graphql.JSONv2
 }

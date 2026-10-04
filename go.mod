@@ -28,3 +28,5 @@ require (
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 )
+
+replace github.com/vektah/gqlparser/v2 => github.com/sonatard/gqlparser/v2 v2.4.2-0.20261004075823-0342c994caea

@@ -91,7 +91,7 @@ func FuzzJSONDecode(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, body []byte) {
 		var params graphql.RawParams
-		err := jsonDecode(bytes.NewReader(body), &params)
+		err := jsonDecode(nil, bytes.NewReader(body), &params)
 		if err != nil {
 			// A failed decode is the caller's cue to reject the request. There
 			// is nothing to assert about the partially filled destination,

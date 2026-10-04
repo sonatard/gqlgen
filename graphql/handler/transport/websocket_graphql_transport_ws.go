@@ -55,7 +55,7 @@ func (me graphqltransportwsMessageExchanger) NextMessage() (message, error) {
 	}
 
 	var graphqltransportwsMessage graphqltransportwsMessage
-	if err := jsonDecode(r, &graphqltransportwsMessage); err != nil {
+	if err := jsonDecode(me.exec, r, &graphqltransportwsMessage); err != nil {
 		return message{}, errInvalidMsg
 	}
 

@@ -48,7 +48,7 @@ func (h UrlEncodedForm) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 		return
 	}
 
-	params, err := h.parseBody(bodyString)
+	params, err := h.parseBody(exec, bodyString)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		gqlErr := gqlerror.Errorf("could not cleanup body: %+v", err)
@@ -76,11 +76,14 @@ func (h UrlEncodedForm) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 	writeJson(w, exec, responses(ctx))
 }
 
-func (h UrlEncodedForm) parseBody(bodyString string) (*graphql.RawParams, error) {
+func (h UrlEncodedForm) parseBody(
+	exec graphql.GraphExecutor,
+	bodyString string,
+) (*graphql.RawParams, error) {
 	switch {
 	case strings.Contains(bodyString, "\"query\":"):
 		// body is json
-		return h.parseJson(bodyString)
+		return h.parseJson(exec, bodyString)
 	case strings.HasPrefix(bodyString, "query=%7B"):
 		// body is urlencoded
 		return h.parseEncoded(bodyString)
@@ -106,11 +109,14 @@ func (h UrlEncodedForm) parseEncoded(bodyString string) (*graphql.RawParams, err
 	return params, nil
 }
 
-func (h UrlEncodedForm) parseJson(bodyString string) (*graphql.RawParams, error) {
+func (h UrlEncodedForm) parseJson(
+	exec graphql.GraphExecutor,
+	bodyString string,
+) (*graphql.RawParams, error) {
 	params := &graphql.RawParams{}
 	bodyReader := io.NopCloser(strings.NewReader(bodyString))
 
-	err := jsonDecode(bodyReader, params)
+	err := jsonDecode(exec, bodyReader, params)
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
+	"reflect"
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -66,7 +69,7 @@ func (a AutomaticPersistedQuery) MutateOperationParameters(
 		Version int64  `mapstructure:"version"`
 	}
 
-	if err := mapstructure.Decode(rawParams.Extensions["persistedQuery"], &extension); err != nil {
+	if err := decodeAPQExtension(rawParams.Extensions["persistedQuery"], &extension); err != nil {
 		return gqlerror.Errorf("invalid APQ extension data")
 	}
 
@@ -114,4 +117,25 @@ func GetApqStats(ctx context.Context) *ApqStats {
 func computeQueryHash(query string) string {
 	b := sha256.Sum256([]byte(query))
 	return hex.EncodeToString(b[:])
+}
+
+// decodeAPQExtension decodes the persistedQuery extension into output. Its
+// version is a json.Number in the JSONv1 mode and a jsontext.Value in the
+// JSONv2 mode; mapstructure only knows the former.
+func decodeAPQExtension(input, output any) error {
+	dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		DecodeHook: jsonTextNumberToJSONNumber,
+		Result:     output,
+	})
+	if err != nil {
+		return err
+	}
+	return dec.Decode(input)
+}
+
+func jsonTextNumberToJSONNumber(_, _ reflect.Type, data any) (any, error) {
+	if raw, ok := data.(jsontext.Value); ok && raw.Kind() == '0' {
+		return json.Number(raw), nil
+	}
+	return data, nil
 }
