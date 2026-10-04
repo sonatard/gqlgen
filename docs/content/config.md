@@ -367,6 +367,11 @@ What changes for code that uses the generated package:
 - The remaining generated functions take the execution context as a parameter, as with
   `use_function_syntax_for_execution_context`, which has no effect in table mode.
 
+gqlgen does not delete generated files it no longer writes. With the follow-schema layout, a
+file left from a schema file that was since removed or renamed still calls the functions mode's
+methods, so it no longer compiles once you switch to table mode. Delete such files when you
+switch.
+
 ## Performance optimization options
 
 gqlgen provides several options to optimize code generation performance, especially useful for large schemas.
