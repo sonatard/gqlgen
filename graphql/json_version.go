@@ -77,15 +77,39 @@ func writeJSONContext(ctx context.Context, w io.Writer, v any) error {
 		return nil
 	}
 
-	var opts []json.Options
-	if o := m.ResponseOptions; o != nil {
-		opts = append(opts, o)
-	}
 	// Marshal to a buffer first so nothing is written when it fails.
-	b, err := json.Marshal(v, opts...)
+	b, err := json.Marshal(v, m.responseOptions()...)
 	if err != nil {
 		return err
 	}
 	_, err = w.Write(b)
 	return err
+}
+
+// marshalJSONContext marshals v with the JSON package the operation in ctx
+// selects: encoding/json in the JSONv1 mode, and the encoding/json/v2 defaults
+// plus the operation's ResponseOptions in the JSONv2 mode.
+func marshalJSONContext(ctx context.Context, v any) ([]byte, error) {
+	m := GetJSONMode(ctx)
+	if m == nil || m.Version != JSONv2 {
+		return jsonv1.Marshal(v)
+	}
+	return json.Marshal(v, m.responseOptions()...)
+}
+
+// unmarshalJSONContext unmarshals data into v with the JSON package the
+// operation in ctx selects: encoding/json in the JSONv1 mode, and the
+// encoding/json/v2 defaults in the JSONv2 mode.
+func unmarshalJSONContext(ctx context.Context, data []byte, v any) error {
+	if GetJSONVersion(ctx) != JSONv2 {
+		return jsonv1.Unmarshal(data, v)
+	}
+	return json.Unmarshal(data, v)
+}
+
+func (m *JSONMode) responseOptions() []json.Options {
+	if m.ResponseOptions == nil {
+		return nil
+	}
+	return []json.Options{m.ResponseOptions}
 }
