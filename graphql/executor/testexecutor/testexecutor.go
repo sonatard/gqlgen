@@ -3,7 +3,8 @@ package testexecutor
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -25,15 +26,12 @@ func (mr *MockResponse) UnmarshalGQL(v any) error {
 }
 
 func (mr *MockResponse) MarshalGQL(w io.Writer) {
-	buf := new(bytes.Buffer)
-	err := json.NewEncoder(buf).Encode(mr)
+	b, err := json.Marshal(mr, jsonv1.DefaultOptionsV1())
 	if err != nil {
 		panic(err)
 	}
 
-	ba := bytes.NewBuffer(bytes.TrimRight(buf.Bytes(), "\n"))
-
-	fmt.Fprint(w, ba)
+	w.Write(b)
 }
 
 // New provides a server for use in tests that isn't relying on generated code. It isnt a perfect

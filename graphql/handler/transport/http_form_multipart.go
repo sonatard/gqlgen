@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"encoding/json"
 	"io"
 	"mime"
 	"net/http"
@@ -98,7 +97,7 @@ func (f MultipartForm) Do(w http.ResponseWriter, r *http.Request, exec graphql.G
 	}
 
 	uploadsMap := map[string][]string{}
-	if err = json.NewDecoder(part).Decode(&uploadsMap); err != nil {
+	if err = jsonDecode(part, &uploadsMap); err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		writeJsonError(w, exec, "map form field could not be decoded")
 		return

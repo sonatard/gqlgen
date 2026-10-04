@@ -2,7 +2,8 @@ package apollofederatedtracingv1
 
 import (
 	"context"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"sync"
 	"time"
@@ -236,7 +237,7 @@ func (tb *TreeBuilder) addProtobufError(
 		}
 	}
 
-	gqlJson, err := json.Marshal(gqlError)
+	gqlJson, err := json.Marshal(gqlError, jsonv1.DefaultOptionsV1())
 	if err != nil {
 		tb.logger.Println(err)
 		tb.mu.Unlock()

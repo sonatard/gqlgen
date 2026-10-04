@@ -2,7 +2,9 @@ package debug
 
 import (
 	"context"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"os"
@@ -40,7 +42,12 @@ func (a *Tracer) Validate(schema graphql.ExecutableSchema) error {
 }
 
 func stringify(value any) string {
-	valueJson, err := json.MarshalIndent(value, "  ", "  ")
+	valueJson, err := json.Marshal(
+		value,
+		jsonv1.DefaultOptionsV1(),
+		jsontext.WithIndentPrefix("  "),
+		jsontext.WithIndent("  "),
+	)
 	if err == nil {
 		return string(valueJson)
 	}

@@ -1,7 +1,8 @@
 package playground
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -68,7 +69,7 @@ func ApolloSandboxHandler(title, endpoint string, opts ...ApolloSandboxOption) h
 		opt(options)
 	}
 
-	optionsBytes, err := json.Marshal(options.ApolloSandboxOption)
+	optionsBytes, err := json.Marshal(options.ApolloSandboxOption, jsonv1.DefaultOptionsV1())
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal apollo sandbox options: %w", err))
 	}

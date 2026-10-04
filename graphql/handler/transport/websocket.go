@@ -3,7 +3,8 @@ package transport
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"log"
@@ -234,7 +235,7 @@ func (c *wsConnection) init() bool {
 	case initMessageType:
 		if len(m.payload) > 0 {
 			c.initPayload = make(InitPayload)
-			err := json.Unmarshal(m.payload, &c.initPayload)
+			err := json.Unmarshal(m.payload, &c.initPayload, jsonv1.DefaultOptionsV1())
 			if err != nil {
 				return false
 			}
@@ -385,7 +386,7 @@ func (c *wsConnection) keepAlivePongOnly(ctx context.Context) {
 			c.pongOnlyTicker.Stop()
 			return
 		case <-c.pongOnlyTicker.C:
-			c.write(&message{t: pongMessageType, payload: json.RawMessage{}})
+			c.write(&message{t: pongMessageType, payload: jsonv1.RawMessage{}})
 		}
 	}
 }
@@ -409,7 +410,7 @@ func (c *wsConnection) ping(ctx context.Context) {
 			c.pingPongTicker.Stop()
 			return
 		case <-c.pingPongTicker.C:
-			c.write(&message{t: pingMessageType, payload: json.RawMessage{}})
+			c.write(&message{t: pingMessageType, payload: jsonv1.RawMessage{}})
 			// The initial deadline for this method is set in run()
 			// if we have not yet received a pong, don't reset the deadline.
 			c.mu.Lock()
