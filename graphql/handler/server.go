@@ -99,6 +99,12 @@ func (s *Server) SetDisableSuggestion(value bool) {
 	s.exec.SetDisableSuggestion(value)
 }
 
+// SetJSONVersion selects the JSON package requests are read and responses are
+// written with. See executor.Executor.SetJSONVersion.
+func (s *Server) SetJSONVersion(v graphql.JSONVersion) {
+	s.exec.SetJSONVersion(v)
+}
+
 // Use adds the given extension middleware to the server. Extensions are run in
 // order from first to last added.
 func (s *Server) Use(extension graphql.HandlerExtension) {

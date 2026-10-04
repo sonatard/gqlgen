@@ -22,6 +22,7 @@ type OperationContext struct {
 	Headers       http.Header
 
 	Operation              *ast.OperationDefinition
+	JSONVersion            JSONVersion
 	DisableIntrospection   bool
 	RecoverFunc            RecoverFunc
 	ResolverMiddleware     FieldMiddleware

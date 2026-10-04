@@ -131,6 +131,18 @@
         }
       }
     },
+    "json": {
+      "description": "Which JSON package should the generated server use? It can be overridden at setup with handler.Server.SetJSONVersion.",
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "enum": ["v1", "v2"],
+          "default": "v1",
+          "description": "v1 uses encoding/json. v2 uses encoding/json/v2 with its default behavior, which differs from encoding/json."
+        }
+      }
+    },
     "autobind": {
       "description": "gqlgen will search for any type names in the schema in these go packages",
       "type": "array",

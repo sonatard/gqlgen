@@ -69,6 +69,12 @@ resolver:
   # resolver bodies: dependencies are reached as r.r.myService instead of r.myService.
   # omit_resolver_embedding: false
 
+# Optional: choose the JSON package the generated server uses. v1 (the default)
+# is encoding/json; v2 is encoding/json/v2 with its default behavior, which
+# differs from encoding/json. handler.Server.SetJSONVersion overrides it at setup.
+# json:
+#   version: v2
+
 # Optional: turn on use ` + "`" + `gqlgen:"fieldName"` + "`" + ` tags in your models
 # struct_tag: json
 
