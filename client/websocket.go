@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/coder/websocket"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 const (
@@ -62,7 +64,7 @@ func (p *Client) WebsocketWithPayload(
 	initPayload map[string]any,
 	options ...Option,
 ) *Subscription {
-	r, err := p.newRequest(query, options...)
+	r, jsonVersion, err := p.newRequest(query, options...)
 	if err != nil {
 		return errorSubscription(fmt.Errorf("request: %w", err))
 	}
@@ -92,19 +94,19 @@ func (p *Client) WebsocketWithPayload(
 
 	initMessage := operationMessage{Type: connectionInitMsg}
 	if initPayload != nil {
-		initMessage.Payload, err = json.Marshal(initPayload)
+		initMessage.Payload, err = marshalJSON(jsonVersion, initPayload)
 		if err != nil {
 			_ = closeFn()
 			return errorSubscription(fmt.Errorf("parse payload: %w", err))
 		}
 	}
 
-	if err = writeWebsocketJSON(c, initMessage); err != nil {
+	if err = writeWebsocketJSON(c, jsonVersion, initMessage); err != nil {
 		_ = closeFn()
 		return errorSubscription(fmt.Errorf("init: %w", err))
 	}
 
-	ack, err := readWebsocketJSON(c)
+	ack, err := readWebsocketJSON(c, jsonVersion)
 	if err != nil {
 		_ = closeFn()
 		return errorSubscription(fmt.Errorf("ack: %w", err))
@@ -115,7 +117,7 @@ func (p *Client) WebsocketWithPayload(
 		return errorSubscription(fmt.Errorf("expected ack message, got %#v", ack))
 	}
 
-	ka, err := readWebsocketJSON(c)
+	ka, err := readWebsocketJSON(c, jsonVersion)
 	if err != nil {
 		_ = closeFn()
 		return errorSubscription(fmt.Errorf("ack: %w", err))
@@ -128,6 +130,7 @@ func (p *Client) WebsocketWithPayload(
 
 	if err = writeWebsocketJSON(
 		c,
+		jsonVersion,
 		operationMessage{Type: startMsg, ID: "1", Payload: requestBody},
 	); err != nil {
 		_ = closeFn()
@@ -138,7 +141,7 @@ func (p *Client) WebsocketWithPayload(
 		Close: closeFn,
 		Next: func(response any) error {
 			for {
-				op, err := readWebsocketJSON(c)
+				op, err := readWebsocketJSON(c, jsonVersion)
 				if err != nil {
 					return err
 				}
@@ -154,8 +157,7 @@ func (p *Client) WebsocketWithPayload(
 					return fmt.Errorf("expected data message, got %#v", op)
 				}
 
-				var respDataRaw Response
-				err = json.Unmarshal(op.Payload, &respDataRaw)
+				respDataRaw, err := unmarshalResponse(jsonVersion, op.Payload)
 				if err != nil {
 					return fmt.Errorf("decode: %w", err)
 				}
@@ -172,15 +174,22 @@ func (p *Client) WebsocketWithPayload(
 	}
 }
 
-func writeWebsocketJSON(c *websocket.Conn, msg operationMessage) error {
-	data, err := json.Marshal(msg)
+func writeWebsocketJSON(
+	c *websocket.Conn,
+	jsonVersion graphql.JSONVersion,
+	msg operationMessage,
+) error {
+	data, err := marshalJSON(jsonVersion, msg)
 	if err != nil {
 		return err
 	}
 	return c.Write(context.Background(), websocket.MessageText, data)
 }
 
-func readWebsocketJSON(c *websocket.Conn) (operationMessage, error) {
+func readWebsocketJSON(
+	c *websocket.Conn,
+	jsonVersion graphql.JSONVersion,
+) (operationMessage, error) {
 	messageType, r, err := c.Reader(context.Background())
 	if err != nil {
 		return operationMessage{}, err
@@ -195,7 +204,7 @@ func readWebsocketJSON(c *websocket.Conn) (operationMessage, error) {
 	}
 
 	var msg operationMessage
-	if err := json.Unmarshal(data, &msg); err != nil {
+	if err := unmarshalJSON(jsonVersion, data, &msg); err != nil {
 		return operationMessage{}, err
 	}
 	return msg, nil

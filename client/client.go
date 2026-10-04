@@ -12,6 +12,8 @@ import (
 	"regexp"
 
 	"github.com/go-viper/mapstructure/v2"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 type (
@@ -36,6 +38,8 @@ type (
 		OperationName string         `json:"operationName,omitempty"`
 		Extensions    map[string]any `json:"extensions,omitempty"`
 		HTTP          *http.Request  `json:"-"`
+
+		jsonVersion graphql.JSONVersion
 	}
 
 	// Response is a GraphQL layer response from a handler.
@@ -86,7 +90,7 @@ func (p *Client) Post(query string, response any, options ...Option) error {
 // unpacked onto Response. This is used to test extension keys which are not
 // available when using Post.
 func (p *Client) RawPost(query string, options ...Option) (*Response, error) {
-	r, err := p.newRequest(query, options...)
+	r, jsonVersion, err := p.newRequest(query, options...)
 	if err != nil {
 		return nil, fmt.Errorf("build: %w", err)
 	}
@@ -100,8 +104,7 @@ func (p *Client) RawPost(query string, options ...Option) (*Response, error) {
 
 	// decode it into map string first, let mapstructure do the final decode
 	// because it can be much stricter about unknown fields.
-	respDataRaw := &Response{}
-	err = json.Unmarshal(w.Body.Bytes(), &respDataRaw)
+	respDataRaw, err := unmarshalResponse(jsonVersion, w.Body.Bytes())
 	if err != nil {
 		return nil, fmt.Errorf("decode: %w", err)
 	}
@@ -111,7 +114,10 @@ func (p *Client) RawPost(query string, options ...Option) (*Response, error) {
 
 var boundaryRegex = regexp.MustCompile(`multipart/form-data; ?boundary=.*`)
 
-func (p *Client) newRequest(query string, options ...Option) (*http.Request, error) {
+func (p *Client) newRequest(
+	query string,
+	options ...Option,
+) (*http.Request, graphql.JSONVersion, error) {
 	bd := &Request{
 		Query: query,
 		HTTP:  httptest.NewRequest(http.MethodPost, p.target, http.NoBody),
@@ -132,16 +138,16 @@ func (p *Client) newRequest(query string, options ...Option) (*http.Request, err
 	case boundaryRegex.MatchString(contentType):
 		break
 	case contentType == "application/json":
-		requestBody, err := json.Marshal(bd)
+		requestBody, err := marshalJSON(bd.jsonVersion, bd)
 		if err != nil {
-			return nil, fmt.Errorf("encode: %w", err)
+			return nil, bd.jsonVersion, fmt.Errorf("encode: %w", err)
 		}
 		bd.HTTP.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 	default:
 		panic("unsupported encoding " + bd.HTTP.Header.Get("Content-Type"))
 	}
 
-	return bd.HTTP, nil
+	return bd.HTTP, bd.jsonVersion, nil
 }
 
 // SetCustomDecodeConfig sets a custom decode hook for the client

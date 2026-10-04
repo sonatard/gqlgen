@@ -34,7 +34,7 @@ func errorSSE(err error) *SSE {
 }
 
 func (p *Client) SSE(ctx context.Context, query string, options ...Option) *SSE {
-	r, err := p.newRequest(query, options...)
+	r, jsonVersion, err := p.newRequest(query, options...)
 	if err != nil {
 		return errorSSE(fmt.Errorf("request: %w", err))
 	}
@@ -82,7 +82,7 @@ func (p *Client) SSE(ctx context.Context, query string, options ...Option) *SSE 
 					}
 				case "data":
 					var respDataRaw SSEResponse
-					if err = json.Unmarshal([]byte(kv[1]), &respDataRaw); err != nil {
+					if err = unmarshalJSON(jsonVersion, []byte(kv[1]), &respDataRaw); err != nil {
 						return fmt.Errorf("decode: %w", err)
 					}
 
