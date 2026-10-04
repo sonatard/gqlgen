@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"encoding/json"
+	"encoding/json/jsontext"
 	"fmt"
 	"io"
 	"strconv"
@@ -16,6 +17,11 @@ func UnmarshalID(v any) (string, error) {
 	case string:
 		return v, nil
 	case json.Number:
+		return string(v), nil
+	case jsontext.Value:
+		if !isJSONNumber(v) {
+			return "", fmt.Errorf("%T is not a string", v)
+		}
 		return string(v), nil
 	case int:
 		return strconv.Itoa(v), nil
@@ -48,6 +54,11 @@ func UnmarshalIntID(v any) (int, error) {
 		return int(v), nil
 	case json.Number:
 		return strconv.Atoi(string(v))
+	case jsontext.Value:
+		if !isJSONNumber(v) {
+			return 0, fmt.Errorf("%T is not an int", v)
+		}
+		return strconv.Atoi(string(v))
 	default:
 		return 0, fmt.Errorf("%T is not an int", v)
 	}
@@ -75,6 +86,12 @@ func UnmarshalUintID(v any) (uint, error) {
 	case uint64:
 		return uint(v), nil
 	case json.Number:
+		result, err := strconv.ParseUint(string(v), 10, 64)
+		return uint(result), err
+	case jsontext.Value:
+		if !isJSONNumber(v) {
+			return 0, fmt.Errorf("%T is not an uint", v)
+		}
 		result, err := strconv.ParseUint(string(v), 10, 64)
 		return uint(result), err
 	default:

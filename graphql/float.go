@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"io"
@@ -27,6 +28,11 @@ func UnmarshalFloat(v any) (float64, error) {
 	case float64:
 		return v, nil
 	case json.Number:
+		return strconv.ParseFloat(string(v), 64)
+	case jsontext.Value:
+		if !isJSONNumber(v) {
+			return 0, fmt.Errorf("%T is not an float", v)
+		}
 		return strconv.ParseFloat(string(v), 64)
 	case nil:
 		return 0, nil
