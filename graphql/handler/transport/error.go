@@ -15,7 +15,7 @@ import (
 // json error response
 func SendError(w http.ResponseWriter, code int, errors ...*gqlerror.Error) {
 	w.WriteHeader(code)
-	b, err := respjson.Marshal(&graphql.Response{Errors: errors})
+	b, err := respjson.Marshal(nil, &graphql.Response{Errors: errors})
 	if err != nil {
 		panic(err)
 	}

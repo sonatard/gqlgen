@@ -2,6 +2,7 @@ package respjson
 
 import (
 	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"testing"
 	"time"
@@ -90,7 +91,7 @@ func requireMarshalsLikeEncodingJSON(t *testing.T, v any) {
 	t.Helper()
 
 	want, wantErr := jsonv1.Marshal(v)
-	got, gotErr := Marshal(v)
+	got, gotErr := Marshal(nil, v)
 	if wantErr != nil {
 		require.EqualError(t, gotErr, wantErr.Error())
 		require.Equal(t, fmt.Sprintf("%T", wantErr), fmt.Sprintf("%T", gotErr))
@@ -98,4 +99,36 @@ func requireMarshalsLikeEncodingJSON(t *testing.T, v any) {
 	}
 	require.NoError(t, gotErr)
 	require.Equal(t, string(want), string(got))
+}
+
+type executorWithOptions struct {
+	graphql.GraphExecutor
+	opts json.Options
+}
+
+func (e executorWithOptions) ResponseJSONOptions() json.Options { return e.opts }
+
+func TestMarshalUsesExecutorOptions(t *testing.T) {
+	const escaped = `{"data":{"a":"\u003cb\u003e"}}`
+	tests := []struct {
+		name string
+		exec graphql.GraphExecutor
+		want string
+	}{
+		{name: "no executor", exec: nil, want: escaped},
+		{name: "executor without options", exec: struct{ graphql.GraphExecutor }{}, want: escaped},
+		{name: "executor with nil options", exec: executorWithOptions{}, want: escaped},
+		{
+			name: "executor with encoding/json/v2 defaults",
+			exec: executorWithOptions{opts: json.DefaultOptionsV2()},
+			want: `{"data":{"a":"<b>"}}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Marshal(tt.exec, &graphql.Response{Data: []byte(`{"a":"<b>"}`)})
+			require.NoError(t, err)
+			require.Equal(t, tt.want, string(got))
+		})
+	}
 }

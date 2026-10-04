@@ -89,7 +89,7 @@ func (h POST) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecu
 	if err != nil {
 		gqlErr := gqlerror.Errorf("could not read request body: %+v", err)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -102,7 +102,7 @@ func (h POST) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecu
 			string(bodyBytes),
 		)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -120,11 +120,11 @@ func (h POST) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecu
 			w.WriteHeader(statusFor(opErr))
 		}
 		resp := exec.DispatchError(graphql.WithOperationContext(ctx, rc), opErr)
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
 	var responses graphql.ResponseHandler
 	responses, ctx = exec.DispatchOperation(ctx, rc)
-	writeJson(w, responses(ctx))
+	writeJson(w, exec, responses(ctx))
 }

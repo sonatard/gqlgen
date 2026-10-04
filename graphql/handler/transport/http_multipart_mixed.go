@@ -86,7 +86,7 @@ func (t MultipartMixed) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 		gqlErr := gqlerror.Errorf("could not get json request body: %+v", err)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
 		log.Printf("could not get json request body: %+v", err.Error())
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -100,7 +100,7 @@ func (t MultipartMixed) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 		)
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
 		log.Printf("decoding error: %+v body:%s", err.Error(), bodyString)
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -116,7 +116,7 @@ func (t MultipartMixed) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 		w.WriteHeader(statusFor(opErr))
 
 		resp := exec.DispatchError(ctx, opErr)
-		writeJson(w, resp)
+		writeJson(w, exec, resp)
 		return
 	}
 
@@ -140,7 +140,7 @@ func (t MultipartMixed) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 		fmt.Sprintf(`multipart/mixed;boundary="%s";deferSpec=20220824`, boundary),
 	)
 
-	a := newMultipartResponseAggregator(w, boundary, timeout)
+	a := newMultipartResponseAggregator(w, boundary, timeout, exec)
 	defer a.Done(w)
 
 	responses, ctx := exec.DispatchOperation(ctx, rc)
@@ -156,9 +156,14 @@ func (t MultipartMixed) Do(w http.ResponseWriter, r *http.Request, exec graphql.
 	}
 }
 
-func writeIncrementalJson(w io.Writer, responses []*graphql.Response, hasNext bool) {
+func writeIncrementalJson(
+	w io.Writer,
+	exec graphql.GraphExecutor,
+	responses []*graphql.Response,
+	hasNext bool,
+) {
 	// TODO: Remove this wrapper on response once gqlgen supports the 2023 spec
-	b, err := respjson.Marshal(struct {
+	b, err := respjson.Marshal(exec, struct {
 		Incremental []*graphql.Response `json:"incremental"`
 		HasNext     bool                `json:"hasNext"`
 	}{
@@ -189,6 +194,7 @@ func writeContentTypeHeader(w io.Writer) {
 type multipartResponseAggregator struct {
 	mu              sync.Mutex
 	boundary        string
+	exec            graphql.GraphExecutor
 	initialResponse *graphql.Response
 	deferResponses  []*graphql.Response
 	done            chan bool
@@ -201,9 +207,11 @@ func newMultipartResponseAggregator(
 	w http.ResponseWriter,
 	boundary string,
 	tickerDuration time.Duration,
+	exec graphql.GraphExecutor,
 ) *multipartResponseAggregator {
 	a := &multipartResponseAggregator{
 		boundary: boundary,
+		exec:     exec,
 		done:     make(chan bool, 1),
 	}
 	go func() {
@@ -260,7 +268,7 @@ func (a *multipartResponseAggregator) flush(w http.ResponseWriter) {
 		writeBoundary(w, a.boundary, false)
 		writeContentTypeHeader(w)
 
-		writeJson(w, a.initialResponse)
+		writeJson(w, a.exec, a.initialResponse)
 		hasNext = a.initialResponse.HasNext != nil && *a.initialResponse.HasNext
 
 		// Handle when initial is aggregated with deferred responses.
@@ -288,7 +296,7 @@ func (a *multipartResponseAggregator) flush(w http.ResponseWriter) {
 		// the incremental (deferResponses) object.
 		hasNext = a.deferResponses[len(a.deferResponses)-1].HasNext != nil &&
 			*a.deferResponses[len(a.deferResponses)-1].HasNext
-		writeIncrementalJson(w, a.deferResponses, hasNext)
+		writeIncrementalJson(w, a.exec, a.deferResponses, hasNext)
 
 		// Reset the deferResponses so we don't send them again
 		a.deferResponses = nil

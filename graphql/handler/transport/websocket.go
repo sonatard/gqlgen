@@ -257,7 +257,7 @@ func (c *wsConnection) init() bool {
 		}
 
 		if initAckPayload != nil {
-			initJsonAckPayload, err := respjson.Marshal(*initAckPayload)
+			initJsonAckPayload, err := respjson.Marshal(c.exec, *initAckPayload)
 			if err != nil {
 				panic(err)
 			}
@@ -512,7 +512,7 @@ func (c *wsConnection) subscribe(start time.Time, msg *message) {
 }
 
 func (c *wsConnection) sendResponse(id string, response *graphql.Response) {
-	b, err := respjson.Marshal(response)
+	b, err := respjson.Marshal(c.exec, response)
 	if err != nil {
 		panic(err)
 	}
@@ -532,7 +532,7 @@ func (c *wsConnection) sendError(id string, errors ...*gqlerror.Error) {
 	for i, err := range errors {
 		errs[i] = err
 	}
-	b, err := respjson.Marshal(errs)
+	b, err := respjson.Marshal(c.exec, errs)
 	if err != nil {
 		panic(err)
 	}
@@ -540,7 +540,7 @@ func (c *wsConnection) sendError(id string, errors ...*gqlerror.Error) {
 }
 
 func (c *wsConnection) sendConnectionError(format string, args ...any) {
-	b, err := respjson.Marshal(&gqlerror.Error{Message: fmt.Sprintf(format, args...)})
+	b, err := respjson.Marshal(c.exec, &gqlerror.Error{Message: fmt.Sprintf(format, args...)})
 	if err != nil {
 		panic(err)
 	}

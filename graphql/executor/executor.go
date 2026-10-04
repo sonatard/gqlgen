@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"encoding/json/v2"
 
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -25,9 +26,10 @@ type Executor struct {
 	recoverFunc    graphql.RecoverFunc
 	queryCache     graphql.Cache[*ast.QueryDocument]
 
-	parserTokenLimit  int
-	disableSuggestion bool
-	defaultRulesFn    func() *rules.Rules
+	parserTokenLimit    int
+	disableSuggestion   bool
+	defaultRulesFn      func() *rules.Rules
+	responseJSONOptions json.Options
 }
 
 var _ graphql.GraphExecutor = &Executor{}
@@ -243,6 +245,30 @@ func (e *Executor) SetParserTokenLimit(limit int) {
 
 func (e *Executor) SetDisableSuggestion(value bool) {
 	e.disableSuggestion = value
+}
+
+// SetResponseJSONOptions sets the encoding/json/v2 options the handler and its
+// transports write responses with. By default, and when opts is nil, they use
+// encoding/json's jsonv1.DefaultOptionsV1(), which writes exactly what
+// encoding/json.Marshal writes. Pass json.DefaultOptionsV2() for
+// encoding/json/v2's defaults, which leave HTML characters unescaped and
+// reject invalid UTF-8 and duplicate names, or any other combination; opts
+// replaces the default rather than adding to it.
+//
+// The options apply to the JSON the transports encode: the response envelope
+// with its errors and extensions, and the websocket error and init-ack
+// payloads. The response data has already been written by the field
+// marshalers and is only re-encoded, so stricter options can make encoding
+// fail, for example on invalid UTF-8 that a custom scalar wrote; the
+// transports treat that like any other encoding failure.
+func (e *Executor) SetResponseJSONOptions(opts json.Options) {
+	e.responseJSONOptions = opts
+}
+
+// ResponseJSONOptions returns the options set with SetResponseJSONOptions, or
+// nil if none were.
+func (e *Executor) ResponseJSONOptions() json.Options {
+	return e.responseJSONOptions
 }
 
 // parseQuery decodes the incoming query and validates it, pulling from cache if present.

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"net/http"
@@ -99,6 +100,12 @@ func (s *Server) SetDisableSuggestion(value bool) {
 	s.exec.SetDisableSuggestion(value)
 }
 
+// SetResponseJSONOptions sets the encoding/json/v2 options responses are
+// written with. See executor.Executor.SetResponseJSONOptions.
+func (s *Server) SetResponseJSONOptions(opts json.Options) {
+	s.exec.SetResponseJSONOptions(opts)
+}
+
 // Use adds the given extension middleware to the server. Extensions are run in
 // order from first to last added.
 func (s *Server) Use(extension graphql.HandlerExtension) {
@@ -149,7 +156,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			err := s.exec.PresentRecoveredError(r.Context(), err)
 			gqlErr, _ := err.(*gqlerror.Error)
 			resp := &graphql.Response{Errors: []*gqlerror.Error{gqlErr}}
-			b, _ := respjson.Marshal(resp)
+			b, _ := respjson.Marshal(s.exec, resp)
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write(b)
 		}
@@ -159,24 +166,35 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	transport := s.getTransport(r)
 	if transport == nil {
-		sendErrorf(w, http.StatusBadRequest, "transport not supported")
+		sendErrorf(w, s.exec, http.StatusBadRequest, "transport not supported")
 		return
 	}
 
 	transport.Do(w, r, s.exec)
 }
 
-func sendError(w http.ResponseWriter, code int, errors ...*gqlerror.Error) {
+func sendError(
+	w http.ResponseWriter,
+	exec graphql.GraphExecutor,
+	code int,
+	errors ...*gqlerror.Error,
+) {
 	w.WriteHeader(code)
-	b, err := respjson.Marshal(&graphql.Response{Errors: errors})
+	b, err := respjson.Marshal(exec, &graphql.Response{Errors: errors})
 	if err != nil {
 		panic(err)
 	}
 	_, _ = w.Write(b)
 }
 
-func sendErrorf(w http.ResponseWriter, code int, format string, args ...any) {
-	sendError(w, code, &gqlerror.Error{Message: fmt.Sprintf(format, args...)})
+func sendErrorf(
+	w http.ResponseWriter,
+	exec graphql.GraphExecutor,
+	code int,
+	format string,
+	args ...any,
+) {
+	sendError(w, exec, code, &gqlerror.Error{Message: fmt.Sprintf(format, args...)})
 }
 
 type OperationFunc func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler
