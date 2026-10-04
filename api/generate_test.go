@@ -47,6 +47,18 @@ func TestGenerate(t *testing.T) {
 		{
 			name:    "default",
 			workDir: filepath.Join(wd, "testdata", "default"),
+			wantExec: map[string]int{
+				// Without json.version, the schema leaves the choice to the handler.
+				"JSONVersion()": 0,
+			},
+		},
+		{
+			name:    "json_v2",
+			workDir: filepath.Join(wd, "testdata", "jsonv2"),
+			wantExec: map[string]int{
+				"func (e *executableSchema) JSONVersion() graphql.JSONVersion": 1,
+				"return graphql.JSONv2": 1,
+			},
 		},
 		{
 			name:    "federation2",

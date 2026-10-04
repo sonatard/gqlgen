@@ -29,6 +29,7 @@ type Config struct {
 	Model                                PackageConfig              `yaml:"model,omitempty"`
 	Federation                           PackageConfig              `yaml:"federation,omitempty"`
 	Resolver                             ResolverConfig             `yaml:"resolver,omitempty"`
+	JSON                                 JSONConfig                 `yaml:"json,omitempty"`
 	AutoBind                             []string                   `yaml:"autobind"`
 	AutobindGetterHaser                  bool                       `yaml:"autobind_getter_haser,omitempty"`
 	Models                               TypeMap                    `yaml:"models,omitempty"`
@@ -819,6 +820,10 @@ func (a StringList) Has(file string) bool {
 func (c *Config) check() error {
 	if c.Models == nil {
 		c.Models = TypeMap{}
+	}
+
+	if err := c.JSON.Check(); err != nil {
+		return fmt.Errorf("config.json: %w", err)
 	}
 
 	type FilenamePackage struct {

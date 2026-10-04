@@ -28,6 +28,13 @@ type Executor struct {
 	parserTokenLimit  int
 	disableSuggestion bool
 	defaultRulesFn    func() *rules.Rules
+	jsonVersion       graphql.JSONVersion
+}
+
+// jsonVersioned is implemented by generated ExecutableSchemas whose gqlgen.yml
+// sets json.version.
+type jsonVersioned interface {
+	JSONVersion() graphql.JSONVersion
 }
 
 var _ graphql.GraphExecutor = &Executor{}
@@ -43,6 +50,9 @@ func New(es graphql.ExecutableSchema) *Executor {
 		ext:              processExtensions(nil),
 		parserTokenLimit: parserTokenNoLimit,
 	}
+	if v, ok := es.(jsonVersioned); ok {
+		e.jsonVersion = v.JSONVersion()
+	}
 	return e
 }
 
@@ -56,6 +66,7 @@ func (e *Executor) CreateOperationContext(
 	params *graphql.RawParams,
 ) (*graphql.OperationContext, gqlerror.List) {
 	opCtx := &graphql.OperationContext{
+		JSONVersion:            e.jsonVersion,
 		DisableIntrospection:   true,
 		RecoverFunc:            e.recoverFunc,
 		ResolverMiddleware:     e.ext.fieldMiddleware,
@@ -243,6 +254,18 @@ func (e *Executor) SetParserTokenLimit(limit int) {
 
 func (e *Executor) SetDisableSuggestion(value bool) {
 	e.disableSuggestion = value
+}
+
+// SetJSONVersion selects the JSON package requests are read and responses are
+// written with. It overrides the json.version set in gqlgen.yml, which in
+// turn overrides the default, graphql.JSONv1.
+func (e *Executor) SetJSONVersion(v graphql.JSONVersion) {
+	e.jsonVersion = v
+}
+
+// JSONVersion returns the JSON version the executor uses.
+func (e *Executor) JSONVersion() graphql.JSONVersion {
+	return e.jsonVersion
 }
 
 // parseQuery decodes the incoming query and validates it, pulling from cache if present.
