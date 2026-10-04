@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,6 +53,38 @@ func TestWebsocketFollowsJSONVersion(t *testing.T) {
 			ack = initAck(t, v2, subprotocol)
 			assert.Contains(t, ack, `"type":"connection_ack"`)
 			assert.Contains(t, ack, `"html":"<b>"`)
+		})
+	}
+}
+
+// TestWebsocketPingPongJSONv2 checks that the server's ping and pong-only
+// messages, which carry no payload, are written in the JSONv2 mode.
+// encoding/json/v2 cannot marshal an empty, non-nil json.RawMessage.
+func TestWebsocketPingPongJSONv2(t *testing.T) {
+	for msgType, ws := range map[string]transport.Websocket{
+		graphqltransportwsPingMsg: {PingPongInterval: 20 * time.Millisecond},
+		graphqltransportwsPongMsg: {PongOnlyInterval: 20 * time.Millisecond},
+	} {
+		t.Run(msgType, func(t *testing.T) {
+			h := testserver.New()
+			h.AddTransport(ws)
+			h.SetJSONVersion(graphql.JSONv2)
+			srv := httptest.NewServer(h)
+			defer srv.Close()
+
+			c := wsConnectWithSubprotocol(srv.URL, graphqltransportwsSubprotocol)
+			defer c.Close()
+			c.SetReadDeadline(time.Now().Add(2 * time.Second))
+
+			require.NoError(
+				t,
+				c.WriteJSON(&operationMessage{Type: graphqltransportwsConnectionInitMsg}),
+			)
+			var msg operationMessage
+			require.NoError(t, c.ReadJSON(&msg))
+			assert.Equal(t, graphqltransportwsConnectionAckMsg, msg.Type)
+			require.NoError(t, c.ReadJSON(&msg))
+			assert.Equal(t, msgType, msg.Type)
 		})
 	}
 }

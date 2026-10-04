@@ -385,7 +385,7 @@ func (c *wsConnection) keepAlivePongOnly(ctx context.Context) {
 			c.pongOnlyTicker.Stop()
 			return
 		case <-c.pongOnlyTicker.C:
-			c.write(&message{t: pongMessageType, payload: json.RawMessage{}})
+			c.write(&message{t: pongMessageType})
 		}
 	}
 }
@@ -409,7 +409,7 @@ func (c *wsConnection) ping(ctx context.Context) {
 			c.pingPongTicker.Stop()
 			return
 		case <-c.pingPongTicker.C:
-			c.write(&message{t: pingMessageType, payload: json.RawMessage{}})
+			c.write(&message{t: pingMessageType})
 			// The initial deadline for this method is set in run()
 			// if we have not yet received a pong, don't reset the deadline.
 			c.mu.Lock()
