@@ -30,10 +30,41 @@ func TestGenerationIsDeterministic(t *testing.T) {
 	}
 }
 
-// generate generates the executor of the config in table mode into a temporary
-// directory next to the config, where it has an import path, and returns the generated
-// files by name. The resolvers of the test server are not generated again.
+// generate generates the executor of the config in table mode, as generateDir does, and
+// returns the generated files by name.
 func generate(t *testing.T, configPath string) map[string]string {
+	t.Helper()
+	dir := generateDir(t, configPath, config.ExecModeTable)
+	entries, err := os.ReadDir(dir)
+	require.NoError(t, err)
+	files := make(map[string]string, len(entries))
+	for _, e := range entries {
+		b, err := os.ReadFile(filepath.Join(dir, e.Name()))
+		require.NoError(t, err)
+		files[e.Name()] = string(b)
+	}
+	require.NotEmpty(t, files)
+	return files
+}
+
+// generateDir generates the executor of the config in mode into a temporary directory
+// next to the config, where it has an import path, and returns the directory. The
+// resolvers of the test server are not generated again.
+func generateDir(t *testing.T, configPath string, mode config.ExecMode) string {
+	t.Helper()
+	dir, err := generateWith(t, configPath, mode)
+	require.NoError(t, err)
+	return dir
+}
+
+// generateWith is generateDir with the options of api.Generate, such as plugins, and
+// returns the error of the generation.
+func generateWith(
+	t *testing.T,
+	configPath string,
+	mode config.ExecMode,
+	options ...api.Option,
+) (string, error) {
 	t.Helper()
 	// The paths of a config are relative to its directory, where gqlgen runs.
 	t.Chdir(filepath.Dir(configPath))
@@ -45,7 +76,7 @@ func generate(t *testing.T, configPath string) map[string]string {
 	dir, err := os.MkdirTemp(filepath.Dir(configPath), "_generated-")
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
-	cfg.Exec.Mode = config.ExecModeTable
+	cfg.Exec.Mode = mode
 	if cfg.Exec.Layout == config.ExecLayoutFollowSchema {
 		cfg.Exec.DirName = dir
 	} else {
@@ -61,16 +92,5 @@ func generate(t *testing.T, configPath string) map[string]string {
 	cfg.Resolver = config.ResolverConfig{}
 	cfg.SkipValidation = true
 	cfg.SkipModTidy = true
-	require.NoError(t, api.Generate(cfg))
-
-	entries, err := os.ReadDir(dir)
-	require.NoError(t, err)
-	files := make(map[string]string, len(entries))
-	for _, e := range entries {
-		b, err := os.ReadFile(filepath.Join(dir, e.Name()))
-		require.NoError(t, err)
-		files[e.Name()] = string(b)
-	}
-	require.NotEmpty(t, files)
-	return files
+	return dir, api.Generate(cfg, options...)
 }
