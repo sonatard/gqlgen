@@ -29,7 +29,42 @@ import (
 // sends: truncated JSON, wrong types in every field, deep nesting, duplicate
 // keys, huge numbers and bare scalars where an object is expected.
 func FuzzJSONDecode(f *testing.F) {
-	seeds := []string{
+	for _, seed := range jsonDecodeSeeds() {
+		f.Add([]byte(seed))
+	}
+
+	f.Fuzz(func(t *testing.T, body []byte) {
+		var params graphql.RawParams
+		err := jsonDecode(bytes.NewReader(body), &params)
+		if err != nil {
+			// A failed decode is the caller's cue to reject the request. There
+			// is nothing to assert about the partially filled destination,
+			// because no caller reads it.
+			return
+		}
+
+		// Past this point a transport hands these parameters to the executor,
+		// so they have to be coherent.
+		for key, value := range params.Variables {
+			requireDecodedJSON(t, "variables["+key+"]", value)
+		}
+		for key, value := range params.Extensions {
+			requireDecodedJSON(t, "extensions["+key+"]", value)
+		}
+
+		// RawParams is re-encodable, which the APQ extension and the
+		// multipart transport both rely on when they rewrite a request.
+		if _, marshalErr := json.Marshal(params); marshalErr != nil {
+			t.Fatalf("decoded params do not re-encode: %v (body %q)", marshalErr, body)
+		}
+	})
+}
+
+// jsonDecodeSeeds returns the request bodies that seed FuzzJSONDecode. They
+// double as the corpus for checking that the encoding/json/v2 decoder agrees
+// with the encoding/json one.
+func jsonDecodeSeeds() []string {
+	return []string{
 		// Ordinary requests.
 		`{"query":"{ name }"}`,
 		`{"query":"query Q($id: Int!){ find(id: $id) }","variables":{"id":1}}`,
@@ -61,13 +96,14 @@ func FuzzJSONDecode(f *testing.F) {
 		`{"variables":[1,2,3]}`,
 		`{"extensions":42}`,
 
-		// Duplicate keys: the last wins in encoding/json, which is worth
-		// pinning because a client could use it to smuggle a second query past
-		// something that inspected the first.
+		// Duplicate keys: the last wins, which is worth pinning because a
+		// client could use it to smuggle a second query past something that
+		// inspected the first.
 		`{"query":"{ a }","query":"{ b }"}`,
 
-		// Numeric edges. UseNumber means these stay exact rather than becoming
-		// float64, which is the behaviour the scalar unmarshalers depend on.
+		// Numeric edges. jsonDecode keeps these exact as json.Number rather
+		// than float64, which is the behaviour the scalar unmarshalers depend
+		// on.
 		`{"variables":{"big":9223372036854775807}}`,
 		`{"variables":{"bigger":9223372036854775808}}`,
 		`{"variables":{"huge":1e308}}`,
@@ -85,41 +121,12 @@ func FuzzJSONDecode(f *testing.F) {
 		`{"query":"{ name }"} {"query":"{ other }"}`,
 		`{"query":"{ name }"}trailing garbage`,
 	}
-	for _, seed := range seeds {
-		f.Add([]byte(seed))
-	}
-
-	f.Fuzz(func(t *testing.T, body []byte) {
-		var params graphql.RawParams
-		err := jsonDecode(bytes.NewReader(body), &params)
-		if err != nil {
-			// A failed decode is the caller's cue to reject the request. There
-			// is nothing to assert about the partially filled destination,
-			// because no caller reads it.
-			return
-		}
-
-		// Past this point a transport hands these parameters to the executor,
-		// so they have to be coherent.
-		for key, value := range params.Variables {
-			requireDecodedJSON(t, "variables["+key+"]", value)
-		}
-		for key, value := range params.Extensions {
-			requireDecodedJSON(t, "extensions["+key+"]", value)
-		}
-
-		// RawParams is re-encodable, which the APQ extension and the
-		// multipart transport both rely on when they rewrite a request.
-		if _, marshalErr := json.Marshal(params); marshalErr != nil {
-			t.Fatalf("decoded params do not re-encode: %v (body %q)", marshalErr, body)
-		}
-	})
 }
 
-// requireDecodedJSON asserts a decoded value is one of the shapes
-// encoding/json produces with UseNumber set. A scalar unmarshaler type-switches
-// over exactly this set, so anything else would reach it as an unhandled
-// default and be reported as a client error for the wrong reason.
+// requireDecodedJSON asserts a decoded value is one of the shapes jsonDecode
+// produces. A scalar unmarshaler type-switches over exactly this set, so
+// anything else would reach it as an unhandled default and be reported as a
+// client error for the wrong reason.
 func requireDecodedJSON(t *testing.T, path string, value any) {
 	t.Helper()
 
@@ -135,9 +142,9 @@ func requireDecodedJSON(t *testing.T, path string, value any) {
 			requireDecodedJSON(t, path+"[]", nested)
 		}
 	case float64:
-		// UseNumber is set, so a float64 here would mean the decoder was not
-		// configured the way jsonDecode configures it.
-		t.Fatalf("%s decoded to float64 %v; UseNumber should have produced json.Number",
+		// jsonDecode keeps numbers as json.Number, so a float64 here would
+		// mean the decoder lost that configuration.
+		t.Fatalf("%s decoded to float64 %v; jsonDecode should have produced json.Number",
 			path, v)
 	default:
 		t.Fatalf("%s decoded to unexpected type %T", path, value)
