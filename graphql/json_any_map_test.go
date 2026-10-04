@@ -23,22 +23,22 @@ func TestAnyAndMapFollowJSONVersion(t *testing.T) {
 		want string
 	}{
 		{"no operation", context.Background(), `{"html":"\u003cb\u003e"}` + "\n"},
-		{"v1", withOp(&OperationContext{JSONVersion: JSONv1}), `{"html":"\u003cb\u003e"}` + "\n"},
+		{"v1", withOp(&OperationContext{JSONMode: &JSONMode{Version: JSONv1}}), `{"html":"\u003cb\u003e"}` + "\n"},
 		{
 			"v1 ignores the response options",
-			withOp(&OperationContext{
-				JSONVersion:         JSONv1,
-				ResponseJSONOptions: jsontext.EscapeForHTML(false),
-			}),
+			withOp(&OperationContext{JSONMode: &JSONMode{
+				Version:         JSONv1,
+				ResponseOptions: jsontext.EscapeForHTML(false),
+			}}),
 			`{"html":"\u003cb\u003e"}` + "\n",
 		},
-		{"v2", withOp(&OperationContext{JSONVersion: JSONv2}), `{"html":"<b>"}`},
+		{"v2", withOp(&OperationContext{JSONMode: &JSONMode{Version: JSONv2}}), `{"html":"<b>"}`},
 		{
 			"v2 with the response options",
-			withOp(&OperationContext{
-				JSONVersion:         JSONv2,
-				ResponseJSONOptions: jsontext.EscapeForHTML(true),
-			}),
+			withOp(&OperationContext{JSONMode: &JSONMode{
+				Version:         JSONv2,
+				ResponseOptions: jsontext.EscapeForHTML(true),
+			}}),
 			`{"html":"\u003cb\u003e"}`,
 		},
 	} {
@@ -49,22 +49,22 @@ func TestAnyAndMapFollowJSONVersion(t *testing.T) {
 	}
 
 	t.Run("v1 writes what MarshalAny and MarshalMap write", func(t *testing.T) {
-		ctx := withOp(&OperationContext{JSONVersion: JSONv1})
+		ctx := withOp(&OperationContext{JSONMode: &JSONMode{Version: JSONv1}})
 		assert.Equal(t, m2s(MarshalAny(val)), cm2s(ctx, t, MarshalAnyContext(val)))
 		assert.Equal(t, m2s(MarshalMap(val)), cm2s(ctx, t, MarshalMapContext(val)))
 	})
 
 	t.Run("v2 applies the response options", func(t *testing.T) {
-		ctx := withOp(&OperationContext{
-			JSONVersion:         JSONv2,
-			ResponseJSONOptions: json.Deterministic(true),
-		})
+		ctx := withOp(&OperationContext{JSONMode: &JSONMode{
+			Version:         JSONv2,
+			ResponseOptions: json.Deterministic(true),
+		}})
 		m := map[string]any{"c": 3, "a": 1, "b": 2}
 		assert.Equal(t, `{"a":1,"b":2,"c":3}`, cm2s(ctx, t, MarshalMapContext(m)))
 	})
 
 	t.Run("v2 returns errors and writes nothing", func(t *testing.T) {
-		ctx := withOp(&OperationContext{JSONVersion: JSONv2})
+		ctx := withOp(&OperationContext{JSONMode: &JSONMode{Version: JSONv2}})
 		var b bytes.Buffer
 		err := MarshalAnyContext("\xff").MarshalGQLContext(ctx, &b)
 		require.Error(t, err)
@@ -72,7 +72,7 @@ func TestAnyAndMapFollowJSONVersion(t *testing.T) {
 	})
 
 	t.Run("v1 panics on errors as MarshalAny does", func(t *testing.T) {
-		ctx := withOp(&OperationContext{JSONVersion: JSONv1})
+		ctx := withOp(&OperationContext{JSONMode: &JSONMode{Version: JSONv1}})
 		assert.Panics(t, func() { cm2s(ctx, t, MarshalAnyContext(func() {})) })
 	})
 }

@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"encoding/json/v2"
 	"errors"
 	"net/http"
 	"strings"
@@ -23,8 +22,7 @@ type OperationContext struct {
 	Headers       http.Header
 
 	Operation              *ast.OperationDefinition
-	JSONVersion            JSONVersion
-	ResponseJSONOptions    json.Options
+	JSONMode               *JSONMode
 	DisableIntrospection   bool
 	RecoverFunc            RecoverFunc
 	ResolverMiddleware     FieldMiddleware

@@ -26,11 +26,10 @@ type Executor struct {
 	recoverFunc    graphql.RecoverFunc
 	queryCache     graphql.Cache[*ast.QueryDocument]
 
-	parserTokenLimit    int
-	disableSuggestion   bool
-	defaultRulesFn      func() *rules.Rules
-	jsonVersion         graphql.JSONVersion
-	responseJSONOptions json.Options
+	parserTokenLimit  int
+	disableSuggestion bool
+	defaultRulesFn    func() *rules.Rules
+	jsonMode          graphql.JSONMode
 }
 
 // jsonVersioned is implemented by generated ExecutableSchemas whose gqlgen.yml
@@ -53,7 +52,7 @@ func New(es graphql.ExecutableSchema) *Executor {
 		parserTokenLimit: parserTokenNoLimit,
 	}
 	if v, ok := es.(jsonVersioned); ok {
-		e.jsonVersion = v.JSONVersion()
+		e.jsonMode.Version = v.JSONVersion()
 	}
 	return e
 }
@@ -68,8 +67,7 @@ func (e *Executor) CreateOperationContext(
 	params *graphql.RawParams,
 ) (*graphql.OperationContext, gqlerror.List) {
 	opCtx := &graphql.OperationContext{
-		JSONVersion:            e.jsonVersion,
-		ResponseJSONOptions:    e.responseJSONOptions,
+		JSONMode:               &e.jsonMode,
 		DisableIntrospection:   true,
 		RecoverFunc:            e.recoverFunc,
 		ResolverMiddleware:     e.ext.fieldMiddleware,
@@ -263,12 +261,12 @@ func (e *Executor) SetDisableSuggestion(value bool) {
 // written with. It overrides the json.version set in gqlgen.yml, which in
 // turn overrides the default, graphql.JSONv1.
 func (e *Executor) SetJSONVersion(v graphql.JSONVersion) {
-	e.jsonVersion = v
+	e.jsonMode.Version = v
 }
 
 // JSONVersion returns the JSON version the executor uses.
 func (e *Executor) JSONVersion() graphql.JSONVersion {
-	return e.jsonVersion
+	return e.jsonMode.Version
 }
 
 // SetResponseJSONOptions adds encoding/json/v2 options to the ones responses
@@ -277,13 +275,13 @@ func (e *Executor) JSONVersion() graphql.JSONVersion {
 // have no effect in the JSONv1 mode, where responses are written with
 // encoding/json.
 func (e *Executor) SetResponseJSONOptions(opts json.Options) {
-	e.responseJSONOptions = opts
+	e.jsonMode.ResponseOptions = opts
 }
 
 // ResponseJSONOptions returns the options set with SetResponseJSONOptions, or
 // nil if none were.
 func (e *Executor) ResponseJSONOptions() json.Options {
-	return e.responseJSONOptions
+	return e.jsonMode.ResponseOptions
 }
 
 // parseQuery decodes the incoming query and validates it, pulling from cache if present.

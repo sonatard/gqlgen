@@ -34,22 +34,43 @@ func (v JSONVersion) String() string {
 	}
 }
 
+// JSONMode is the JSON mode an operation runs in. The executor shares one
+// JSONMode with all of its operations, so it must not be modified while the
+// executor serves requests.
+type JSONMode struct {
+	// Version selects encoding/json or encoding/json/v2.
+	Version JSONVersion
+	// ResponseOptions are added to the encoding/json/v2 options responses and
+	// the built-in Any and Map scalars are written with in the JSONv2 mode.
+	ResponseOptions json.Options
+}
+
+// GetJSONMode returns the JSON mode of the operation in ctx, or nil if ctx
+// carries no operation or the operation has no mode, which both mean JSONv1.
+func GetJSONMode(ctx context.Context) *JSONMode {
+	if !HasOperationContext(ctx) {
+		return nil
+	}
+	return GetOperationContext(ctx).JSONMode
+}
+
 // GetJSONVersion returns the JSON version of the operation in ctx, or JSONv1
 // if ctx carries no operation.
 func GetJSONVersion(ctx context.Context) JSONVersion {
-	if !HasOperationContext(ctx) {
-		return JSONv1
+	if m := GetJSONMode(ctx); m != nil {
+		return m.Version
 	}
-	return GetOperationContext(ctx).JSONVersion
+	return JSONv1
 }
 
 // writeJSONContext writes v with the JSON package the operation in ctx
 // selects. In the JSONv1 mode it writes what MarshalAny and MarshalMap write,
 // and panics on errors as they do. In the JSONv2 mode it uses the
-// encoding/json/v2 defaults plus the operation's ResponseJSONOptions, and
+// encoding/json/v2 defaults plus the operation's ResponseOptions, and
 // returns errors so that the field resolves to null with an error.
 func writeJSONContext(ctx context.Context, w io.Writer, v any) error {
-	if GetJSONVersion(ctx) != JSONv2 {
+	m := GetJSONMode(ctx)
+	if m == nil || m.Version != JSONv2 {
 		if err := jsonv1.NewEncoder(w).Encode(v); err != nil {
 			panic(err)
 		}
@@ -57,7 +78,7 @@ func writeJSONContext(ctx context.Context, w io.Writer, v any) error {
 	}
 
 	var opts []json.Options
-	if o := GetOperationContext(ctx).ResponseJSONOptions; o != nil {
+	if o := m.ResponseOptions; o != nil {
 		opts = append(opts, o)
 	}
 	// Marshal to a buffer first so nothing is written when it fails.
