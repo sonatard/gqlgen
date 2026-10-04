@@ -4,6 +4,7 @@
 	{{- if .PointersInUnmarshalInput }}
 	  {{- $it = "&it" }}
 	{{- end }}
+	{{- if not $.Config.Exec.IsTable }}
 	func {{$.FuncReceiver}}unmarshalInput{{ .Name }}(ctx context.Context, {{$.ECFuncParam}}obj any) ({{ if .PointersInUnmarshalInput }}*{{ end }}{{.Type | ref}}, error) {
 		var it {{.Type | ref}}
 		if obj == nil {
@@ -114,8 +115,16 @@
 		return {{$it}}, nil
 		{{- end }}
 	}
+	{{- end }}
 
-	{{- if not $.Config.OmitTypedInputUnmarshalers }}
+	{{- if and (not $.Config.OmitTypedInputUnmarshalers) $.Config.Exec.IsTable }}
+
+	// Unmarshal{{ .Name }} unmarshals raw into the {{ .Name }} input type, as graphql.UnmarshalNamedInputFromContext does.
+	func Unmarshal{{ .Name }}(ctx context.Context, raw any) (out {{ if .PointersInUnmarshalInput }}*{{ end }}{{.Type | ref}}, err error) {
+		err = graphql.UnmarshalNamedInputFromContext(ctx, {{ .Name | quote }}, raw, &out)
+		return out, err
+	}
+	{{- else if not $.Config.OmitTypedInputUnmarshalers }}
 
 	// Unmarshal{{ .Name }} unmarshals raw into the {{ .Name }} input type, using the
 	// unmarshaler bound to ctx's request. Call it from a resolver to decode an input
@@ -132,3 +141,70 @@
 	{{- end }}
 {{ end }}
 
+
+{{- define "tableInput" }}
+{{- $data := .Data }}
+{{- $input := .Input }}
+{{- $T := $input.Type | ref }}
+	t.{{ $input.TableVar }}.Init(t.schema, exec.Input[*executionContext]{Name: {{ $input.Name | quote }}, GoType: {{ $T | quote }}, Type: reflect.TypeOf((*{{ $T }})(nil)).Elem()
+	{{- if $input.PointersInUnmarshalInput }}, Pointer: true{{ end }}
+	{{- if $input.IsMap }}, IsMap: true{{ end }}
+	{{- if $input.TableSetsFields }}, Set: {{ $input.TableFunc }}{{ end }}}, []tableInputField{
+	{{- range $field := $input.Fields }}
+		{{- $entry := dict "Data" $data "Field" $field }}
+		{{- if $field.IsResolver }}
+		{ {{- template "tableInputEntry" $entry -}} , {{ $data.TableInEntry $field.TypeReference }}
+		{{- with $data.TableInputGoType $field }}, GoType: {{ . | quote }}{{ end }}, SetWith: func(ctx context.Context, ec *executionContext, inputValue, v any) error {
+				fieldValue, _ := v.({{ $field.TypeReference.GO | ref }})
+				return ec.Resolvers.{{ $field.TableInputInvocation }}
+			}},
+		{{- else }}
+		{ {{- template "tableInputEntry" $entry -}} , {{ $data.TableInEntry $field.TypeReference }}
+		{{- with $data.TableInputGoType $field }}, GoType: {{ . | quote }}{{ end }}},
+		{{- end }}
+	{{- end }}
+	})
+{{- end }}
+
+{{- /* tableInputSet writes the Set of an input, which stores its fields by their index in
+   the table: one function for the input rather than a closure per field, as for the
+   exec.Resolve of an object. It asserts the value,
+   which the runtime passes as any, to the Go type of the field's unmarshaler, so that
+   the compiler checks that the field has the type the unmarshaler unmarshals, as the
+   typed call of the functions mode does. A nil stores the zero value. */}}
+{{- define "tableInputSet" }}
+{{- $input := .Input }}
+{{- $T := $input.Type | ref }}
+{{- if $input.TableSetsFields }}
+
+func {{ $input.TableFunc }}(inputValue any, fieldIndex int, v any) {
+	{{- if $input.IsMap }}
+	m := *inputValue.(*map[string]any)
+	{{- else }}
+	p := inputValue.(*{{ $T }})
+	{{- end }}
+	switch fieldIndex {
+	{{- range $i, $field := $input.Fields }}
+	{{- if not $field.IsResolver }}
+	{{- $V := $field.TypeReference.GO | ref }}
+	case {{ $i }}:
+		{{- if $input.IsMap }}
+		m[{{ $field.Name | quote }}], _ = v.({{ $V }})
+		{{- else if $field.TypeReference.IsOmittable }}
+		x, _ := v.({{ $V }})
+		p.{{ $field.GoFieldName }} = graphql.OmittableOf(x)
+		{{- else }}
+		p.{{ $field.GoFieldName }}, _ = v.({{ $V }})
+		{{- end }}
+	{{- end }}
+	{{- end }}
+	}
+}
+{{- end }}
+{{- end }}
+
+{{- /* tableInputEntry writes the entries of an input field that every field has: its
+   name. The runtime reads its default and directives from the schema. */}}
+{{- define "tableInputEntry" -}}
+Name: {{ .Field.Name | quote }}
+{{- end }}

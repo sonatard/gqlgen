@@ -14,6 +14,11 @@ type ExecConfig struct {
 	Package string     `yaml:"package,omitempty"`
 	Layout  ExecLayout `yaml:"layout,omitempty"` // Default: single-file
 
+	// Mode selects how the executor is generated. The default generates functions for every
+	// field and type. ExecModeTable generates tables that a shared runtime executes, which
+	// makes the generated code much smaller.
+	Mode ExecMode `yaml:"mode,omitempty"`
+
 	// Only for single-file layout:
 	Filename string `yaml:"filename,omitempty"`
 
@@ -38,9 +43,36 @@ var (
 	ExecLayoutFollowSchema ExecLayout = "follow-schema"
 )
 
+type ExecMode string
+
+const (
+	// Generate a function for every field, argument, input and type reference.
+	ExecModeFunctions ExecMode = "functions"
+	// Generate tables of fields and inputs that the graphql/exec runtime executes. The
+	// remaining functions always take the execution context as a parameter, as with
+	// use_function_syntax_for_execution_context.
+	ExecModeTable ExecMode = "table"
+)
+
+// IsTable reports whether the executor is generated as tables for the graphql/exec runtime.
+func (r *ExecConfig) IsTable() bool {
+	return r.Mode == ExecModeTable
+}
+
 func (r *ExecConfig) Check() error {
 	if r.Layout == "" {
 		r.Layout = ExecLayoutSingleFile
+	}
+
+	switch r.Mode {
+	case "", ExecModeFunctions, ExecModeTable:
+	default:
+		return fmt.Errorf(
+			"invalid exec mode %s, use %s or %s",
+			r.Mode,
+			ExecModeFunctions,
+			ExecModeTable,
+		)
 	}
 
 	switch r.Layout {
@@ -106,4 +138,32 @@ func (r *ExecConfig) Pkg() *types.Package {
 
 func (r *ExecConfig) IsDefined() bool {
 	return r.Filename != "" || r.DirName != ""
+}
+
+// CheckTableMode returns an error when the configuration enables a feature that exec.mode
+// table does not support yet: federation, and batch resolvers for every field. api.Generate
+// runs it before it removes the generated files, Init before the plugins write any file,
+// and api.Generate again after the plugins that change the configuration. The batch
+// resolvers of single fields, which the schema enables and disables with @goField, fail
+// the generation once the fields are built.
+func (c *Config) CheckTableMode() error {
+	if !c.Exec.IsTable() {
+		return nil
+	}
+	if c.Schema != nil && c.Schema.Subscription != nil {
+		return errors.New(
+			"exec.mode table does not support subscriptions yet; use exec.mode functions",
+		)
+	}
+	if c.Federation.IsDefined() {
+		return errors.New(
+			"exec.mode table does not support federation yet; use exec.mode functions",
+		)
+	}
+	if c.Resolver.Batch.Enabled {
+		return errors.New(
+			"exec.mode table does not support batch resolvers yet; use exec.mode functions",
+		)
+	}
+	return nil
 }

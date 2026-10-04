@@ -35,6 +35,10 @@ type Object struct {
 	Stream                   bool
 	Directives               []*Directive
 	PointersInUnmarshalInput bool
+
+	// tableFunc is the name of the function that table mode generates for the object or
+	// input, set by tableFuncNames.
+	tableFunc string
 }
 
 func (b *builder) buildObject(typ *ast.Definition) (*Object, error) {
@@ -191,6 +195,73 @@ func (o *Object) InvalidsIncrement(fieldSetVar string) string {
 		return fmt.Sprintf("atomic.AddUint32(&%s.Invalids, 1)", fieldSetVar)
 	}
 	return fieldSetVar + ".Invalids++"
+}
+
+// TableVar returns the name of the field of the tables that holds the table generated
+// for this object or input in table mode.
+func (o *Object) TableVar() string {
+	if o.Kind == ast.InputObject {
+		return "input" + o.Name
+	}
+	return "object" + o.Name
+}
+
+// TableFunc returns the name of the function that table mode generates for this object
+// or input: the exec.Resolve that resolves the fields of an object by their index, or
+// the Set that stores the fields of an input.
+func (o *Object) TableFunc() string {
+	if o.tableFunc != "" {
+		return o.tableFunc
+	}
+	return "_" + tableFuncName(o)
+}
+
+// tableFuncName is the name of the function of TableFunc without its leading underscore.
+func tableFuncName(o *Object) string {
+	if o.Kind == ast.InputObject {
+		return o.Name + "_set"
+	}
+	return o.Name + "_resolve"
+}
+
+// tableFuncNames sets the names of the functions that table mode generates for objects:
+// _User_resolve and _Pair_set, with underscores added while a type of schema has the name,
+// whose function would take it, as the function of a union called User_resolve does.
+func tableFuncNames(schema *ast.Schema, objects Objects) {
+	for _, o := range objects {
+		name := tableFuncName(o)
+		for schema.Types[name] != nil {
+			name += "_"
+		}
+		o.tableFunc = "_" + name
+	}
+}
+
+// TableReadsObject reports whether a case of the exec.Resolve of this object in table mode
+// reads the object: that of every field but those that return a root operation type,
+// which resolve to an empty value of the type. The Resolve of an object that has no other
+// fields does not assert the object to its Go type.
+func (o *Object) TableReadsObject() bool {
+	if o.Root {
+		return false
+	}
+	for _, f := range o.Fields {
+		if !f.TypeReference.IsRoot {
+			return true
+		}
+	}
+	return false
+}
+
+// TableSetsFields reports whether the Set of this input in table mode stores any field:
+// those that a resolver sets are stored by the resolver instead.
+func (o *Object) TableSetsFields() bool {
+	for _, f := range o.Fields {
+		if !f.IsResolver {
+			return true
+		}
+	}
+	return false
 }
 
 func (o *Object) IsReserved() bool {

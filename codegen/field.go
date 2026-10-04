@@ -45,6 +45,9 @@ type Field struct {
 	// option, resolved once at build time so UsesSubscriptionContext and the methods
 	// that depend on it stay nullary instead of threading the flag through the call chain.
 	SubscriptionContextField bool
+	// goType is the Go type of the var the field is bound to, or of the result of its
+	// method, which may not be the type that TypeReference marshals.
+	goType types.Type
 }
 
 func (b *builder) buildField(obj *Object, field *ast.FieldDefinition) (*Field, error) {
@@ -272,6 +275,7 @@ func (b *builder) bindField(obj *Object, f *Field) (errret error) {
 		f.GoFieldName = target.Name()
 		f.Args = newArgs
 		f.TypeReference = tr
+		f.goType = result.Type()
 
 		return nil
 	case *types.Var:
@@ -285,6 +289,7 @@ func (b *builder) bindField(obj *Object, f *Field) (errret error) {
 		f.GoReceiverName = "obj"
 		f.GoFieldName = target.Name()
 		f.TypeReference = tr
+		f.goType = target.Type()
 
 		return nil
 	default:
@@ -773,6 +778,93 @@ func (f *Field) ShortInvocation() string {
 	return fmt.Sprintf("%s().%s(%s)", caser.String(f.Object.Name), f.GoFieldName, f.CallArgs())
 }
 
+// TableObj returns the expression of the field's object in table mode: obj, which the
+// exec.Resolve of the object asserts to its Go type once, before it switches on the field.
+func (f *Field) TableObj() string {
+	return "obj"
+}
+
+// TableGetExpr returns the expression that reads the field from obj, the object with its
+// Go type, in table mode, for fields bound to a struct field, or to a method that takes
+// no context or arguments and returns no error. It returns "" for other fields, and for
+// those whose Go type the marshaler of the field does not take, such as an Omittable that
+// marshals itself: the functions mode returns the value as any, and the field checks its
+// type when it resolves.
+func (f *Field) TableGetExpr() string {
+	if f.IsBatch() || f.HasHaser || f.VOkFunc || f.IsResolver || f.GoReceiverName != "obj" {
+		return ""
+	}
+	if f.goType != nil && f.TypeReference != nil &&
+		!types.AssignableTo(f.goType, f.TypeReference.GO) {
+		return ""
+	}
+	switch {
+	case f.IsVariable():
+		return f.TableObj() + "." + f.GoFieldName
+	case f.IsMethod() && f.NoErr && !f.MethodHasContext && len(f.Args) == 0:
+		return f.TableObj() + "." + f.GoFieldName + "()"
+	}
+	return ""
+}
+
+// TableResolveBody returns the body of the case of the field in the exec.Resolve of its
+// object in table mode, written as a single statement that reads the object from obj and
+// the arguments from fieldArgs. It returns "" when the field needs more than one statement;
+// the template then writes the body the functions mode uses, which reads the arguments from
+// the field context: the runtime passes fieldArgs from the field context, so they are the
+// same.
+func (f *Field) TableResolveBody() string {
+	if f.IsBatch() || f.HasHaser || f.VOkFunc {
+		return ""
+	}
+	recv := f.GoReceiverName
+	if recv == "obj" {
+		recv = f.TableObj()
+	}
+	var body string
+	switch {
+	case f.IsResolver:
+		args := []string{"ctx"}
+		if !f.Object.Root {
+			args = append(args, f.TableObj())
+		}
+		args = append(args, f.callArgExpressions("", "fieldArgs")...)
+		caser := cases.Title(language.English, cases.NoLower)
+		body = "return ec.Resolvers." + caser.String(
+			f.Object.Name,
+		) + "()." + f.GoFieldName + "(" + strings.Join(args, ", ") + ")"
+	case f.IsMethod():
+		call := recv + "." + f.GoFieldName + "(" + f.callArgs("fieldArgs") + ")"
+		if f.NoErr {
+			body = "return " + call + ", nil"
+		} else {
+			body = "return " + call
+		}
+	case f.IsVariable():
+		body = "return " + recv + "." + f.GoFieldName + ", nil"
+	default:
+		return ""
+	}
+	if strings.Contains(body, "\n") {
+		return ""
+	}
+	return body
+}
+
+// TableInputInvocation returns the resolver call that sets an input field from fieldValue
+// in table mode, where the input being unmarshaled is the pointer inputValue, of type any.
+// The functions mode calls it with data, which table mode does not name its variable, as
+// it refers to the Go type of the input afterwards, which a package called data would hide.
+func (f *Field) TableInputInvocation() string {
+	caser := cases.Title(language.English, cases.NoLower)
+	return fmt.Sprintf(
+		"%s().%s(ctx, inputValue.(*%s), fieldValue)",
+		caser.String(f.Object.Name),
+		f.GoFieldName,
+		templates.CurrentImports.LookupType(f.Object.Type),
+	)
+}
+
 func (f *Field) ArgsFunc() string {
 	if len(f.Args) == 0 {
 		return ""
@@ -960,6 +1052,12 @@ func (f *Field) ComplexityArgs() string {
 }
 
 func (f *Field) CallArgs() string {
+	return f.callArgs("fc.Args")
+}
+
+// callArgs returns the arguments of the call that resolves the field, reading the
+// arguments of the field from the map called argsVar.
+func (f *Field) callArgs(argsVar string) string {
 	args := make([]string, 0, len(f.Args)+2)
 
 	if f.IsResolver {
@@ -972,19 +1070,21 @@ func (f *Field) CallArgs() string {
 		args = append(args, "ctx")
 	}
 
-	args = append(args, f.callArgExpressions("")...)
+	args = append(args, f.callArgExpressions("", argsVar)...)
 	return strings.Join(args, ", ")
 }
 
+// fieldArgExpression returns the expression that reads arg from the map called argsVar.
 func (f *Field) fieldArgExpression(
 	arg *FieldArgument,
 	federationRequiresReplacement string,
+	argsVar string,
 ) string {
 	if arg.Name == federationRequiresArgName && federationRequiresReplacement != "" {
 		return federationRequiresReplacement
 	}
 
-	tmp := "fc.Args[" + strconv.Quote(
+	tmp := argsVar + "[" + strconv.Quote(
 		arg.Name,
 	) + "].(" + templates.CurrentImports.LookupType(
 		arg.TypeReference.GO,
@@ -993,17 +1093,19 @@ func (f *Field) fieldArgExpression(
 	if iface, ok := types.Unalias(arg.TypeReference.GO).(*types.Interface); ok && iface.Empty() {
 		tmp = fmt.Sprintf(`
 				func () any {
-					if fc.Args["%s"] == nil {
+					if %[1]s["%[2]s"] == nil {
 						return nil
 					}
-					return fc.Args["%s"].(any)
-				}()`, arg.Name, arg.Name,
+					return %[1]s["%[2]s"].(any)
+				}()`, argsVar, arg.Name,
 		)
 	}
 	return tmp
 }
 
-func (f *Field) callArgExpressions(federationRequiresReplacement string) []string {
+// callArgExpressions returns the expressions of the arguments of the field, read from
+// the map called argsVar.
+func (f *Field) callArgExpressions(federationRequiresReplacement, argsVar string) []string {
 	args := make([]string, 0, len(f.Args))
 	var inlineInfo *InlineArgsInfo
 	if f.Object != nil && f.Object.Definition != nil {
@@ -1025,10 +1127,10 @@ func (f *Field) callArgExpressions(federationRequiresReplacement string) []strin
 				goType := templates.CurrentImports.LookupType(argRef.TypeReference.GO)
 				var entry string
 				if isMap {
-					entry = fmt.Sprintf("%q: fc.Args[%q].(%s)", argName, argName, goType)
+					entry = fmt.Sprintf("%q: %s[%q].(%s)", argName, argsVar, argName, goType)
 				} else {
 					fieldName := templates.ToGo(argName)
-					entry = fmt.Sprintf("%s: fc.Args[%q].(%s)", fieldName, argName, goType)
+					entry = fmt.Sprintf("%s: %s[%q].(%s)", fieldName, argsVar, argName, goType)
 				}
 				entries = append(entries, entry)
 			}
@@ -1040,12 +1142,15 @@ func (f *Field) callArgExpressions(federationRequiresReplacement string) []strin
 
 		for _, arg := range f.Args {
 			if !slices.Contains(inlineInfo.ExpandedArgs, arg.Name) {
-				args = append(args, f.fieldArgExpression(arg, federationRequiresReplacement))
+				args = append(
+					args,
+					f.fieldArgExpression(arg, federationRequiresReplacement, argsVar),
+				)
 			}
 		}
 	} else {
 		for _, arg := range f.Args {
-			args = append(args, f.fieldArgExpression(arg, federationRequiresReplacement))
+			args = append(args, f.fieldArgExpression(arg, federationRequiresReplacement, argsVar))
 		}
 	}
 
@@ -1062,7 +1167,7 @@ func (f *Field) BatchCallArgs(parentVar, federationRequiresReplacement string) s
 		args = append(args, parentVar)
 	}
 
-	args = append(args, f.callArgExpressions(federationRequiresReplacement)...)
+	args = append(args, f.callArgExpressions(federationRequiresReplacement, "fc.Args")...)
 	return strings.Join(args, ", ")
 }
 
