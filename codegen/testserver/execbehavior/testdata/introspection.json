@@ -1301,6 +1301,56 @@
           },
           {
             "kind": "INPUT_OBJECT",
+            "name": "OmittableInput",
+            "description": null,
+            "specifiedByURL": null,
+            "fields": [],
+            "inputFields": [
+              {
+                "name": "text",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "count",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "list",
+                "description": null,
+                "type": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "SCALAR",
+                      "name": "String",
+                      "ofType": null
+                    }
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "interfaces": [],
+            "enumValues": [],
+            "possibleTypes": []
+          },
+          {
+            "kind": "INPUT_OBJECT",
             "name": "OneOfInput",
             "description": "Exactly one of the fields.",
             "specifiedByURL": null,
@@ -1923,6 +1973,37 @@
                   "kind": "OBJECT",
                   "name": "Nullability",
                   "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "omittable",
+                "description": null,
+                "args": [
+                  {
+                    "name": "input",
+                    "description": null,
+                    "type": {
+                      "kind": "NON_NULL",
+                      "name": null,
+                      "ofType": {
+                        "kind": "INPUT_OBJECT",
+                        "name": "OmittableInput",
+                        "ofType": null
+                      }
+                    },
+                    "defaultValue": null
+                  }
+                ],
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
                 },
                 "isDeprecated": false,
                 "deprecationReason": null
@@ -3547,6 +3628,56 @@
                   "ofType": null
                 },
                 "defaultValue": "\"No longer supported\""
+              }
+            ]
+          },
+          {
+            "name": "goField",
+            "description": null,
+            "locations": [
+              "INPUT_FIELD_DEFINITION",
+              "FIELD_DEFINITION"
+            ],
+            "args": [
+              {
+                "name": "forceResolver",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "name",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "omittable",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "type",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null
               }
             ]
           },
