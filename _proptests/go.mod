@@ -8,7 +8,7 @@
 // target in CI.
 module github.com/99designs/gqlgen/_proptests
 
-go 1.26.0
+go 1.27.0
 
 replace github.com/99designs/gqlgen => ../
 
