@@ -136,9 +136,9 @@ func (t Websocket) Do(w http.ResponseWriter, r *http.Request, exec graphql.Graph
 		// clients are required to send a subprotocol, to be backward compatible with the previous
 		// implementation we select
 		// "graphql-ws" by default
-		me = graphqlwsMessageExchanger{c: ws}
+		me = graphqlwsMessageExchanger{c: ws, exec: exec}
 	case graphqltransportwsSubprotocol:
-		me = graphqltransportwsMessageExchanger{c: ws}
+		me = graphqltransportwsMessageExchanger{c: ws, exec: exec}
 	}
 
 	readLimit := int64(defaultPayloadReadLimit)
