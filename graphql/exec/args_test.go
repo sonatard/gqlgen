@@ -10,8 +10,8 @@ import (
 func TestParseArgs(t *testing.T) {
 	ctx := context.Background()
 	args := []Arg[*testEC]{
-		{Name: "x", Type: inInt},
-		{Name: "note", Type: inString},
+		{Name: "x", Type: inInt.In},
+		{Name: "note", Type: inString.In},
 	}
 
 	got, err := ParseArgs(ctx, nil, args, map[string]any{"x": 3})
@@ -31,7 +31,7 @@ func TestParseArgsDirectives(t *testing.T) {
 		require.IsType(t, map[string]any{}, obj)
 	}
 	args := []Arg[*testEC]{
-		{Name: "note", NilOK: true, Directives: returning(nil, count), Type: inString},
+		{Name: "note", NilOK: true, Directives: returning(nil, count), Type: inString.In},
 	}
 	got, err := ParseArgs(ctx, nil, args, map[string]any{"note": "x"})
 	require.NoError(t, err)
@@ -47,7 +47,7 @@ func TestParseArgsDirectives(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, calls)
 
-	args = []Arg[*testEC]{{Name: "x", Directives: returning(nil, count), Type: inInt}}
+	args = []Arg[*testEC]{{Name: "x", Directives: returning(nil, count), Type: inInt.In}}
 	_, err = ParseArgs(ctx, nil, args, map[string]any{"x": 1})
 	require.EqualError(t, err, "input: x unexpected type <nil> from directive, should be int")
 

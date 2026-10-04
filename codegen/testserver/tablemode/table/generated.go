@@ -1001,7 +1001,7 @@ var inUnmarshalOString2ᚖstring = exec.InOf(unmarshalOString2ᚖstring)
 var inUnmarshalOTime2ᚖtimeᚐTime = exec.InOf(unmarshalOTime2ᚖtimeᚐTime)
 
 var directiveAuth = exec.DirectiveDef[*executionContext]{Name: "auth", Args: []exec.Arg[*executionContext]{
-	{Name: "role", Type: inUnmarshalNRole2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRole},
+	{Name: "role", Type: inUnmarshalNRole2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRole.In},
 },
 	Call: func(ctx context.Context, ec *executionContext, obj any, n graphql.Resolver, args map[string]any) (any, error) {
 		if ec.Directives.Auth == nil {
@@ -1012,8 +1012,8 @@ var directiveAuth = exec.DirectiveDef[*executionContext]{Name: "auth", Args: []e
 }
 
 var directiveLength = exec.DirectiveDef[*executionContext]{Name: "length", Args: []exec.Arg[*executionContext]{
-	{Name: "min", Type: inUnmarshalNInt2int},
-	{Name: "max", Type: inUnmarshalOInt2ᚖint},
+	{Name: "min", Type: inUnmarshalNInt2int.In},
+	{Name: "max", Type: inUnmarshalOInt2ᚖint.In},
 },
 	Call: func(ctx context.Context, ec *executionContext, obj any, n graphql.Resolver, args map[string]any) (any, error) {
 		if ec.Directives.Length == nil {
@@ -1217,9 +1217,9 @@ var inputMapInput = exec.Input[*executionContext]{Name: "MapInput", GoType: "map
 
 func init() {
 	inputMapInput.Fields = []exec.InputField[*executionContext]{
-		{Name: "name", Default: "unnamed", Type: inUnmarshalOString2ᚖstring, Set: func(it, v any) { x, _ := v.(*string); (*it.(*map[string]any))["name"] = x }},
-		{Name: "size", Type: inUnmarshalOInt2ᚖint, Set: func(it, v any) { x, _ := v.(*int); (*it.(*map[string]any))["size"] = x }},
-		{Name: "role", Type: inUnmarshalORole2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRole, Set: func(it, v any) { x, _ := v.(*models.Role); (*it.(*map[string]any))["role"] = x }},
+		exec.InputSet(exec.InputField[*executionContext]{Name: "name", Default: "unnamed"}, inUnmarshalOString2ᚖstring, func(it *map[string]any, v *string) { (*it)["name"] = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "size"}, inUnmarshalOInt2ᚖint, func(it *map[string]any, v *int) { (*it)["size"] = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "role"}, inUnmarshalORole2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRole, func(it *map[string]any, v *models.Role) { (*it)["role"] = v }),
 	}
 }
 
@@ -1239,9 +1239,9 @@ var inputNestedInput = exec.Input[*executionContext]{Name: "NestedInput", GoType
 
 func init() {
 	inputNestedInput.Fields = []exec.InputField[*executionContext]{
-		{Name: "value", Default: "default", Type: inUnmarshalNString2string, Set: func(it, v any) { it.(*models.NestedInput).Value, _ = v.(string) }},
-		{Name: "numbers", Type: inUnmarshalOInt2ᚕintᚄ, Set: func(it, v any) { it.(*models.NestedInput).Numbers, _ = v.([]int) }},
-		{Name: "deeper", Type: inUnmarshalONestedInput2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNestedInput, Set: func(it, v any) { it.(*models.NestedInput).Deeper, _ = v.(*models.NestedInput) }},
+		exec.InputSet(exec.InputField[*executionContext]{Name: "value", Default: "default"}, inUnmarshalNString2string, func(it *models.NestedInput, v string) { it.Value = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "numbers"}, inUnmarshalOInt2ᚕintᚄ, func(it *models.NestedInput, v []int) { it.Numbers = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "deeper"}, inUnmarshalONestedInput2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNestedInput, func(it *models.NestedInput, v *models.NestedInput) { it.Deeper = v }),
 	}
 }
 
@@ -1261,8 +1261,8 @@ var inputOmittableInput = exec.Input[*executionContext]{Name: "OmittableInput", 
 
 func init() {
 	inputOmittableInput.Fields = []exec.InputField[*executionContext]{
-		{Name: "value", Type: inUnmarshalOString2ᚖstring, Set: func(it, v any) { x, _ := v.(*string); it.(*models.OmittableInput).Value = graphql.OmittableOf(x) }},
-		{Name: "count", Type: inUnmarshalOInt2ᚖint, Set: func(it, v any) { x, _ := v.(*int); it.(*models.OmittableInput).Count = graphql.OmittableOf(x) }},
+		exec.InputSet(exec.InputField[*executionContext]{Name: "value"}, inUnmarshalOString2ᚖstring, func(it *models.OmittableInput, v *string) { it.Value = graphql.OmittableOf(v) }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "count"}, inUnmarshalOInt2ᚖint, func(it *models.OmittableInput, v *int) { it.Count = graphql.OmittableOf(v) }),
 	}
 }
 
@@ -1282,8 +1282,8 @@ var inputResolvedInput = exec.Input[*executionContext]{Name: "ResolvedInput", Go
 
 func init() {
 	inputResolvedInput.Fields = []exec.InputField[*executionContext]{
-		{Name: "label", Type: inUnmarshalNString2string, Set: func(it, v any) { it.(*models.ResolvedInput).Label, _ = v.(string) }},
-		{Name: "shout", Type: inUnmarshalOString2ᚖstring, SetWith: func(ctx context.Context, ec *executionContext, it, v any) error {
+		exec.InputSet(exec.InputField[*executionContext]{Name: "label"}, inUnmarshalNString2string, func(it *models.ResolvedInput, v string) { it.Label = v }),
+		{Name: "shout", Type: inUnmarshalOString2ᚖstring.In, SetWith: func(ctx context.Context, ec *executionContext, it, v any) error {
 			data, _ := v.(*string)
 			return ec.Resolvers.ResolvedInput().Shout(ctx, it.(*models.ResolvedInput), data)
 		}},
@@ -1306,14 +1306,14 @@ var inputReviewInput = exec.Input[*executionContext]{Name: "ReviewInput", GoType
 
 func init() {
 	inputReviewInput.Fields = []exec.InputField[*executionContext]{
-		{Name: "stars", Type: inUnmarshalNInt2int, Set: func(it, v any) { it.(*models.ReviewInput).Stars, _ = v.(int) }},
-		{Name: "commentary", NilOK: true, Directives: exec.Dirs(directiveLength.With(map[string]any{"min": 1, "max": 20})), Type: inUnmarshalOString2ᚖstring, Set: func(it, v any) { it.(*models.ReviewInput).Commentary, _ = v.(*string) }},
-		{Name: "time", Type: inUnmarshalOTime2ᚖtimeᚐTime, Set: func(it, v any) { it.(*models.ReviewInput).Time, _ = v.(*time.Time) }},
-		{Name: "tags", Default: []any{"fresh"}, Type: inUnmarshalOString2ᚕstringᚄ, Set: func(it, v any) { it.(*models.ReviewInput).Tags, _ = v.([]string) }},
-		{Name: "nested", Type: inUnmarshalONestedInput2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNestedInput, Set: func(it, v any) { it.(*models.ReviewInput).Nested, _ = v.(*models.NestedInput) }},
-		{Name: "note", NilOK: true, Directives: exec.Dirs(directiveNullify.With(nil)), Type: inUnmarshalOString2ᚖstring, Set: func(it, v any) { it.(*models.ReviewInput).Note, _ = v.(*string) }},
-		{Name: "episode", Default: "JEDI", Type: inUnmarshalOEpisode2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode, Set: func(it, v any) { it.(*models.ReviewInput).Episode, _ = v.(*models.Episode) }},
-		{Name: "wallet", Type: inUnmarshalOMoney2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐMoney, Set: func(it, v any) { it.(*models.ReviewInput).Wallet, _ = v.(*models.Money) }},
+		exec.InputSet(exec.InputField[*executionContext]{Name: "stars"}, inUnmarshalNInt2int, func(it *models.ReviewInput, v int) { it.Stars = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "commentary", NilOK: true, Directives: exec.Dirs(directiveLength.With(map[string]any{"min": 1, "max": 20}))}, inUnmarshalOString2ᚖstring, func(it *models.ReviewInput, v *string) { it.Commentary = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "time"}, inUnmarshalOTime2ᚖtimeᚐTime, func(it *models.ReviewInput, v *time.Time) { it.Time = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "tags", Default: []any{"fresh"}}, inUnmarshalOString2ᚕstringᚄ, func(it *models.ReviewInput, v []string) { it.Tags = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "nested"}, inUnmarshalONestedInput2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNestedInput, func(it *models.ReviewInput, v *models.NestedInput) { it.Nested = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "note", NilOK: true, Directives: exec.Dirs(directiveNullify.With(nil))}, inUnmarshalOString2ᚖstring, func(it *models.ReviewInput, v *string) { it.Note = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "episode", Default: "JEDI"}, inUnmarshalOEpisode2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode, func(it *models.ReviewInput, v *models.Episode) { it.Episode = v }),
+		exec.InputSet(exec.InputField[*executionContext]{Name: "wallet"}, inUnmarshalOMoney2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐMoney, func(it *models.ReviewInput, v *models.Money) { it.Wallet = v }),
 	}
 	inputReviewInput.Directives = exec.Dirs(directiveValidReview.With(nil))
 }
@@ -1427,16 +1427,16 @@ var objectDroid = exec.Object[*executionContext]{Name: "Droid", Implementors: []
 
 func init() {
 	objectDroid.Init([]exec.Field[*executionContext]{
-		{Name: "id", NonNull: true, Leaf: "ID", Out: outMarshalNID2string, Get: func(obj any) any { return obj.(*models.Droid).ID }},
-		{Name: "name", NonNull: true, Leaf: "String", Out: outMarshalNString2string, Get: func(obj any) any { return obj.(*models.Droid).Name }},
-		{Name: "friends", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Abstract: "INTERFACE", Out: outMarshalNCharacter2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐCharacterᚄ, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		exec.FieldGet(exec.Field[*executionContext]{Name: "id", NonNull: true, Leaf: "ID"}, outMarshalNID2string, func(obj *models.Droid) string { return obj.ID }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "name", NonNull: true, Leaf: "String"}, outMarshalNString2string, func(obj *models.Droid) string { return obj.Name }),
+		{Name: "friends", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Abstract: "INTERFACE", Out: outMarshalNCharacter2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐCharacterᚄ.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Droid().Friends(ctx, obj.(*models.Droid))
 		}},
-		{Name: "appearsIn", NonNull: true, Leaf: "Episode", Out: outMarshalNEpisode2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisodeᚄ, Get: func(obj any) any { return obj.(*models.Droid).AppearsIn }},
-		{Name: "primaryFunction", NonNull: true, Concurrent: true, IsMethod: true, Leaf: "String", Out: outMarshalNString2string, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		exec.FieldGet(exec.Field[*executionContext]{Name: "appearsIn", NonNull: true, Leaf: "Episode"}, outMarshalNEpisode2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisodeᚄ, func(obj *models.Droid) []models.Episode { return obj.AppearsIn }),
+		{Name: "primaryFunction", NonNull: true, Concurrent: true, IsMethod: true, Leaf: "String", Out: outMarshalNString2string.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return obj.(*models.Droid).PrimaryFunction(ctx)
 		}},
-		{Name: "serial", Leaf: "Int", Out: outMarshalOInt2ᚖint, Get: func(obj any) any { return obj.(*models.Droid).Serial }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "serial", Leaf: "Int"}, outMarshalOInt2ᚖint, func(obj *models.Droid) *int { return obj.Serial }),
 	})
 }
 
@@ -1444,23 +1444,23 @@ var objectHuman = exec.Object[*executionContext]{Name: "Human", Implementors: []
 
 func init() {
 	objectHuman.Init([]exec.Field[*executionContext]{
-		{Name: "id", NonNull: true, Leaf: "ID", Out: outMarshalNID2string, Get: func(obj any) any { return obj.(*models.Human).ID }},
-		{Name: "name", NonNull: true, Leaf: "String", Directives: exec.Dirs(directiveUpper.With(nil)), Out: outMarshalNString2string, Get: func(obj any) any { return obj.(*models.Human).Name }},
-		{Name: "friends", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Abstract: "INTERFACE", Out: outMarshalNCharacter2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐCharacterᚄ, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		exec.FieldGet(exec.Field[*executionContext]{Name: "id", NonNull: true, Leaf: "ID"}, outMarshalNID2string, func(obj *models.Human) string { return obj.ID }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "name", NonNull: true, Leaf: "String", Directives: exec.Dirs(directiveUpper.With(nil))}, outMarshalNString2string, func(obj *models.Human) string { return obj.Name }),
+		{Name: "friends", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Abstract: "INTERFACE", Out: outMarshalNCharacter2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐCharacterᚄ.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Human().Friends(ctx, obj.(*models.Human))
 		}},
-		{Name: "appearsIn", NonNull: true, Leaf: "Episode", Out: outMarshalNEpisode2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisodeᚄ, Get: func(obj any) any { return obj.(*models.Human).AppearsIn }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "appearsIn", NonNull: true, Leaf: "Episode"}, outMarshalNEpisode2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisodeᚄ, func(obj *models.Human) []models.Episode { return obj.AppearsIn }),
 		{Name: "height", NonNull: true, IsMethod: true, Leaf: "Float", Args: []exec.Arg[*executionContext]{
-			{Name: "unit", Type: inUnmarshalOLengthUnit2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐLengthUnit},
-		}, Out: outMarshalNFloat2float64, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "unit", Type: inUnmarshalOLengthUnit2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐLengthUnit.In},
+		}, Out: outMarshalNFloat2float64.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return obj.(*models.Human).Height(args["unit"].(models.LengthUnit)), nil
 		}},
-		{Name: "mass", Leaf: "Float", Out: outMarshalOFloat2ᚖfloat64, Get: func(obj any) any { return obj.(*models.Human).Mass }},
-		{Name: "starships", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectStarship, Out: outMarshalNStarship2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐStarshipᚄ, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		exec.FieldGet(exec.Field[*executionContext]{Name: "mass", Leaf: "Float"}, outMarshalOFloat2ᚖfloat64, func(obj *models.Human) *float64 { return obj.Mass }),
+		{Name: "starships", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectStarship, Out: outMarshalNStarship2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐStarshipᚄ.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Human().Starships(ctx, obj.(*models.Human))
 		}},
-		{Name: "secret", Leaf: "String", Directives: exec.Dirs(directiveAuth.With(map[string]any{"role": "ADMIN"})), Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*models.Human).Secret }},
-		{Name: "nickname", IsMethod: true, Leaf: "String", Out: outMarshalOString2string, Resolve: func(ctx context.Context, ec *executionContext, o any, args map[string]any) (any, error) {
+		exec.FieldGet(exec.Field[*executionContext]{Name: "secret", Leaf: "String", Directives: exec.Dirs(directiveAuth.With(map[string]any{"role": "ADMIN"}))}, outMarshalOString2ᚖstring, func(obj *models.Human) *string { return obj.Secret }),
+		{Name: "nickname", IsMethod: true, Leaf: "String", Out: outMarshalOString2string.Out, Resolve: func(ctx context.Context, ec *executionContext, o any, args map[string]any) (any, error) {
 			obj := o.(*models.Human)
 			v, ok := obj.Nickname()
 			if !ok {
@@ -1468,8 +1468,8 @@ func init() {
 			}
 			return v, nil
 		}},
-		{Name: "tags", Leaf: "String", Out: outMarshalOString2ᚕᚖstring, Get: func(obj any) any { return obj.(*models.Human).Tags }},
-		{Name: "wallet", Leaf: "Money", Out: outMarshalOMoney2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐMoney, Get: func(obj any) any { return obj.(*models.Human).Wallet }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "tags", Leaf: "String"}, outMarshalOString2ᚕᚖstring, func(obj *models.Human) []*string { return obj.Tags }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "wallet", Leaf: "Money"}, outMarshalOMoney2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐMoney, func(obj *models.Human) *models.Money { return obj.Wallet }),
 	})
 }
 
@@ -1478,14 +1478,14 @@ var objectMutation = exec.Object[*executionContext]{Name: "Mutation", Implemento
 func init() {
 	objectMutation.Init([]exec.Field[*executionContext]{
 		{Name: "createReview", IsMethod: true, IsResolver: true, Children: &objectReview, Args: []exec.Arg[*executionContext]{
-			{Name: "episode", Type: inUnmarshalNEpisode2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode},
-			{Name: "review", Type: inUnmarshalNReviewInput2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewInput},
-		}, Out: outMarshalOReview2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReview, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "episode", Type: inUnmarshalNEpisode2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode.In},
+			{Name: "review", Type: inUnmarshalNReviewInput2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewInput.In},
+		}, Out: outMarshalOReview2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReview.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Mutation().CreateReview(ctx, args["episode"].(models.Episode), args["review"].(models.ReviewInput))
 		}},
 		{Name: "setRole", NonNull: true, IsMethod: true, IsResolver: true, Leaf: "Role", Args: []exec.Arg[*executionContext]{
-			{Name: "role", Type: inUnmarshalNRole2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRole},
-		}, Out: outMarshalNRole2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRole, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "role", Type: inUnmarshalNRole2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRole.In},
+		}, Out: outMarshalNRole2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRole.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Mutation().SetRole(ctx, args["role"].(models.Role))
 		}},
 	})
@@ -1495,10 +1495,10 @@ var objectNullChain = exec.Object[*executionContext]{Name: "NullChain", Implemen
 
 func init() {
 	objectNullChain.Init([]exec.Field[*executionContext]{
-		{Name: "required", NonNull: true, Leaf: "String", Out: outMarshalNString2ᚖstring, Get: func(obj any) any { return obj.(*models.NullChain).Required }},
-		{Name: "optional", Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*models.NullChain).Optional }},
-		{Name: "child", Children: &objectNullChain, Out: outMarshalONullChain2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNullChain, Get: func(obj any) any { return obj.(*models.NullChain).Child }},
-		{Name: "requiredChild", NonNull: true, Children: &objectNullChain, Out: outMarshalNNullChain2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNullChain, Get: func(obj any) any { return obj.(*models.NullChain).RequiredChild }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "required", NonNull: true, Leaf: "String"}, outMarshalNString2ᚖstring, func(obj *models.NullChain) *string { return obj.Required }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "optional", Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *models.NullChain) *string { return obj.Optional }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "child", Children: &objectNullChain}, outMarshalONullChain2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNullChain, func(obj *models.NullChain) *models.NullChain { return obj.Child }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "requiredChild", NonNull: true, Children: &objectNullChain}, outMarshalNNullChain2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNullChain, func(obj *models.NullChain) *models.NullChain { return obj.RequiredChild }),
 	})
 }
 
@@ -1507,111 +1507,111 @@ var objectQuery = exec.Object[*executionContext]{Name: "Query", Implementors: []
 func init() {
 	objectQuery.Init([]exec.Field[*executionContext]{
 		{Name: "hero", Concurrent: true, IsMethod: true, IsResolver: true, Abstract: "INTERFACE", Args: []exec.Arg[*executionContext]{
-			{Name: "episode", Type: inUnmarshalOEpisode2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode},
-		}, Out: outMarshalOCharacter2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐCharacter, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "episode", Type: inUnmarshalOEpisode2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode.In},
+		}, Out: outMarshalOCharacter2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐCharacter.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Hero(ctx, args["episode"].(*models.Episode))
 		}},
 		{Name: "human", Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectHuman, Args: []exec.Arg[*executionContext]{
-			{Name: "id", Type: inUnmarshalNID2string},
-		}, Out: outMarshalOHuman2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐHuman, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "id", Type: inUnmarshalNID2string.In},
+		}, Out: outMarshalOHuman2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐHuman.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Human(ctx, args["id"].(string))
 		}},
 		{Name: "droid", Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectDroid, Args: []exec.Arg[*executionContext]{
-			{Name: "id", Type: inUnmarshalNID2string},
-		}, Directives: exec.Dirs(directiveAuth.With(map[string]any{"role": "USER"})), Out: outMarshalODroid2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐDroid, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "id", Type: inUnmarshalNID2string.In},
+		}, Directives: exec.Dirs(directiveAuth.With(map[string]any{"role": "USER"})), Out: outMarshalODroid2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐDroid.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Droid(ctx, args["id"].(string))
 		}},
 		{Name: "node", Concurrent: true, IsMethod: true, IsResolver: true, Abstract: "INTERFACE", Args: []exec.Arg[*executionContext]{
-			{Name: "id", Type: inUnmarshalNID2string},
-		}, Out: outMarshalONode2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNode, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "id", Type: inUnmarshalNID2string.In},
+		}, Out: outMarshalONode2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNode.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Node(ctx, args["id"].(string))
 		}},
 		{Name: "search", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "SearchResult", Args: []exec.Arg[*executionContext]{
-			{Name: "text", Directives: exec.Dirs(directiveLength.With(map[string]any{"min": 1})), Type: inUnmarshalNString2string},
-		}, Out: outMarshalNSearchResult2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐSearchResultᚄ, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "text", Directives: exec.Dirs(directiveLength.With(map[string]any{"min": 1})), Type: inUnmarshalNString2string.In},
+		}, Out: outMarshalNSearchResult2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐSearchResultᚄ.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Search(ctx, args["text"].(string))
 		}},
 		{Name: "starship", Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectStarship, Args: []exec.Arg[*executionContext]{
-			{Name: "id", Type: inUnmarshalNID2string},
-		}, Out: outMarshalOStarship2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐStarship, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "id", Type: inUnmarshalNID2string.In},
+		}, Out: outMarshalOStarship2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐStarship.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Starship(ctx, args["id"].(string))
 		}},
 		{Name: "reviews", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectReview, Args: []exec.Arg[*executionContext]{
-			{Name: "episode", Type: inUnmarshalNEpisode2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode},
-			{Name: "since", Type: inUnmarshalOTime2ᚖtimeᚐTime},
-		}, Out: outMarshalNReview2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewᚄ, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "episode", Type: inUnmarshalNEpisode2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode.In},
+			{Name: "since", Type: inUnmarshalOTime2ᚖtimeᚐTime.In},
+		}, Out: outMarshalNReview2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewᚄ.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Reviews(ctx, args["episode"].(models.Episode), args["since"].(*time.Time))
 		}},
 		{Name: "echoReview", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectReview, Args: []exec.Arg[*executionContext]{
-			{Name: "input", Type: inUnmarshalNReviewInput2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewInput},
-		}, Out: outMarshalNReview2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReview, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "input", Type: inUnmarshalNReviewInput2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewInput.In},
+		}, Out: outMarshalNReview2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReview.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().EchoReview(ctx, args["input"].(models.ReviewInput))
 		}},
 		{Name: "echoReviews", Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectReview, Args: []exec.Arg[*executionContext]{
-			{Name: "inputs", Type: inUnmarshalOReviewInput2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewInputᚄ},
-		}, Out: outMarshalOReview2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewᚄ, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "inputs", Type: inUnmarshalOReviewInput2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewInputᚄ.In},
+		}, Out: outMarshalOReview2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐReviewᚄ.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().EchoReviews(ctx, args["inputs"].([]*models.ReviewInput))
 		}},
 		{Name: "echoMap", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "Map", Args: []exec.Arg[*executionContext]{
-			{Name: "input", Type: inUnmarshalOMapInput2map},
-		}, Out: outMarshalNMap2map, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "input", Type: inUnmarshalOMapInput2map.In},
+		}, Out: outMarshalNMap2map.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().EchoMap(ctx, args["input"].(map[string]any))
 		}},
 		{Name: "echoResolved", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Args: []exec.Arg[*executionContext]{
-			{Name: "input", Type: inUnmarshalNResolvedInput2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐResolvedInput},
-		}, Out: outMarshalNString2string, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "input", Type: inUnmarshalNResolvedInput2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐResolvedInput.In},
+		}, Out: outMarshalNString2string.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().EchoResolved(ctx, args["input"].(models.ResolvedInput))
 		}},
 		{Name: "echoOmittable", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Args: []exec.Arg[*executionContext]{
-			{Name: "input", Type: inUnmarshalNOmittableInput2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐOmittableInput},
-		}, Out: outMarshalNString2string, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "input", Type: inUnmarshalNOmittableInput2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐOmittableInput.In},
+		}, Out: outMarshalNString2string.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().EchoOmittable(ctx, args["input"].(models.OmittableInput))
 		}},
 		{Name: "echoNullified", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Args: []exec.Arg[*executionContext]{
-			{Name: "value", NilOK: true, Directives: exec.Dirs(directiveNullify.With(nil)), Type: inUnmarshalOString2ᚖstring},
-		}, Out: outMarshalNString2string, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "value", NilOK: true, Directives: exec.Dirs(directiveNullify.With(nil)), Type: inUnmarshalOString2ᚖstring.In},
+		}, Out: outMarshalNString2string.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().EchoNullified(ctx, args["value"].(*string))
 		}},
 		{Name: "money", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "Money", Args: []exec.Arg[*executionContext]{
-			{Name: "amount", Type: inUnmarshalNMoney2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐMoney},
-		}, Out: outMarshalNMoney2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐMoney, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "amount", Type: inUnmarshalNMoney2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐMoney.In},
+		}, Out: outMarshalNMoney2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐMoney.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Money(ctx, args["amount"].(models.Money))
 		}},
-		{Name: "roles", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "Role", Out: outMarshalNRole2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRoleᚄ, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		{Name: "roles", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "Role", Out: outMarshalNRole2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐRoleᚄ.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Roles(ctx)
 		}},
 		{Name: "withDefaults", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Args: []exec.Arg[*executionContext]{
-			{Name: "a", Type: inUnmarshalOInt2ᚖint},
-			{Name: "b", Type: inUnmarshalOString2ᚖstring},
-			{Name: "c", Type: inUnmarshalOEpisode2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisodeᚄ},
-			{Name: "d", Type: inUnmarshalONestedInput2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNestedInput},
-		}, Out: outMarshalNString2string, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "a", Type: inUnmarshalOInt2ᚖint.In},
+			{Name: "b", Type: inUnmarshalOString2ᚖstring.In},
+			{Name: "c", Type: inUnmarshalOEpisode2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisodeᚄ.In},
+			{Name: "d", Type: inUnmarshalONestedInput2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNestedInput.In},
+		}, Out: outMarshalNString2string.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().WithDefaults(ctx, args["a"].(*int), args["b"].(*string), args["c"].([]models.Episode), args["d"].(*models.NestedInput))
 		}},
-		{Name: "nullChain", Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectNullChain, Out: outMarshalONullChain2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNullChain, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		{Name: "nullChain", Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectNullChain, Out: outMarshalONullChain2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐNullChain.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().NullChain(ctx)
 		}},
-		{Name: "failing", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Out: outMarshalNString2string, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		{Name: "failing", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Out: outMarshalNString2string.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Failing(ctx)
 		}},
-		{Name: "failingOptional", Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		{Name: "failingOptional", Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Out: outMarshalOString2ᚖstring.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().FailingOptional(ctx)
 		}},
-		{Name: "panicking", Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		{Name: "panicking", Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "String", Out: outMarshalOString2ᚖstring.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Panicking(ctx)
 		}},
-		{Name: "summary", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectSummary, Out: outMarshalNSummary2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐSummary, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		{Name: "summary", NonNull: true, Concurrent: true, IsMethod: true, IsResolver: true, Children: &objectSummary, Out: outMarshalNSummary2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐSummary.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().Summary(ctx)
 		}},
-		{Name: "secretNumber", Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "Int", Directives: exec.Dirs(directiveAuth.With(map[string]any{"role": "ADMIN"})), Out: outMarshalOInt2ᚖint, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		{Name: "secretNumber", Concurrent: true, IsMethod: true, IsResolver: true, Leaf: "Int", Directives: exec.Dirs(directiveAuth.With(map[string]any{"role": "ADMIN"})), Out: outMarshalOInt2ᚖint.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.Resolvers.Query().SecretNumber(ctx)
 		}},
 		{Name: "__type", IsMethod: true, Children: &object__Type, Args: []exec.Arg[*executionContext]{
-			{Name: "name", Type: inUnmarshalNString2string},
-		}, Out: outMarshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "name", Type: inUnmarshalNString2string.In},
+		}, Out: outMarshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.IntrospectType(args["name"].(string))
 		}},
-		{Name: "__schema", IsMethod: true, Children: &object__Schema, Out: outMarshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+		{Name: "__schema", IsMethod: true, Children: &object__Schema, Out: outMarshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return ec.IntrospectSchema()
 		}},
 	})
@@ -1621,11 +1621,11 @@ var objectReview = exec.Object[*executionContext]{Name: "Review", Implementors: 
 
 func init() {
 	objectReview.Init([]exec.Field[*executionContext]{
-		{Name: "stars", NonNull: true, Leaf: "Int", Out: outMarshalNInt2int, Get: func(obj any) any { return obj.(*models.Review).Stars }},
-		{Name: "commentary", Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*models.Review).Commentary }},
-		{Name: "time", Leaf: "Time", Out: outMarshalOTime2ᚖtimeᚐTime, Get: func(obj any) any { return obj.(*models.Review).Time }},
-		{Name: "tags", NonNull: true, Leaf: "String", Out: outMarshalNString2ᚕstringᚄ, Get: func(obj any) any { return obj.(*models.Review).Tags }},
-		{Name: "episode", Leaf: "Episode", Out: outMarshalOEpisode2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode, Get: func(obj any) any { return obj.(*models.Review).Episode }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "stars", NonNull: true, Leaf: "Int"}, outMarshalNInt2int, func(obj *models.Review) int { return obj.Stars }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "commentary", Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *models.Review) *string { return obj.Commentary }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "time", Leaf: "Time"}, outMarshalOTime2ᚖtimeᚐTime, func(obj *models.Review) *time.Time { return obj.Time }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "tags", NonNull: true, Leaf: "String"}, outMarshalNString2ᚕstringᚄ, func(obj *models.Review) []string { return obj.Tags }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "episode", Leaf: "Episode"}, outMarshalOEpisode2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐEpisode, func(obj *models.Review) *models.Episode { return obj.Episode }),
 	})
 }
 
@@ -1633,14 +1633,14 @@ var objectStarship = exec.Object[*executionContext]{Name: "Starship", Implemento
 
 func init() {
 	objectStarship.Init([]exec.Field[*executionContext]{
-		{Name: "id", NonNull: true, Leaf: "ID", Out: outMarshalNID2string, Get: func(obj any) any { return obj.(*models.Starship).ID }},
-		{Name: "name", NonNull: true, Leaf: "String", Out: outMarshalNString2string, Get: func(obj any) any { return obj.(*models.Starship).Name }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "id", NonNull: true, Leaf: "ID"}, outMarshalNID2string, func(obj *models.Starship) string { return obj.ID }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "name", NonNull: true, Leaf: "String"}, outMarshalNString2string, func(obj *models.Starship) string { return obj.Name }),
 		{Name: "length", NonNull: true, IsMethod: true, Leaf: "Float", Args: []exec.Arg[*executionContext]{
-			{Name: "unit", Type: inUnmarshalOLengthUnit2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐLengthUnit},
-		}, Out: outMarshalNFloat2float64, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "unit", Type: inUnmarshalOLengthUnit2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐLengthUnit.In},
+		}, Out: outMarshalNFloat2float64.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return obj.(*models.Starship).Length(args["unit"].(models.LengthUnit))
 		}},
-		{Name: "history", NonNull: true, Leaf: "Int", Out: outMarshalNInt2ᚕᚕintᚄ, Get: func(obj any) any { return obj.(*models.Starship).History }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "history", NonNull: true, Leaf: "Int"}, outMarshalNInt2ᚕᚕintᚄ, func(obj *models.Starship) [][]int { return obj.History }),
 	})
 }
 
@@ -1648,10 +1648,10 @@ var objectSummary = exec.Object[*executionContext]{Name: "Summary", Implementors
 
 func init() {
 	objectSummary.Init([]exec.Field[*executionContext]{
-		{Name: "label", NonNull: true, Leaf: "String", Out: outMarshalNString2string, Get: func(obj any) any { return obj.(*models.Summary).Label }},
-		{Name: "count", NonNull: true, Leaf: "Int", Out: outMarshalNInt2int, Get: func(obj any) any { return obj.(*models.Summary).Count }},
-		{Name: "extra", Leaf: "Map", Out: outMarshalOMap2map, Get: func(obj any) any { return obj.(*models.Summary).Extra }},
-		{Name: "query", NonNull: true, Children: &objectQuery, Out: outMarshalNQuery2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐQuery, RootValue: true, Get: func(obj any) any { return models.Query{} }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "label", NonNull: true, Leaf: "String"}, outMarshalNString2string, func(obj *models.Summary) string { return obj.Label }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "count", NonNull: true, Leaf: "Int"}, outMarshalNInt2int, func(obj *models.Summary) int { return obj.Count }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "extra", Leaf: "Map"}, outMarshalOMap2map, func(obj *models.Summary) map[string]any { return obj.Extra }),
+		{Name: "query", NonNull: true, Children: &objectQuery, Out: outMarshalNQuery2githubᚗcomᚋ99designsᚋgqlgenᚋcodegenᚋtestserverᚋtablemodeᚋmodelsᚐQuery.Out, RootValue: true, Get: func(any) any { return models.Query{} }},
 	})
 }
 
@@ -1659,13 +1659,13 @@ var object__Directive = exec.Object[*executionContext]{Name: "__Directive", Impl
 
 func init() {
 	object__Directive.Init([]exec.Field[*executionContext]{
-		{Name: "name", NonNull: true, Leaf: "String", Out: outMarshalNString2string, Get: func(obj any) any { return obj.(*introspection.Directive).Name }},
-		{Name: "description", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.Directive).Description() }},
-		{Name: "isRepeatable", NonNull: true, Leaf: "Boolean", Out: outMarshalNBoolean2bool, Get: func(obj any) any { return obj.(*introspection.Directive).IsRepeatable }},
-		{Name: "locations", NonNull: true, Leaf: "__DirectiveLocation", Out: outMarshalN__DirectiveLocation2ᚕstringᚄ, Get: func(obj any) any { return obj.(*introspection.Directive).Locations }},
-		{Name: "args", NonNull: true, Children: &object__InputValue, Args: []exec.Arg[*executionContext]{
-			{Name: "includeDeprecated", Type: inUnmarshalOBoolean2ᚖbool},
-		}, Out: outMarshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ, Get: func(obj any) any { return obj.(*introspection.Directive).Args }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "name", NonNull: true, Leaf: "String"}, outMarshalNString2string, func(obj *introspection.Directive) string { return obj.Name }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "description", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.Directive) *string { return obj.Description() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "isRepeatable", NonNull: true, Leaf: "Boolean"}, outMarshalNBoolean2bool, func(obj *introspection.Directive) bool { return obj.IsRepeatable }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "locations", NonNull: true, Leaf: "__DirectiveLocation"}, outMarshalN__DirectiveLocation2ᚕstringᚄ, func(obj *introspection.Directive) []string { return obj.Locations }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "args", NonNull: true, Children: &object__InputValue, Args: []exec.Arg[*executionContext]{
+			{Name: "includeDeprecated", Type: inUnmarshalOBoolean2ᚖbool.In},
+		}}, outMarshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ, func(obj *introspection.Directive) []introspection.InputValue { return obj.Args }),
 	})
 }
 
@@ -1673,10 +1673,10 @@ var object__EnumValue = exec.Object[*executionContext]{Name: "__EnumValue", Impl
 
 func init() {
 	object__EnumValue.Init([]exec.Field[*executionContext]{
-		{Name: "name", NonNull: true, Leaf: "String", Out: outMarshalNString2string, Get: func(obj any) any { return obj.(*introspection.EnumValue).Name }},
-		{Name: "description", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.EnumValue).Description() }},
-		{Name: "isDeprecated", NonNull: true, IsMethod: true, Leaf: "Boolean", Out: outMarshalNBoolean2bool, Get: func(obj any) any { return obj.(*introspection.EnumValue).IsDeprecated() }},
-		{Name: "deprecationReason", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.EnumValue).DeprecationReason() }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "name", NonNull: true, Leaf: "String"}, outMarshalNString2string, func(obj *introspection.EnumValue) string { return obj.Name }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "description", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.EnumValue) *string { return obj.Description() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "isDeprecated", NonNull: true, IsMethod: true, Leaf: "Boolean"}, outMarshalNBoolean2bool, func(obj *introspection.EnumValue) bool { return obj.IsDeprecated() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "deprecationReason", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.EnumValue) *string { return obj.DeprecationReason() }),
 	})
 }
 
@@ -1684,14 +1684,14 @@ var object__Field = exec.Object[*executionContext]{Name: "__Field", Implementors
 
 func init() {
 	object__Field.Init([]exec.Field[*executionContext]{
-		{Name: "name", NonNull: true, Leaf: "String", Out: outMarshalNString2string, Get: func(obj any) any { return obj.(*introspection.Field).Name }},
-		{Name: "description", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.Field).Description() }},
-		{Name: "args", NonNull: true, Children: &object__InputValue, Args: []exec.Arg[*executionContext]{
-			{Name: "includeDeprecated", Type: inUnmarshalOBoolean2ᚖbool},
-		}, Out: outMarshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ, Get: func(obj any) any { return obj.(*introspection.Field).Args }},
-		{Name: "type", NonNull: true, Children: &object__Type, Out: outMarshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, Get: func(obj any) any { return obj.(*introspection.Field).Type }},
-		{Name: "isDeprecated", NonNull: true, IsMethod: true, Leaf: "Boolean", Out: outMarshalNBoolean2bool, Get: func(obj any) any { return obj.(*introspection.Field).IsDeprecated() }},
-		{Name: "deprecationReason", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.Field).DeprecationReason() }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "name", NonNull: true, Leaf: "String"}, outMarshalNString2string, func(obj *introspection.Field) string { return obj.Name }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "description", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.Field) *string { return obj.Description() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "args", NonNull: true, Children: &object__InputValue, Args: []exec.Arg[*executionContext]{
+			{Name: "includeDeprecated", Type: inUnmarshalOBoolean2ᚖbool.In},
+		}}, outMarshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ, func(obj *introspection.Field) []introspection.InputValue { return obj.Args }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "type", NonNull: true, Children: &object__Type}, outMarshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, func(obj *introspection.Field) *introspection.Type { return obj.Type }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "isDeprecated", NonNull: true, IsMethod: true, Leaf: "Boolean"}, outMarshalNBoolean2bool, func(obj *introspection.Field) bool { return obj.IsDeprecated() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "deprecationReason", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.Field) *string { return obj.DeprecationReason() }),
 	})
 }
 
@@ -1699,12 +1699,12 @@ var object__InputValue = exec.Object[*executionContext]{Name: "__InputValue", Im
 
 func init() {
 	object__InputValue.Init([]exec.Field[*executionContext]{
-		{Name: "name", NonNull: true, Leaf: "String", Out: outMarshalNString2string, Get: func(obj any) any { return obj.(*introspection.InputValue).Name }},
-		{Name: "description", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.InputValue).Description() }},
-		{Name: "type", NonNull: true, Children: &object__Type, Out: outMarshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, Get: func(obj any) any { return obj.(*introspection.InputValue).Type }},
-		{Name: "defaultValue", Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.InputValue).DefaultValue }},
-		{Name: "isDeprecated", NonNull: true, IsMethod: true, Leaf: "Boolean", Out: outMarshalNBoolean2bool, Get: func(obj any) any { return obj.(*introspection.InputValue).IsDeprecated() }},
-		{Name: "deprecationReason", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.InputValue).DeprecationReason() }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "name", NonNull: true, Leaf: "String"}, outMarshalNString2string, func(obj *introspection.InputValue) string { return obj.Name }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "description", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.InputValue) *string { return obj.Description() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "type", NonNull: true, Children: &object__Type}, outMarshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, func(obj *introspection.InputValue) *introspection.Type { return obj.Type }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "defaultValue", Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.InputValue) *string { return obj.DefaultValue }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "isDeprecated", NonNull: true, IsMethod: true, Leaf: "Boolean"}, outMarshalNBoolean2bool, func(obj *introspection.InputValue) bool { return obj.IsDeprecated() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "deprecationReason", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.InputValue) *string { return obj.DeprecationReason() }),
 	})
 }
 
@@ -1712,12 +1712,12 @@ var object__Schema = exec.Object[*executionContext]{Name: "__Schema", Implemento
 
 func init() {
 	object__Schema.Init([]exec.Field[*executionContext]{
-		{Name: "description", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.Schema).Description() }},
-		{Name: "types", NonNull: true, IsMethod: true, Children: &object__Type, Out: outMarshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ, Get: func(obj any) any { return obj.(*introspection.Schema).Types() }},
-		{Name: "queryType", NonNull: true, IsMethod: true, Children: &object__Type, Out: outMarshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, Get: func(obj any) any { return obj.(*introspection.Schema).QueryType() }},
-		{Name: "mutationType", IsMethod: true, Children: &object__Type, Out: outMarshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, Get: func(obj any) any { return obj.(*introspection.Schema).MutationType() }},
-		{Name: "subscriptionType", IsMethod: true, Children: &object__Type, Out: outMarshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, Get: func(obj any) any { return obj.(*introspection.Schema).SubscriptionType() }},
-		{Name: "directives", NonNull: true, IsMethod: true, Children: &object__Directive, Out: outMarshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ, Get: func(obj any) any { return obj.(*introspection.Schema).Directives() }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "description", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.Schema) *string { return obj.Description() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "types", NonNull: true, IsMethod: true, Children: &object__Type}, outMarshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ, func(obj *introspection.Schema) []introspection.Type { return obj.Types() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "queryType", NonNull: true, IsMethod: true, Children: &object__Type}, outMarshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, func(obj *introspection.Schema) *introspection.Type { return obj.QueryType() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "mutationType", IsMethod: true, Children: &object__Type}, outMarshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, func(obj *introspection.Schema) *introspection.Type { return obj.MutationType() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "subscriptionType", IsMethod: true, Children: &object__Type}, outMarshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, func(obj *introspection.Schema) *introspection.Type { return obj.SubscriptionType() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "directives", NonNull: true, IsMethod: true, Children: &object__Directive}, outMarshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ, func(obj *introspection.Schema) []introspection.Directive { return obj.Directives() }),
 	})
 }
 
@@ -1725,25 +1725,25 @@ var object__Type = exec.Object[*executionContext]{Name: "__Type", Implementors: 
 
 func init() {
 	object__Type.Init([]exec.Field[*executionContext]{
-		{Name: "kind", NonNull: true, IsMethod: true, Leaf: "__TypeKind", Out: outMarshalN__TypeKind2string, Get: func(obj any) any { return obj.(*introspection.Type).Kind() }},
-		{Name: "name", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.Type).Name() }},
-		{Name: "description", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.Type).Description() }},
-		{Name: "specifiedByURL", IsMethod: true, Leaf: "String", Out: outMarshalOString2ᚖstring, Get: func(obj any) any { return obj.(*introspection.Type).SpecifiedByURL() }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "kind", NonNull: true, IsMethod: true, Leaf: "__TypeKind"}, outMarshalN__TypeKind2string, func(obj *introspection.Type) string { return obj.Kind() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "name", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.Type) *string { return obj.Name() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "description", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.Type) *string { return obj.Description() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "specifiedByURL", IsMethod: true, Leaf: "String"}, outMarshalOString2ᚖstring, func(obj *introspection.Type) *string { return obj.SpecifiedByURL() }),
 		{Name: "fields", IsMethod: true, Children: &object__Field, Args: []exec.Arg[*executionContext]{
-			{Name: "includeDeprecated", Type: inUnmarshalOBoolean2bool},
-		}, Out: outMarshalO__Field2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐFieldᚄ, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "includeDeprecated", Type: inUnmarshalOBoolean2bool.In},
+		}, Out: outMarshalO__Field2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐFieldᚄ.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return obj.(*introspection.Type).Fields(args["includeDeprecated"].(bool)), nil
 		}},
-		{Name: "interfaces", IsMethod: true, Children: &object__Type, Out: outMarshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ, Get: func(obj any) any { return obj.(*introspection.Type).Interfaces() }},
-		{Name: "possibleTypes", IsMethod: true, Children: &object__Type, Out: outMarshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ, Get: func(obj any) any { return obj.(*introspection.Type).PossibleTypes() }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "interfaces", IsMethod: true, Children: &object__Type}, outMarshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ, func(obj *introspection.Type) []introspection.Type { return obj.Interfaces() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "possibleTypes", IsMethod: true, Children: &object__Type}, outMarshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ, func(obj *introspection.Type) []introspection.Type { return obj.PossibleTypes() }),
 		{Name: "enumValues", IsMethod: true, Children: &object__EnumValue, Args: []exec.Arg[*executionContext]{
-			{Name: "includeDeprecated", Type: inUnmarshalOBoolean2bool},
-		}, Out: outMarshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
+			{Name: "includeDeprecated", Type: inUnmarshalOBoolean2bool.In},
+		}, Out: outMarshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ.Out, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) {
 			return obj.(*introspection.Type).EnumValues(args["includeDeprecated"].(bool)), nil
 		}},
-		{Name: "inputFields", IsMethod: true, Children: &object__InputValue, Out: outMarshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ, Get: func(obj any) any { return obj.(*introspection.Type).InputFields() }},
-		{Name: "ofType", IsMethod: true, Children: &object__Type, Out: outMarshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, Get: func(obj any) any { return obj.(*introspection.Type).OfType() }},
-		{Name: "isOneOf", IsMethod: true, Leaf: "Boolean", Out: outMarshalOBoolean2bool, Get: func(obj any) any { return obj.(*introspection.Type).IsOneOf() }},
+		exec.FieldGet(exec.Field[*executionContext]{Name: "inputFields", IsMethod: true, Children: &object__InputValue}, outMarshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ, func(obj *introspection.Type) []introspection.InputValue { return obj.InputFields() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "ofType", IsMethod: true, Children: &object__Type}, outMarshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType, func(obj *introspection.Type) *introspection.Type { return obj.OfType() }),
+		exec.FieldGet(exec.Field[*executionContext]{Name: "isOneOf", IsMethod: true, Leaf: "Boolean"}, outMarshalOBoolean2bool, func(obj *introspection.Type) bool { return obj.IsOneOf() }),
 	})
 }
 

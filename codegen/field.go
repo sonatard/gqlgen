@@ -779,18 +779,18 @@ func (f *Field) TableObj() string {
 	return "obj.(" + templates.CurrentImports.LookupType(f.Object.Reference()) + ")"
 }
 
-// TableGetExpr returns the expression that reads the field from obj in table mode, for
-// fields bound to a struct field, or to a method that takes no context or arguments and
-// returns no error. It returns "" for other fields.
+// TableGetExpr returns the expression that reads the field from obj, the object with its
+// Go type, in table mode, for fields bound to a struct field, or to a method that takes
+// no context or arguments and returns no error. It returns "" for other fields.
 func (f *Field) TableGetExpr() string {
 	if f.IsBatch() || f.HasHaser || f.VOkFunc || f.IsResolver || f.GoReceiverName != "obj" {
 		return ""
 	}
 	switch {
 	case f.IsVariable():
-		return f.TableObj() + "." + f.GoFieldName
+		return "obj." + f.GoFieldName
 	case f.IsMethod() && f.NoErr && !f.MethodHasContext && len(f.Args) == 0:
-		return f.TableObj() + "." + f.GoFieldName + "()"
+		return "obj." + f.GoFieldName + "()"
 	}
 	return ""
 }

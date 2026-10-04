@@ -21,7 +21,7 @@ func TestChain(t *testing.T) {
 					return "", errors.New("bad name")
 				}
 				return fmt.Sprint(v), nil
-			})},
+			}).In},
 		},
 		Call: func(ctx context.Context, ec *testEC, obj any, next graphql.Resolver, args map[string]any) (any, error) {
 			log = append(log, "before "+args["name"].(string))

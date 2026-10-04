@@ -162,7 +162,7 @@ func {{$.FuncReceiver}}_fieldMiddleware(ctx context.Context, {{$.ECFuncParam}}ob
 	{{- if $arg.ImplDirectives }}
 		{{- if $arg.TypeReference.IsNilable }}, NilOK: true{{ end }}
 		{{- if $arg.CallArgumentDirectivesWithNull }}, WithNull: true{{ end }}, Directives: {{ $arg.TableDirectives }}
-	{{- end }}, Type: {{ $arg.TableIn }}},
+	{{- end }}, Type: {{ $arg.TableIn }}.In},
 	{{- end }}
 }
 {{- end }}

@@ -22,10 +22,14 @@ type In[EC any] struct {
 	name      string
 }
 
+// InFor is the In of the values of type V. V only adds to the static type, so that
+// InputSet can check at compile time that a setter takes the type the In unmarshals.
+type InFor[EC, V any] struct{ *In[EC] }
+
 // InOf returns the In of the values that u unmarshals.
-func InOf[EC, V any](u Unmarshal[EC, V]) *In[EC] {
+func InOf[EC, V any](u Unmarshal[EC, V]) InFor[EC, V] {
 	var zero V
-	return &In[EC]{
+	return InFor[EC, V]{&In[EC]{
 		unmarshal: func(ctx context.Context, ec EC, v any) (any, error) {
 			return u(ctx, ec, v)
 		},
@@ -35,7 +39,23 @@ func InOf[EC, V any](u Unmarshal[EC, V]) *In[EC] {
 		},
 		zero: zero,
 		name: typeString(reflect.TypeFor[V]()),
+	}}
+}
+
+// InputSet completes f to unmarshal the field with in and to store the value with set
+// in the input, of type T. The compiler checks that set takes the type in unmarshals;
+// at run time the input and the value are passed as any, and nil stores the zero value.
+func InputSet[EC, T, V any](
+	f InputField[EC],
+	in InFor[EC, V],
+	set func(it *T, v V),
+) InputField[EC] {
+	f.Type = in.In
+	f.Set = func(it, v any) {
+		x, _ := v.(V)
+		set(it.(*T), x)
 	}
+	return f
 }
 
 // Input describes how a GraphQL input object is unmarshaled into its Go type.

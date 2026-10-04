@@ -113,10 +113,14 @@ type Out[EC any] struct {
 	name    string
 }
 
+// OutFor is the Out of the values of type V. V only adds to the static type, so that
+// FieldGet can check at compile time that a getter returns the type the Out marshals.
+type OutFor[EC, V any] struct{ *Out[EC] }
+
 // OutOf returns the Out of the values that m marshals.
-func OutOf[EC, V any](m Marshal[EC, V]) *Out[EC] {
+func OutOf[EC, V any](m Marshal[EC, V]) OutFor[EC, V] {
 	var zero V
-	return &Out[EC]{
+	return OutFor[EC, V]{&Out[EC]{
 		accept: func(v any) bool {
 			_, ok := v.(V)
 			return ok
@@ -125,7 +129,16 @@ func OutOf[EC, V any](m Marshal[EC, V]) *Out[EC] {
 			return m(ctx, ec, sel, v.(V))
 		},
 		name: fmt.Sprintf("%T", zero),
-	}
+	}}
+}
+
+// FieldGet completes f to read the field with get from its object, of type T, and to
+// marshal the value with out. The compiler checks that get returns the type out
+// marshals; at run time the object and the value are passed as any.
+func FieldGet[EC Context, T, V any](f Field[EC], out OutFor[EC, V], get func(T) V) Field[EC] {
+	f.Out = out.Out
+	f.Get = func(obj any) any { return get(obj.(T)) }
+	return f
 }
 
 // Init sets the fields of the object. Generated code calls it once, from an init

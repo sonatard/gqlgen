@@ -46,16 +46,16 @@ func pointInput() *Input[*testEC] {
 	return &Input[*testEC]{
 		Name: "Point",
 		Fields: []InputField[*testEC]{
-			{Name: "x", Type: inInt, Set: func(it, v any) { it.(*point).X, _ = v.(int) }},
+			{Name: "x", Type: inInt.In, Set: func(it, v any) { it.(*point).X, _ = v.(int) }},
 			{
 				Name:    "y",
 				Default: 7,
-				Type:    inInt,
+				Type:    inInt.In,
 				Set:     func(it, v any) { it.(*point).Y, _ = v.(int) },
 			},
 			{
 				Name: "note",
-				Type: inString,
+				Type: inString.In,
 				Set:  func(it, v any) { it.(*point).Note, _ = v.(*string) },
 			},
 		},
@@ -163,7 +163,7 @@ func TestInputMap(t *testing.T) {
 		Fields: []InputField[*testEC]{
 			{
 				Name: "x",
-				Type: inInt,
+				Type: inInt.In,
 				Set:  func(it, v any) { x, _ := v.(int); (*it.(*map[string]any))["x"] = x },
 			},
 		},
@@ -184,7 +184,7 @@ func TestInputFieldSetByResolver(t *testing.T) {
 		Fields: []InputField[*testEC]{
 			{
 				Name: "x",
-				Type: inInt,
+				Type: inInt.In,
 				SetWith: func(ctx context.Context, ec *testEC, it, v any) error {
 					x, _ := v.(int)
 					if x < 0 {

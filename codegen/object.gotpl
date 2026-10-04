@@ -147,7 +147,15 @@ func init() {
 	{{ $object.TableVar }}.Init([]exec.Field[*executionContext]{
 	{{- range $field := $object.Fields }}
 		{{- $def := $field.TypeReference.Definition }}
+		{{- /* A field read from its object with a getter is built by exec.FieldGet, which
+		   checks at compile time that the getter returns the type its Out marshals. */}}
+		{{- $get := $field.TableGetExpr }}
+		{{- if $field.TypeReference.IsRoot }}{{ $get = "" }}{{ end }}
+		{{- if $get }}
+		exec.FieldGet(exec.Field[*executionContext]{Name: {{ $field.Name | quote }}
+		{{- else }}
 		{Name: {{ $field.Name | quote }}
+		{{- end }}
 		{{- if $field.TypeReference.GQL.NonNull }}, NonNull: true{{ end }}
 		{{- if $field.IsConcurrent }}, Concurrent: true{{ end }}
 		{{- if or $field.IsMethod $field.IsResolver }}, IsMethod: true{{ end }}
@@ -157,15 +165,16 @@ func init() {
 		{{- else }}, Children: &object{{ $def.Name }}
 		{{- end }}
 		{{- if $field.Args }}, Args: {{ template "tableArgs" $field.Args }}{{ end }}
-		{{- if $field.HasDirectives }}, Directives: {{ $field.TableDirectives }}{{ end }}, Out: {{ $field.TableOut }}
+		{{- if $field.HasDirectives }}, Directives: {{ $field.TableDirectives }}{{ end }}
+		{{- if $get }}}, {{ $field.TableOut }}, func(obj {{ $object.Reference | ref }}) {{ $field.TypeReference.GO | ref }} { return {{ $get }} }),
+		{{- else }}, Out: {{ $field.TableOut }}.Out
 		{{- if $object.Stream }}, Stream: exec.{{ if $field.UsesSubscriptionContext }}Event{{ end }}StreamOf[{{ $field.TypeReference.GO | ref }}](){{ end }}
-		{{- $get := $field.TableGetExpr }}
 		{{- if $field.TypeReference.IsRoot }}, RootValue: true
 			{{- if $field.TypeReference.IsPtr }}{{ $get = printf "&%s{}" ($field.TypeReference.Elem.GO | ref) }}
 			{{- else }}{{ $get = printf "%s{}" ($field.TypeReference.GO | ref) }}{{ end }}
 		{{- end }}
 		{{- $body := $field.TableResolveBody }}
-		{{- if $get }}, Get: func(obj any) any { return {{ $get }} }},
+		{{- if $get }}, Get: func(any) any { return {{ $get }} }},
 		{{- else if $body }}, Resolve: func(ctx context.Context, ec *executionContext, obj any, args map[string]any) (any, error) { {{ $body }} }},
 		{{- else if $object.Root }}, Resolve: func(ctx context.Context, ec *executionContext, _ any, args map[string]any) (any, error) {
 			{{- template "fieldDefinition" $field }}
@@ -174,6 +183,7 @@ func init() {
 			obj := o.({{ $object.Reference | ref }})
 			{{- template "fieldDefinition" $field }}
 		}},
+		{{- end }}
 		{{- end }}
 	{{- end }}
 	})
