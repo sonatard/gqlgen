@@ -2,7 +2,8 @@ package graphql
 
 import (
 	"context"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"io"
 )
 
@@ -62,11 +63,11 @@ func (o Omittable[T]) MarshalJSON() ([]byte, error) {
 		value = zero
 	}
 
-	return json.Marshal(value)
+	return json.Marshal(value, jsonv1.DefaultOptionsV1())
 }
 
 func (o *Omittable[T]) UnmarshalJSON(bytes []byte) error {
-	err := json.Unmarshal(bytes, &o.value)
+	err := json.Unmarshal(bytes, &o.value, jsonv1.DefaultOptionsV1())
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,7 @@ func (o Omittable[T]) MarshalGQL(w io.Writer) {
 	case ContextMarshaler:
 		_ = marshaler.MarshalGQLContext(context.Background(), w)
 	default:
-		b, _ := json.Marshal(value)
+		b, _ := json.Marshal(value, jsonv1.DefaultOptionsV1())
 		w.Write(b)
 	}
 }
@@ -105,7 +106,7 @@ func (o *Omittable[T]) UnmarshalGQL(bytes []byte) error {
 		}
 		o.set = true
 	default:
-		if err := json.Unmarshal(bytes, &o.value); err != nil {
+		if err := json.Unmarshal(bytes, &o.value, jsonv1.DefaultOptionsV1()); err != nil {
 			return err
 		}
 		o.set = true
@@ -126,7 +127,7 @@ func (o Omittable[T]) MarshalGQLContext(ctx context.Context, w io.Writer) {
 	case Marshaler:
 		marshaler.MarshalGQL(w)
 	default:
-		b, _ := json.Marshal(value)
+		b, _ := json.Marshal(value, jsonv1.DefaultOptionsV1())
 		w.Write(b)
 	}
 }
@@ -144,7 +145,7 @@ func (o *Omittable[T]) UnmarshalGQLContext(ctx context.Context, bytes []byte) er
 		}
 		o.set = true
 	default:
-		if err := json.Unmarshal(bytes, &o.value); err != nil {
+		if err := json.Unmarshal(bytes, &o.value, jsonv1.DefaultOptionsV1()); err != nil {
 			return err
 		}
 		o.set = true
