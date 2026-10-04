@@ -1,5 +1,5 @@
 //go:generate rm -f resolver.go
-//go:generate go run ../../../testdata/gqlgen.go -config gqlgen.yml -stub stub.go
+//go:generate ../bothmodes.sh gqlgen.yml -stub stub.go
 
 package singlefile
 
