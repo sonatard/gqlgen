@@ -1,8 +1,6 @@
 package transport
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -101,12 +99,6 @@ func (h GET) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecut
 
 	responses, ctx := exec.DispatchOperation(r.Context(), opCtx)
 	writeJson(w, responses(ctx))
-}
-
-func jsonDecode(r io.Reader, val any) error {
-	dec := json.NewDecoder(r)
-	dec.UseNumber()
-	return dec.Decode(val)
 }
 
 func statusFor(errs gqlerror.List) int {
