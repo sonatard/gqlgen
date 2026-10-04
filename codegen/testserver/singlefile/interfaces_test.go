@@ -212,16 +212,12 @@ func TestInterfaces(t *testing.T) {
 		resolvers.QueryResolver.Shapes = func(ctx context.Context) (shapes []Shape, err error) {
 			return []Shape{
 				&Rectangle{
-					Coordinates: Coordinates{
-						X: -1,
-						Y: -1,
-					},
+					X: -1,
+					Y: -1,
 				},
 				&Circle{
-					Coordinates: Coordinates{
-						X: 1,
-						Y: 1,
-					},
+					X: 1,
+					Y: 1,
 				},
 			}, nil
 		}

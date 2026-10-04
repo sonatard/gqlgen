@@ -484,37 +484,35 @@ func TestField_CallArgs(t *testing.T) {
 		Expected string
 	}{
 		{
-			Name: "Field with method that has context, and three args (string, interface, named interface)",
-			Field: Field{
-				MethodHasContext: true,
-				Args: []*FieldArgument{
-					{
-						ArgumentDefinition: &ast2.ArgumentDefinition{
-							Name: "test",
-						},
-						TypeReference: &config.TypeReference{
-							GO: (&types.Interface{}).Complete(),
-						},
+			Name:             "Field with method that has context, and three args (string, interface, named interface)",
+			MethodHasContext: true,
+			Args: []*FieldArgument{
+				{
+					ArgumentDefinition: &ast2.ArgumentDefinition{
+						Name: "test",
 					},
-					{
-						ArgumentDefinition: &ast2.ArgumentDefinition{
-							Name: "test2",
-						},
-						TypeReference: &config.TypeReference{
-							GO: types.NewNamed(
-								types.NewTypeName(token.NoPos, nil, "TestInterface", nil),
-								(&types.Interface{}).Complete(),
-								nil,
-							),
-						},
+					TypeReference: &config.TypeReference{
+						GO: (&types.Interface{}).Complete(),
 					},
-					{
-						ArgumentDefinition: &ast2.ArgumentDefinition{
-							Name: "test3",
-						},
-						TypeReference: &config.TypeReference{
-							GO: types.Typ[types.String],
-						},
+				},
+				{
+					ArgumentDefinition: &ast2.ArgumentDefinition{
+						Name: "test2",
+					},
+					TypeReference: &config.TypeReference{
+						GO: types.NewNamed(
+							types.NewTypeName(token.NoPos, nil, "TestInterface", nil),
+							(&types.Interface{}).Complete(),
+							nil,
+						),
+					},
+				},
+				{
+					ArgumentDefinition: &ast2.ArgumentDefinition{
+						Name: "test3",
+					},
+					TypeReference: &config.TypeReference{
+						GO: types.Typ[types.String],
 					},
 				},
 			},
@@ -528,19 +526,17 @@ func TestField_CallArgs(t *testing.T) {
 		},
 		{
 			Name: "Resolver field that isn't root object with single int argument",
-			Field: Field{
-				Object: &Object{
-					Root: false,
-				},
-				IsResolver: true,
-				Args: []*FieldArgument{
-					{
-						ArgumentDefinition: &ast2.ArgumentDefinition{
-							Name: "test",
-						},
-						TypeReference: &config.TypeReference{
-							GO: types.Typ[types.Int],
-						},
+			Object: &Object{
+				Root: false,
+			},
+			IsResolver: true,
+			Args: []*FieldArgument{
+				{
+					ArgumentDefinition: &ast2.ArgumentDefinition{
+						Name: "test",
+					},
+					TypeReference: &config.TypeReference{
+						GO: types.Typ[types.Int],
 					},
 				},
 			},
