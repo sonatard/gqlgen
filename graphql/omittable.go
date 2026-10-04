@@ -3,6 +3,9 @@ package graphql
 import (
 	"context"
 	"encoding/json"
+	"encoding/json/jsontext"
+	jsonv2 "encoding/json/v2"
+	"errors"
 	"io"
 )
 
@@ -14,8 +17,10 @@ type Omittable[T any] struct {
 }
 
 var (
-	_ json.Marshaler   = Omittable[struct{}]{}
-	_ json.Unmarshaler = (*Omittable[struct{}])(nil)
+	_ json.Marshaler         = Omittable[struct{}]{}
+	_ json.Unmarshaler       = (*Omittable[struct{}])(nil)
+	_ jsonv2.MarshalerTo     = Omittable[struct{}]{}
+	_ jsonv2.UnmarshalerFrom = (*Omittable[struct{}])(nil)
 )
 
 func OmittableOf[T any](value T) Omittable[T] {
@@ -74,6 +79,38 @@ func (o *Omittable[T]) UnmarshalJSON(bytes []byte) error {
 	return nil
 }
 
+// MarshalJSONTo implements the encoding/json/v2 MarshalerTo interface. It
+// marshals the value with the caller's options, so encoding/json/v2 writes it
+// with its own defaults rather than those of encoding/json.
+//
+// encoding/json is built on encoding/json/v2 and calls this method too. For
+// it, the method defers to MarshalJSON, so that options such as
+// Encoder.SetEscapeHTML and the ",string" tag apply to the Omittable as they
+// did before rather than to the value inside it.
+func (o Omittable[T]) MarshalJSONTo(enc *jsontext.Encoder) error {
+	if isLegacyJSON(enc.Options()) {
+		return errors.ErrUnsupported
+	}
+	return jsonv2.MarshalEncode(enc, o.Value())
+}
+
+// UnmarshalJSONFrom implements the encoding/json/v2 UnmarshalerFrom interface.
+// It unmarshals the value with the caller's options and marks it as set.
+//
+// For encoding/json, the method defers to UnmarshalJSON, so that options such
+// as Decoder.UseNumber and Decoder.DisallowUnknownFields do not reach the
+// value inside the Omittable, as before.
+func (o *Omittable[T]) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
+	if isLegacyJSON(dec.Options()) {
+		return errors.ErrUnsupported
+	}
+	if err := jsonv2.UnmarshalDecode(dec, &o.value); err != nil {
+		return err
+	}
+	o.set = true
+	return nil
+}
+
 func (o Omittable[T]) MarshalGQL(w io.Writer) {
 	var value any = o.value
 	if !o.set {
@@ -126,7 +163,14 @@ func (o Omittable[T]) MarshalGQLContext(ctx context.Context, w io.Writer) {
 	case Marshaler:
 		marshaler.MarshalGQL(w)
 	default:
-		b, _ := json.Marshal(value)
+		b, err := marshalJSONContext(ctx, value)
+		if err != nil && GetJSONVersion(ctx) == JSONv2 {
+			// encoding/json/v2 rejects some values encoding/json accepts,
+			// such as strings with invalid UTF-8. Write null rather than
+			// nothing, which would leave invalid JSON.
+			Null.MarshalGQL(w)
+			return
+		}
 		w.Write(b)
 	}
 }
@@ -144,10 +188,17 @@ func (o *Omittable[T]) UnmarshalGQLContext(ctx context.Context, bytes []byte) er
 		}
 		o.set = true
 	default:
-		if err := json.Unmarshal(bytes, &o.value); err != nil {
+		if err := unmarshalJSONContext(ctx, bytes, &o.value); err != nil {
 			return err
 		}
 		o.set = true
 	}
 	return nil
+}
+
+// isLegacyJSON reports whether opts are those of encoding/json, which calls
+// the encoding/json/v2 methods with its legacy options.
+func isLegacyJSON(opts jsonv2.Options) bool {
+	legacy, _ := jsonv2.GetOption(opts, json.CallMethodsWithLegacySemantics)
+	return legacy
 }
