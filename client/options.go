@@ -1,6 +1,21 @@
 package client
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/99designs/gqlgen/graphql"
+)
+
+// JSONVersion selects the JSON package the request is written and the
+// response is read with. graphql.JSONv1, the default, uses encoding/json and
+// graphql.JSONv2 uses encoding/json/v2 with its default behavior. Pass it to
+// New to apply it to every request; a request option applies it to that
+// request only, and must come before WithFiles.
+func JSONVersion(v graphql.JSONVersion) Option {
+	return func(bd *Request) {
+		bd.jsonVersion = v
+	}
+}
 
 // Var adds a variable into the outgoing request
 func Var(name string, value any) Option {

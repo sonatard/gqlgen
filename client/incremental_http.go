@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	jsonv2 "encoding/json/v2"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 type IncrementalHandler struct {
@@ -90,7 +93,7 @@ func (p *Client) IncrementalHTTP(
 	query string,
 	options ...Option,
 ) *IncrementalHandler {
-	r, err := p.newRequest(query, options...)
+	r, jsonVersion, err := p.newRequest(query, options...)
 	if err != nil {
 		return errorIncremental(fmt.Errorf("request: %w", err))
 	}
@@ -186,7 +189,12 @@ func (p *Client) IncrementalHTTP(
 			} else {
 				data = IncrementalResponse{}
 			}
-			if err = json.NewDecoder(next.Part).Decode(&data); err != nil {
+			if jsonVersion == graphql.JSONv2 {
+				err = jsonv2.UnmarshalRead(next.Part, &data)
+			} else {
+				err = json.NewDecoder(next.Part).Decode(&data)
+			}
+			if err != nil {
 				return err
 			}
 
