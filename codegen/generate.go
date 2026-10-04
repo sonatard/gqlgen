@@ -26,6 +26,10 @@ func GenerateCode(data *Data) error {
 	if !data.Config.Exec.IsDefined() {
 		return errors.New("missing exec config")
 	}
+	// Plugins may have changed the data since BuildData.
+	if err := data.tableCheckState(); err != nil {
+		return err
+	}
 
 	switch data.Config.Exec.Layout {
 	case config.ExecLayoutSingleFile:
@@ -42,7 +46,7 @@ func generateSingleFile(data *Data) error {
 		PackageName:     data.Config.Exec.Package,
 		Filename:        data.Config.Exec.Filename,
 		Data:            data,
-		RegionTags:      true,
+		RegionTags:      !data.Config.Exec.IsTable(),
 		GeneratedHeader: true,
 		Packages:        data.Config.Packages,
 		TemplateFS:      singleFileTemplateFS,
@@ -95,7 +99,7 @@ func generatePerSchema(data *Data) error {
 			PackageName:     data.Config.Exec.Package,
 			Filename:        path,
 			Data:            build,
-			RegionTags:      true,
+			RegionTags:      !data.Config.Exec.IsTable(),
 			GeneratedHeader: true,
 			Packages:        data.Config.Packages,
 			TemplateFS:      schemaTemplateFS,
@@ -142,6 +146,13 @@ func addBuild(filename string, p *ast.Position, data *Data, builds *map[string]*
 		// whose implementors are spread across files would only register batch parents
 		// for the implementors that happen to share the interface's file.
 		allBatchFieldTypes: data.batchFieldTypes(),
+	}
+	if data.Config.Exec.IsTable() {
+		// The file holds only some of the types, so it shares what table mode derives
+		// from the whole schema, and builds the tables of its own types.
+		info := data.tableInfo()
+		(*builds)[filename].table = info
+		(*builds)[filename].tableGroups = info.groupsByFile[filename]
 	}
 }
 

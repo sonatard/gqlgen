@@ -5,7 +5,14 @@
 	)
 {{ end }}
 
+{{- if $.Config.Exec.IsTable }}
+type executableSchema struct {
+	*graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
+	tables *tables
+}
+{{- else }}
 type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
+{{- end }}
 
 func (e *executableSchema) Schema() *ast.Schema {
 	if e.SchemaData != nil {
@@ -31,7 +38,11 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 						break
 						}
 						{{ if $field.Args }}
+							{{- if $.Config.Exec.IsTable }}
+							args, err := ec.tables.{{ $object.TableVar }}.ParseArgs(ctx, ec, {{ $field.Name | quote }}, rawArgs)
+							{{- else }}
 							args, err := {{$.ECDot}}{{ $field.ArgsFunc }}(ctx, {{$.ECArg}}rawArgs)
+							{{- end }}
 							if err != nil {
 							return 0, false
 							}
@@ -52,6 +63,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalers := func() *graphql.InputUnmarshalerIndex {
+		{{- if $.Config.Exec.IsTable }}
+		return graphql.NewInputUnmarshalerIndex(ec.tables.schema.InputUnmarshalers(ec)...)
+		{{- else }}
 		return graphql.NewInputUnmarshalerIndex(
 		{{- range $input := .Inputs -}}
 			{{ if not $input.HasUnmarshal }}
@@ -63,6 +77,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			{{- end }}
 		{{- end }}
 		)
+		{{- end }}
 	}
 	first := true
 
@@ -76,10 +91,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				ctx = graphql.WithLazyInputUnmarshalerIndex(ctx, inputUnmarshalers)
 				{{ if .AllDirectives.LocationDirectives "QUERY" -}}
 					data = {{$.ECDot}}_queryMiddleware(ctx, {{$.ECArg}}opCtx.Operation, func(ctx context.Context) (any, error){
-						return {{$.ECDot}}_{{.QueryRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet), nil
+						return {{ $.ObjectMarshal .QueryRoot.Name "opCtx.Operation.SelectionSet" "" }}, nil
 					})
 				{{- else -}}
-					data = {{$.ECDot}}_{{.QueryRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet)
+					data = {{ $.ObjectMarshal .QueryRoot.Name "opCtx.Operation.SelectionSet" "" }}
 				{{- end }}
 			} else {
 				if atomic.LoadInt32(&ec.PendingDeferred) > 0 {
@@ -112,10 +127,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			ctx = graphql.WithLazyInputUnmarshalerIndex(ctx, inputUnmarshalers)
 			{{ if .AllDirectives.LocationDirectives "MUTATION" -}}
 				data := {{$.ECDot}}_mutationMiddleware(ctx, {{$.ECArg}}opCtx.Operation, func(ctx context.Context) (any, error){
-					return {{$.ECDot}}_{{.MutationRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet), nil
+					return {{ $.ObjectMarshal .MutationRoot.Name "opCtx.Operation.SelectionSet" "" }}, nil
 				})
 			{{- else -}}
-				data := {{$.ECDot}}_{{.MutationRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet)
+				data := {{ $.ObjectMarshal .MutationRoot.Name "opCtx.Operation.SelectionSet" "" }}
 			{{- end }}
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
@@ -187,6 +202,9 @@ func (e *executableSchema) ExecWithEventContext(ctx context.Context) graphql.Res
 
 type executionContext struct {
 	*graphql.ExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot]
+	{{- if $.Config.Exec.IsTable }}
+	tables *tables
+	{{- end }}
 }
 
 func newExecutionContext(
@@ -197,10 +215,17 @@ func newExecutionContext(
 	return &executionContext{
 		ExecutionContextState: graphql.NewExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot](
 			opCtx,
+			{{- if $.Config.Exec.IsTable }}
+			execSchema.ExecutableSchemaState,
+			{{- else }}
 			(*graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot])(execSchema),
+			{{- end }}
 			parsedSchema,
 			deferredResults,
 		),
+		{{- if $.Config.Exec.IsTable }}
+		tables: execSchema.tables,
+		{{- end }}
 	}
 }
 
@@ -224,6 +249,28 @@ var sources = []*ast.Source{
 {{- end }}
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
+{{- if .TableLinkedSchema }}
+
+// linkedSchema loads the schema that the code is generated for, which is not the schema
+// of the sources: plugins of the generator changed it, or gqlgen added an empty query type.
+// The tables are linked to it, and requests are validated against parsedSchema, as in the
+// functions mode. It is loaded when NewExecutableSchema first builds the tables.
+var linkedSchema = sync.OnceValue(func() *ast.Schema {
+	return gqlparser.MustLoadSchema(&ast.Source{Name: "linked_schema.graphql", Input: {{ .TableLinkedSchema | rawQuote }}})
+})
+{{- end }}
+{{- if $.Config.Exec.IsTable }}
+
+// builtTables builds the tables when NewExecutableSchema is first called, for every
+// executable schema of the package: they do not depend on the Config and are only read
+// once built. They are linked to the schema as it is then, which code may change later
+// through Schema, while the functions mode runs the code it was generated for.
+var builtTables = sync.OnceValue(func() *tables {
+	return newTables({{ if .TableLinkedSchema }}linkedSchema(){{ else }}parsedSchema{{ end }})
+})
+{{- end }}
+
+{{- if not $.Config.Exec.IsTable }}
 
 // childFields_* functions provide shared child field context lookups.
 // Each function is generated once per unique object type, deduplicating the
@@ -239,6 +286,70 @@ func {{$.FuncReceiver}}childFields_{{ $ct.TypeName }}(ctx context.Context, {{$.E
 	}
 	return nil, fmt.Errorf("no field named %q was found under type {{ $ct.TypeName }}", field.Name)
 }
+{{- end }}
+{{- end }}
+
+{{- if $.Config.Exec.IsTable }}
+{{- $chunks := .TableInitChunks }}
+
+// The entries of the tables, for the generated files that build them.
+type (
+	tableField      = exec.Field[*executionContext]
+	tableInputField = exec.InputField[*executionContext]
+	tableOut        = *exec.Out[*executionContext]
+	tableIn         = *exec.In[*executionContext]
+)
+
+// tables holds the tables that the graphql/exec runtime executes, and the marshalers
+// and unmarshalers they are built from. newTables builds them, once for the package, and
+// they are only read afterwards. What the schema says about them, the runtime reads from
+// the schema.
+type tables struct {
+	schema *exec.Schema[*executionContext]
+	{{- range $i, $f := .TableFields }}
+	{{- if and $f.Section $i }}
+{{ end }}
+	{{ $f.Name }} {{ $f.Type }}
+	{{- end }}
+}
+
+{{- /* The parameter and the locals of the generated code have names that a package of the
+   Go types it refers to is unlikely to have, which they would hide. */}}
+func newTables(schemaToLink *ast.Schema) *tables {
+	t := &tables{schema: exec.NewSchema[*executionContext](schemaToLink)}
+	{{- if $.Config.OmitPanicHandler }}
+	t.schema.OmitPanicHandler = true
+	{{- end }}
+	{{- if $.Config.Exec.WorkerLimit }}
+	t.schema.WorkerLimit = {{ $.Config.Exec.WorkerLimit }}
+	{{- end }}
+	{{- if $.Config.CallArgumentDirectivesWithNull }}
+	t.schema.ArgumentDirectivesWithNull = true
+	{{- end }}
+	// The marshalers only take the address of the tables they marshal, so they come
+	// first, each after the marshalers it uses.
+	{{- range $i, $_ := $chunks }}
+	t.initMarshalers{{ $i }}()
+	{{- end }}
+	{{- range $directive := .TableDirectiveDefs }}
+	t.{{ $directive.TableVar }}.Init(t.schema, {{ $directive.Name | quote }}, {{ if $directive.Args }}{{ $.TableDirectiveIns $directive }}{{ else }}nil{{ end }}, func(ctx context.Context, ec *executionContext, directiveObj any, n graphql.Resolver, directiveArgs map[string]any) (any, error) {
+		return {{ $directive.CallPath }}({{ $directive.TableCallArgs }})
+	}, {{ if $directive.IsBuiltIn }}nil{{ else }}func(ec *executionContext) bool { return {{ $directive.CallPath }} != nil }{{ end }})
+	{{- end }}
+	{{- range $group := .TableInitGroups }}
+	t.init{{ (index $group 0).TableVar | ucFirst }}()
+	{{- end }}
+	t.schema.Link()
+	return t
+}
+{{- range $i, $chunk := $chunks }}
+
+func (t *tables) initMarshalers{{ $i }}() {
+	{{- range $chunk }}
+	{{ . }}
+	{{- end }}
+}
+{{- end }}
 {{- end }}
 
 {{ template "globalMiddleware" . }}

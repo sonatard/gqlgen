@@ -55,6 +55,10 @@ func generate(
 	incrementalOpts *codegen.IncrementalOptions,
 	option ...Option,
 ) error {
+	// Fail for what table mode does not support before the generated files are removed.
+	if err := cfg.CheckTableMode(); err != nil {
+		return err
+	}
 	_ = syscall.Unlink(cfg.Exec.Filename)
 	if cfg.Model.IsDefined() {
 		_ = syscall.Unlink(cfg.Model.Filename)
@@ -162,6 +166,10 @@ func generate(
 				return fmt.Errorf("%s: %w", p.Name(), err)
 			}
 		}
+	}
+	// The plugins may have enabled what table mode does not support.
+	if err := cfg.CheckTableMode(); err != nil {
+		return err
 	}
 
 	// Merge again now that the generated models have been injected into the typemap

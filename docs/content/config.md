@@ -30,6 +30,10 @@ exec:
   # Optional: Maximum number of goroutines in concurrency to use per child resolvers(default: unlimited)
   # worker_limit: 1000
 
+  # Optional: "table" generates tables executed by the graphql/exec runtime instead of
+  # a function per field, which makes the generated code much smaller. See "Table mode".
+  # mode: functions
+
 # Comment or remove this section to skip Apollo Federation support
 federation:
   filename: graph/federation.go
@@ -307,7 +311,7 @@ For a single gqlgen project, what gqlgen config works best really changes at a f
 1. quick proof of concept - `single-file` layout
 2. medium-sized team(s) - `follow-schema` layout
 3. many teams - separate schema and resolvers into separate packages as [in this example](https://github.com/99designs/gqlgen/tree/master/_examples/large-project-structure/integration/go.mod) (see below)
-4. very large type systems (more than 65,000 methods) - `use_function_syntax_for_execution_context`
+4. very large type systems (more than 65,000 methods) - `use_function_syntax_for_execution_context`, or `exec.mode: table` (see [Table mode](#table-mode)) to also shrink the generated code
 However, some will instead choose to adopt GraphQL Federation and split into multiple gqlgen instances before one of these growth points is even reached.
 
 Big projects usually divide into a separate domains, grouping all related files and resources under a folder such as:
@@ -324,6 +328,66 @@ DomainB
 
 After first generating `resolvers` section you can comment out the entire resolver section of the `config.yaml`, so that resolvers are **not** auto-generated so you can then design any desired resolver architecture.
 This idea is from a discussion [https://github.com/99designs/gqlgen/issues/1253](https://github.com/99designs/gqlgen/issues/1253#issuecomment-664448226)
+
+## Table mode
+
+By default gqlgen generates a function for every field, argument, input object and type
+reference, so the generated executor grows by a few dozen lines for every field in the
+schema. Large schemas produce hundreds of thousands of lines, which slows compilation and
+makes the generated files hard to review.
+
+`exec.mode: table` generates tables that describe the schema instead. Each field, argument
+and input field becomes one entry of a table, and the code that is the same for every field
+lives in the `github.com/99designs/gqlgen/graphql/exec` runtime: building the field
+context, unmarshaling arguments, running directives and middleware, propagating nulls and
+running fields concurrently. An entry holds only what ties the field to Go, such as its
+getter or resolver, its marshaler and the unmarshalers of its arguments; what the schema
+says, such as the type of the field, the directives applied to it and the defaults of its
+arguments, the runtime reads from the schema when the first executable schema is created.
+The executable schemas of the package share the tables.
+
+```yaml
+exec:
+  filename: graph/generated.go
+  mode: table
+```
+
+As the runtime reads the schema that the generated package embeds, regenerate the code when
+you change the schema or upgrade gqlgen or gqlparser. Tables that no longer match the schema, such as
+after a field or an argument was added or removed, make `NewExecutableSchema` panic.
+
+Table mode answers every request like the default mode. In the `BenchmarkModes` benchmark
+of `codegen/testserver/tablemode`, a request takes about as long as in the default mode and
+makes about 5% fewer allocations. The generated code is much smaller: the
+`_examples/starwars` executor goes from 5,359 to 1,147 lines.
+
+Table mode does not support these features yet. Generation fails with an error that names
+the feature when the schema uses one of them; use the default mode for such schemas.
+
+- subscriptions
+- Apollo Federation
+- batch resolvers
+
+What changes for code that uses the generated package:
+
+- The resolver interfaces, `ResolverRoot`, `DirectiveRoot`, `ComplexityRoot`, `Config` and
+  `NewExecutableSchema` stay the same, so resolvers and directive implementations do not change.
+- The generated package no longer has the per-field functions such as `ec._Query_hero`,
+  `ec.fieldContext_Query_hero` and `ec.field_Query_hero_args`, nor the per-object marshalers
+  such as `ec._Human`.
+- The remaining generated functions take the execution context as a parameter, as with
+  `use_function_syntax_for_execution_context`, which has no effect in table mode.
+- Plugins whose templates call the per-field functions or the methods of the execution
+  context, such as `ec._Query_hero`, do not work with table mode.
+- Plugins that change `codegen.Data` after gqlgen builds it, in what the runtime reads from
+  the schema, such as the directives of a field, fail the generation with an error that names
+  the change. Such plugins can change the schema with a `plugin.SchemaMutator` instead.
+
+gqlgen does not delete generated files it no longer writes. With the follow-schema layout, a
+file left from a schema file that was since removed or renamed still calls the functions mode's
+methods, so it no longer compiles once you switch to table mode. Delete such files when you
+switch. In table mode, such a file also refers to tables that the package no longer
+declares, so delete the generated file of a schema file that you remove or rename.
 
 ## Performance optimization options
 

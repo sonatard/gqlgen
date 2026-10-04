@@ -120,18 +120,32 @@ nextArg:
 
 func (d *Data) Args() map[string][]*FieldArgument {
 	ret := map[string][]*FieldArgument{}
-	for _, o := range d.Objects {
-		for _, f := range o.Fields {
-			if len(f.Args) > 0 {
-				ret[f.ArgsFunc()] = f.Args
+	// Table mode keeps the arguments of fields in the field tables.
+	if !d.Config.Exec.IsTable() {
+		for _, o := range d.Objects {
+			for _, f := range o.Fields {
+				if len(f.Args) > 0 {
+					ret[f.ArgsFunc()] = f.Args
+				}
 			}
 		}
 	}
 
 	for _, directive := range d.Directives() {
-		if len(directive.Args) > 0 {
-			ret[directive.ArgsFunc()] = directive.Args
+		if len(directive.Args) == 0 {
+			continue
 		}
+		// Table mode unmarshals the arguments of the directives in the schema with their
+		// exec.DirectiveDef, and keeps these functions for the directives of the query.
+		if d.Config.Exec.IsTable() && !directive.IsLocation(
+			ast.LocationQuery,
+			ast.LocationMutation,
+			ast.LocationSubscription,
+			ast.LocationField,
+		) {
+			continue
+		}
+		ret[directive.ArgsFunc()] = directive.Args
 	}
 	return ret
 }

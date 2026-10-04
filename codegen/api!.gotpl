@@ -14,10 +14,28 @@
 {{ reserveImport "github.com/vektah/gqlparser/v2" "gqlparser" }}
 {{ reserveImport "github.com/vektah/gqlparser/v2/ast" }}
 {{ reserveImport "github.com/99designs/gqlgen/graphql" }}
+{{- if $.Config.Exec.IsTable }}
+{{ reserveImport "reflect" }}
+{{ reserveImport "github.com/99designs/gqlgen/graphql/exec" }}
+
+// The graphql/exec runtime that this code is built with must support the version of it
+// that the code was generated for. See exec.SupportPackageIsVersion1.
+const _ = exec.SupportPackageIsVersion1
+{{- end }}
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
+	{{- if $.Config.Exec.IsTable }}
+	{{- /* The tables are linked against the schema they were generated from: a schema in
+	   the Config only validates requests and answers introspection, as in the functions
+	   mode. */}}
+	return &executableSchema{
+		ExecutableSchemaState: &graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]{SchemaData: cfg.Schema, Resolvers: cfg.Resolvers, Directives: cfg.Directives, ComplexityRoot: cfg.Complexity},
+		tables:                builtTables(),
+	}
+	{{- else }}
 	return &executableSchema{SchemaData: cfg.Schema, Resolvers: cfg.Resolvers, Directives: cfg.Directives, ComplexityRoot: cfg.Complexity}
+	{{- end }}
 }
 
 type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]

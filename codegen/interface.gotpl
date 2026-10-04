@@ -11,7 +11,17 @@ func {{$.FuncReceiver}}_{{$interface.Name}}(ctx context.Context, {{$.ECFuncParam
 					return graphql.Null
 				}
 			{{- end }}
-			return {{$.ECDot}}_{{$implementor.Name}}(ctx, {{$.ECArg}}sel, {{ if $implementor.TakeRef }}&{{ end }}obj)
+			{{- $obj := "obj" }}
+			{{- if $implementor.TakeRef }}{{ $obj = "&obj" }}{{ end }}
+			{{- if and $.Config.Exec.IsTable ($.TableChecksImplementor $implementor) }}
+				{{- /* The table takes the object as any. The functions mode passes it in
+				   this Go type, so that an implementation it cannot take fails to compile
+				   in the same way. */}}
+				var o {{ $.TableObjectReference $implementor.Name | ref }} = {{ $obj }}
+				return {{ $.ObjectMarshal $implementor.Name "sel" "o" }}
+			{{- else }}
+			return {{ $.ObjectMarshal $implementor.Name "sel" $obj }}
+			{{- end }}
 	{{- end }}
 	default:
 		if typedObj, ok := obj.(graphql.Marshaler); ok {

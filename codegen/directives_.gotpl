@@ -4,10 +4,10 @@
 		directive{{add $i 1}} := func(ctx context.Context) (any, error) {
 			{{- range $arg := $directive.Args }}
 				{{- if notNil "Value" $arg }}
-						{{ $arg.VarName }}, err := {{$.Data.ECDot}}{{ $arg.TypeReference.UnmarshalFunc }}(ctx, {{$.Data.ECArg}}{{ $arg.Value | dump }})
+						{{ $arg.VarName }}, err := {{ $.Data.UnmarshalCall $arg.TypeReference }}(ctx, {{$.Data.ECArg}}{{ $arg.Value | dump }})
 						if err != nil { {{ $.ErrReturn "err" }} }
 					{{- else if notNil "Default" $arg }}
-						{{ $arg.VarName }}, err := {{$.Data.ECDot}}{{ $arg.TypeReference.UnmarshalFunc }}(ctx, {{$.Data.ECArg}}{{ $arg.Default | dump }})
+						{{ $arg.VarName }}, err := {{ $.Data.UnmarshalCall $arg.TypeReference }}(ctx, {{$.Data.ECArg}}{{ $arg.Default | dump }})
 						if err != nil { {{ $.ErrReturn "err" }} }
 					{{- end }}
 			{{- end }}
@@ -122,7 +122,13 @@ func {{$.FuncReceiver}}_subscriptionMiddleware(ctx context.Context, {{$.ECFuncPa
 {{ end }}
 
 {{ if .AllDirectives.LocationDirectives "FIELD" }}
+{{- if $.Config.Exec.IsTable }}
+// FieldMiddleware applies the FIELD directives of the query to a field. The graphql/exec
+// runtime calls it for every field.
+func (ec *executionContext) FieldMiddleware(ctx context.Context, obj any, next graphql.Resolver) graphql.Resolver {
+{{- else }}
 func {{$.FuncReceiver}}_fieldMiddleware(ctx context.Context, {{$.ECFuncParam}}obj any, next graphql.Resolver) graphql.Resolver {
+{{- end }}
 	fc := graphql.GetFieldContext(ctx)
 	for _, d := range fc.Field.Directives {
 		switch d.Name {
@@ -147,3 +153,4 @@ func {{$.FuncReceiver}}_fieldMiddleware(ctx context.Context, {{$.ECFuncParam}}ob
 }
 {{ end }}
 {{ end }}
+

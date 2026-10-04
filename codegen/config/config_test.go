@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser/v2"
@@ -402,6 +403,23 @@ func TestConfigCheck(t *testing.T) {
 					"exec and federation define the same import path (github.com/99designs/gqlgen/codegen/config/generated) with different package names (generated vs federation)",
 				)
 			})
+
+			t.Run("invalid exec mode", func(t *testing.T) {
+				config := Config{
+					Exec: ExecConfig{
+						Layout:   execLayout,
+						Mode:     "fast",
+						Filename: "generated/exec.go",
+						DirName:  "generated",
+					},
+				}
+
+				require.EqualError(
+					t,
+					config.check(),
+					"config.exec: invalid exec mode fast, use functions or table",
+				)
+			})
 		})
 	}
 }
@@ -702,4 +720,41 @@ func TestBatchResolverUnsupportedReason(t *testing.T) {
 			assert.False(t, cfg.TypeSupportsBatchResolver(tc.typeName, tc.schemaType))
 		})
 	}
+}
+
+func TestCheckTableMode(t *testing.T) {
+	newConfig := func() *Config {
+		return &Config{Exec: ExecConfig{Mode: ExecModeTable}}
+	}
+
+	require.NoError(t, newConfig().CheckTableMode())
+
+	c := newConfig()
+	c.Schema = &ast.Schema{Subscription: &ast.Definition{Name: "Subscription"}}
+	require.ErrorContains(t, c.CheckTableMode(), "does not support subscriptions")
+
+	c = newConfig()
+	c.Federation = PackageConfig{Filename: "federation.go"}
+	require.ErrorContains(t, c.CheckTableMode(), "does not support federation")
+
+	c = newConfig()
+	c.Resolver.Batch.Enabled = true
+	require.ErrorContains(t, c.CheckTableMode(), "does not support batch resolvers")
+
+	// The batch resolvers of single fields fail the generation once the schema says
+	// which fields have one.
+	batch := true
+	c = newConfig()
+	c.Models = TypeMap{"User": {Fields: map[string]TypeMapField{"posts": {Batch: &batch}}}}
+	require.NoError(t, c.CheckTableMode())
+	c.Resolver.Batch.Enabled = true
+
+	c.Exec.Mode = ExecModeFunctions
+	require.NoError(t, c.CheckTableMode())
+}
+
+func TestExecModeFromYAML(t *testing.T) {
+	var c Config
+	require.NoError(t, yaml.Unmarshal([]byte("exec:\n  mode: table\n"), &c))
+	require.True(t, c.Exec.IsTable())
 }
