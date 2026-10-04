@@ -3,7 +3,9 @@
 {{- template "tableGroups" $ }}
 {{- end }}
 {{- range $object := .Objects }}
-{{- if not $.Config.Exec.IsTable }}
+{{- if $.Config.Exec.IsTable }}
+{{- template "tableSubscription" (dict "Data" $ "Object" $object) }}
+{{- else }}
 
 var {{ $object.Name|lcFirst}}Implementors = {{$object.Implementors}}
 
@@ -167,7 +169,8 @@ func (t *tables) init{{ (index $group 0).TableVar | ucFirst }}() {
 	t.{{ $object.TableVar }}.Init(t.schema, {{ $object.Name | quote }}, {{ $object.TableFunc }}, []tableField{
 	{{- range $field := $object.Fields }}
 		{{- $entry := dict "Data" $data "Field" $field }}
-		{ {{- template "tableFieldEntry" $entry -}} , {{ $data.TableOutEntry $field.TypeReference }}},
+		{ {{- template "tableFieldEntry" $entry -}} , {{ $data.TableOutEntry $field.TypeReference }}
+		{{- if $object.Stream }}, Stream: exec.{{ if $field.UsesSubscriptionContext }}Event{{ end }}StreamOf[{{ $field.TypeReference.GO | ref }}](){{ end }}},
 	{{- end }}
 	})
 {{- end }}
@@ -235,5 +238,26 @@ Name: {{ $field.Name | quote }}
 {{- end }}
 {{- if $field.Arguments }}, Args: {{ $data.TableFieldIns $field }}
 {{- with $data.TableArgOrder $field }}, ArgOrder: {{ . }}{{ end }}
+{{- end }}
+{{- end }}
+
+{{- define "tableSubscription" }}
+{{- $data := .Data }}
+{{- $object := .Object }}
+{{- if $object.Stream }}
+
+{{- /* The subscription keeps the function of the functions mode, which the generated
+   Exec, the subscription middleware and the marshaler of the root type call. */}}
+{{- if $object.HasSubscriptionContextField }}
+
+func _{{ $object.Name }}(ctx context.Context, {{ $data.ECFuncParam }}sel ast.SelectionSet) func(ctx context.Context) (context.Context, graphql.Marshaler) {
+	return ec.tables.{{ $object.TableVar }}.SubscribeWithEventContext(ctx, ec, sel)
+}
+{{- else }}
+
+func _{{ $object.Name }}(ctx context.Context, {{ $data.ECFuncParam }}sel ast.SelectionSet) func(ctx context.Context) graphql.Marshaler {
+	return ec.tables.{{ $object.TableVar }}.Subscribe(ctx, ec, sel)
+}
+{{- end }}
 {{- end }}
 {{- end }}

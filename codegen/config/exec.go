@@ -150,11 +150,6 @@ func (c *Config) CheckTableMode() error {
 	if !c.Exec.IsTable() {
 		return nil
 	}
-	if c.Schema != nil && c.Schema.Subscription != nil {
-		return errors.New(
-			"exec.mode table does not support subscriptions yet; use exec.mode functions",
-		)
-	}
 	if c.Federation.IsDefined() {
 		return errors.New(
 			"exec.mode table does not support federation yet; use exec.mode functions",
