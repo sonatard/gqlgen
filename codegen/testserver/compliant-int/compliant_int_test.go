@@ -1,5 +1,5 @@
-//go:generate go run ../../../testdata/gqlgen.go -config gqlgen_default.yml -stub generated-default/stub.go
-//go:generate go run ../../../testdata/gqlgen.go -config gqlgen_compliant_strict.yml -stub generated-compliant-strict/stub.go
+//go:generate go run ../../../testdata/gqlgen.go -config gqlgen_default.yml -stub generated-default/stub.go -both-modes
+//go:generate go run ../../../testdata/gqlgen.go -config gqlgen_compliant_strict.yml -stub generated-compliant-strict/stub.go -both-modes
 
 package compliant_int
 
