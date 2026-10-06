@@ -8,7 +8,9 @@ import (
 
 type Stub struct {
 	QueryResolver struct {
-		Echo func(ctx context.Context, arg *string) (*string, error)
+		Echo       func(ctx context.Context, arg *string) (*string, error)
+		Tagged     func(ctx context.Context) (*string, error)
+		TaggedWith func(ctx context.Context) (*string, error)
 	}
 }
 
@@ -20,4 +22,10 @@ type stubQuery struct{ *Stub }
 
 func (r *stubQuery) Echo(ctx context.Context, arg *string) (*string, error) {
 	return r.QueryResolver.Echo(ctx, arg)
+}
+func (r *stubQuery) Tagged(ctx context.Context) (*string, error) {
+	return r.QueryResolver.Tagged(ctx)
+}
+func (r *stubQuery) TaggedWith(ctx context.Context) (*string, error) {
+	return r.QueryResolver.TaggedWith(ctx)
 }
