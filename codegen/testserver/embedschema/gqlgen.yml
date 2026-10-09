@@ -1,0 +1,15 @@
+# The schema files lie outside the directory of the generated code, which embeds copies
+# of them from exec.embed_schema_dir.
+schema:
+  - "*.graphql"
+  - "shared/*.graphql"
+skip_validation: true
+exec:
+  layout: follow-schema
+  dir: generated
+  package: generated
+  embed_schema_dir: schema
+model:
+  filename: generated/models-gen.go
+  package: generated
+omit_complexity: true

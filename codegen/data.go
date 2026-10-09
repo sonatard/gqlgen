@@ -168,11 +168,17 @@ func (d *Data) UniqueChildFieldTypes() []*ChildFieldType {
 // AugmentedSource contains extra information about graphql schema files which is not known directly
 // from the Config.Sources data
 type AugmentedSource struct {
+	// Name is the name of the schema file as the configuration gives it.
+	Name string
 	// path relative to Config.Exec.Filename
 	RelativePath string
 	Embeddable   bool
 	BuiltIn      bool
-	Source       string
+	// Copy is set when the file at RelativePath is a copy of the schema file that gqlgen
+	// writes into exec.embed_schema_dir, because the file itself lies outside the
+	// directory of the generated code.
+	Copy   bool
+	Source string
 }
 
 type builder struct {
@@ -461,12 +467,24 @@ func BuildData(cfg *config.Config, plugins ...any) (*Data, error) {
 		if strings.HasPrefix(relative, "..") || s.BuiltIn {
 			embeddable = false
 		}
+		// A file outside the directory of the generated code cannot be embedded from
+		// there, but a copy of it in exec.embed_schema_dir can.
+		copied := !embeddable && !s.BuiltIn && cfg.Exec.EmbedSchemaDir != ""
+		if copied {
+			relative = schemaCopyPath(cfg.Exec.EmbedSchemaDir, relative)
+			embeddable = true
+		}
 		aSources = append(aSources, AugmentedSource{
+			Name:         s.Name,
 			RelativePath: relative,
 			Embeddable:   embeddable,
 			BuiltIn:      s.BuiltIn,
+			Copy:         copied,
 			Source:       s.Input,
 		})
+	}
+	if err := checkSchemaCopies(aSources); err != nil {
+		return nil, err
 	}
 	s.AugmentedSources = aSources
 

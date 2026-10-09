@@ -30,6 +30,12 @@ exec:
   # Optional: Maximum number of goroutines in concurrency to use per child resolvers(default: unlimited)
   # worker_limit: 1000
 
+  # Optional: directory under the directory of the generated code into which gqlgen copies
+  # the schema files that lie outside that directory, so that the generated code embeds them
+  # with go:embed instead of including their text. Useful when a large schema lies outside
+  # that directory. gqlgen owns the directory: it deletes the files in it that it did not write.
+  # embed_schema_dir: schema
+
 # Comment or remove this section to skip Apollo Federation support
 federation:
   filename: graph/federation.go

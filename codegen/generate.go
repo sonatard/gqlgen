@@ -27,6 +27,16 @@ func GenerateCode(data *Data) error {
 		return errors.New("missing exec config")
 	}
 
+	err := writeSchemaCopies(
+		data.Config.Exec.Dir(),
+		data.Config.Exec.EmbedSchemaDir,
+		data.AugmentedSources,
+		!data.Config.OmitGQLGenFileNotice,
+	)
+	if err != nil {
+		return err
+	}
+
 	switch data.Config.Exec.Layout {
 	case config.ExecLayoutSingleFile:
 		return generateSingleFile(data)

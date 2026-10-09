@@ -406,6 +406,49 @@ func TestConfigCheck(t *testing.T) {
 	}
 }
 
+func TestExecEmbedSchemaDir(t *testing.T) {
+	for dir, wantErr := range map[string]bool{
+		"schema":        false,
+		"schema/copies": false,
+		"./schema/":     false,
+		".":             true,
+		"..":            true,
+		"../schema":     true,
+		"/schema":       true,
+	} {
+		t.Run(dir, func(t *testing.T) {
+			config := ExecConfig{
+				Layout:         ExecLayoutFollowSchema,
+				DirName:        "generated",
+				EmbedSchemaDir: dir,
+			}
+			err := config.Check()
+			if wantErr {
+				require.EqualError(
+					t,
+					err,
+					"embed_schema_dir must be a directory inside the directory of the generated code, not "+dir,
+				)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+
+	config := ExecConfig{
+		Layout:         ExecLayoutFollowSchema,
+		DirName:        "generated",
+		EmbedSchemaDir: "./schema/",
+	}
+	require.NoError(t, config.Check())
+	require.Equal(t, "schema", config.EmbedSchemaDir)
+	require.Equal(t, abs("generated/schema"), config.EmbedSchemaPath())
+
+	single := ExecConfig{Filename: "generated/exec.go", EmbedSchemaDir: "schema"}
+	require.Equal(t, abs("generated/schema"), single.EmbedSchemaPath())
+	require.Empty(t, (&ExecConfig{}).EmbedSchemaPath())
+}
+
 func TestAutobinding(t *testing.T) {
 	t.Run("valid paths", func(t *testing.T) {
 		cfg := Config{

@@ -41,6 +41,10 @@
           "type": "integer",
           "description": "Maximum number of goroutines in concurrency to use per child resolvers",
           "default": 1000
+        },
+        "embed_schema_dir": {
+          "type": "string",
+          "description": "Directory under the directory of the generated code into which gqlgen copies the schema files that lie outside that directory, so that the generated code embeds them with go:embed instead of including their text. gqlgen deletes the files in it that it did not write."
         }
       }
     },

@@ -26,6 +26,13 @@ type ExecConfig struct {
 	// but processing time may increase due to the reduced number of concurrences
 	// Default: 0 (unlimited)
 	WorkerLimit uint `yaml:"worker_limit"`
+
+	// EmbedSchemaDir is the directory, relative to the directory of the generated code,
+	// that gqlgen copies the schema files outside that directory into, so that the
+	// generated code embeds them with go:embed instead of including their text. Unset, the
+	// text of such files is written into the generated code. gqlgen owns the directory: it
+	// deletes the files in it that it did not write.
+	EmbedSchemaDir string `yaml:"embed_schema_dir,omitempty"`
 }
 
 type ExecLayout string
@@ -73,7 +80,38 @@ func (r *ExecConfig) Check() error {
 		r.Package = code.NameForDir(r.Dir())
 	}
 
+	if r.EmbedSchemaDir != "" {
+		dir := filepath.ToSlash(filepath.Clean(r.EmbedSchemaDir))
+		if filepath.IsAbs(r.EmbedSchemaDir) || strings.HasPrefix(dir, "/") ||
+			dir == "." || dir == ".." || strings.HasPrefix(dir, "../") {
+			return fmt.Errorf(
+				"embed_schema_dir must be a directory inside the directory of the generated code, not %s",
+				r.EmbedSchemaDir,
+			)
+		}
+		r.EmbedSchemaDir = dir
+	}
+
 	return nil
+}
+
+// EmbedSchemaPath returns the absolute path of the directory that the schema files outside
+// the directory of the generated code are copied into, or "" when none is configured. It
+// works before Check, as LoadConfig leaves the copies out of the schema.
+func (r *ExecConfig) EmbedSchemaPath() string {
+	if r.EmbedSchemaDir == "" {
+		return ""
+	}
+	var dir string
+	switch {
+	case r.Layout == ExecLayoutFollowSchema:
+		dir = r.DirName
+	case r.Filename != "":
+		dir = filepath.Dir(r.Filename)
+	default:
+		return ""
+	}
+	return abs(filepath.Join(dir, r.EmbedSchemaDir))
 }
 
 func (r *ExecConfig) ImportPath() string {

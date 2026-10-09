@@ -269,6 +269,9 @@ func CompleteConfig(config *Config) error {
 		}
 	}
 
+	// The copies of the schema in exec.embed_schema_dir are output, not schema, however
+	// the globs match them.
+	embedDir := config.Exec.EmbedSchemaPath()
 	preGlobbing := config.SchemaFilename
 	config.SchemaFilename = StringList{}
 	for _, f := range preGlobbing {
@@ -309,6 +312,9 @@ func CompleteConfig(config *Config) error {
 		}
 
 		for _, m := range matches {
+			if embedDir != "" && strings.HasPrefix(abs(m), embedDir+"/") {
+				continue
+			}
 			if config.SchemaFilename.Has(m) {
 				continue
 			}
