@@ -1,14 +1,12 @@
 #!/bin/bash
-# check-table-mode regenerates the examples and the integration server with exec.mode
-# set to table, then type-checks the examples, runs their tests and runs the integration
-# spec against the table-mode server. It rewrites the configs and the generated code in
-# the working tree, so it is meant for CI.
+# check-table-mode regenerates the examples, the integration server and the test servers
+# of the federation plugin with exec.mode set to table, then type-checks the examples, runs
+# their tests and those of the federation plugin, and runs the integration spec and the
+# federation spec against the table-mode servers. It rewrites the configs and the
+# generated code in the working tree, so it is meant for CI.
 
 set -euo pipefail
 export GO111MODULE=on
-
-# Examples that use Apollo Federation, which table mode does not support yet.
-unsupported='^_examples/(embedding/subdir|federation/.*|multi-entity-tests/.*)$'
 
 # config_of prints the configs that the go:generate lines of directory $1 use.
 config_of() {
@@ -50,14 +48,19 @@ ${indent}mode: table/" "$1"
 	fi
 }
 
-dirs=$(grep -rl --include='*.go' -E 'go:generate go run .*(testdata/gqlgen.go|github.com/99designs/gqlgen$)' _examples integration |
-	xargs -n1 dirname | sort -u | grep -Ev "$unsupported")
+dirs=$(grep -rl --include='*.go' -E 'go:generate go run .*(testdata/gqlgen.go|github.com/99designs/gqlgen$)' _examples integration plugin/federation |
+	xargs -n1 dirname | sort -u)
 for d in $dirs; do
 	# A failure of config_of in the list of a for loop would not stop the script.
 	configs=$(config_of "$d") || exit 1
 	for c in $configs; do
 		to_table "$c"
 	done
+done
+# The tests of the federation plugin also generate code from the configs of its testdata
+# that no go:generate line uses.
+for c in plugin/federation/testdata/*/*.yml; do
+	to_table "$c"
 done
 for d in $dirs; do
 	echo "### generating $d in table mode"
@@ -67,15 +70,24 @@ for d in $dirs; do
 		echo "$d was not generated in table mode"
 		exit 1
 	fi
+	# Only the functions mode declares the field contexts: a directory with several
+	# configs, such as that of the federation plugin, has no executor of it left.
+	if grep -rqsE --include='*.go' '^func .*fieldContext_' "$d" "$(dirname "$d")/graph"; then
+		echo "$d still has an executor of the functions mode"
+		exit 1
+	fi
 done
 
 echo "### testing the examples"
-for m in _examples _examples/large-project-structure/main _examples/mini-habr-with-subscriptions _examples/websocket-initfunc/server; do
-	excluded=$(cd "$m" && go list ./... | grep -E 'embedding/subdir|federation|multi-entity-tests' || true)
-	# With no exclusion, the fixed string ^ matches no package path.
-	packages=$(cd "$m" && go list ./... | grep -vxF -e "${excluded:-^}")
-	(cd "$m" && go vet $packages && go test -race $packages)
+for m in _examples _examples/large-project-structure/main _examples/mini-habr-with-subscriptions _examples/websocket-initfunc/server _examples/multi-entity-tests/*/; do
+	(cd "$m" && go vet ./... && go test -race ./...)
 done
+
+echo "### testing the federation plugin"
+go test -race ./plugin/federation/...
 
 echo "### running the integration spec against the table-mode server"
 .github/workflows/check-integration
+
+echo "### running the federation spec against the table-mode subgraphs"
+.github/workflows/check-federation

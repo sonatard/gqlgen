@@ -28,6 +28,7 @@ import (
 func TestTableModeCompiles(t *testing.T) {
 	for _, name := range []string{
 		"omittable", "mapmodel", "names", "batchoff", "ifacemodel", "shadowed", "funcpair",
+		"fedentity",
 	} {
 		t.Run(name, func(t *testing.T) {
 			configPath, err := filepath.Abs(filepath.Join("compile", name, "gqlgen.yml"))
@@ -214,7 +215,6 @@ func TestTableModeRejectsPluginChanges(t *testing.T) {
 		{"directives of absent arguments in the configuration", nullConfig{}, "call_argument_directives_with_null"},
 		{"a source in the data", guardedSource{}, "the sources"},
 		{"a directive left to the generator in the data", runtimeDirective{}, "directive @generatorOnly"},
-		{"a batch resolver in the data", batchData{}, "User.id"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			dir, err := generateWith(t, configPath, config.ExecModeTable, api.AddPlugin(tc.plugin))
@@ -287,6 +287,7 @@ func TestTableModeFollowsPluginChanges(t *testing.T) {
 		plugin plugin.Plugin
 	}{
 		{"a batch resolver in the configuration", batchID{}},
+		{"a batch resolver in the data", batchData{}},
 		{"a resolver", userResolver{}},
 		{"an input that unmarshals itself", rawDefault{}},
 		{"a directive declared outside the sources on an input that unmarshals itself", rawDirective{}},
@@ -298,6 +299,39 @@ func TestTableModeFollowsPluginChanges(t *testing.T) {
 				require.Empty(t, typeErrors(t, dir), "exec mode %s", mode)
 			}
 		})
+	}
+}
+
+// unmarshalerCaller writes a file into the package of the executor that unmarshals
+// Hello.name, as a plugin that generates code calling the unmarshalers would.
+type unmarshalerCaller struct{}
+
+func (unmarshalerCaller) Name() string { return "unmarshaler-caller" }
+
+func (unmarshalerCaller) GenerateCode(data *codegen.Data) error {
+	t := data.Objects.ByName("Hello").Fields[0].TypeReference
+	data.AddUnmarshalerCall(t)
+	src := "package " + data.Config.Exec.Package + `
+
+import "context"
+
+func callUnmarshaler(ctx context.Context, ec *executionContext, v any) (string, error) {
+	return ` + data.UnmarshalCall(t) + "(ctx, " + data.ECArg() + `v)
+}
+`
+	return os.WriteFile(filepath.Join(data.Config.Exec.Dir(), "caller.go"), []byte(src), 0o600)
+}
+
+// A plugin that runs after the federation plugin can call an unmarshaler too, although
+// the federation plugin asked for those of its keys before.
+func TestTableModePluginUnmarshalers(t *testing.T) {
+	configPath, err := filepath.Abs(filepath.Join("compile", "federation", "gqlgen.yml"))
+	require.NoError(t, err)
+	for _, mode := range []config.ExecMode{config.ExecModeFunctions, config.ExecModeTable} {
+		dir, err := generateWith(t, configPath, mode, api.AddPlugin(unmarshalerCaller{}))
+		require.NoError(t, err, "exec mode %s", mode)
+		require.FileExists(t, filepath.Join(dir, "caller.go"))
+		require.Empty(t, typeErrors(t, dir), "exec mode %s", mode)
 	}
 }
 
@@ -334,32 +368,6 @@ func TestTableModeLinksChangedSources(t *testing.T) {
 	generated, err := os.ReadFile("generated.go")
 	require.NoError(t, err)
 	require.Contains(t, string(generated), "guarded: Int @guard")
-}
-
-// Generation fails for what table mode does not support before it removes the generated
-// files, which the functions mode would generate again.
-func TestTableModeKeepsFilesOfUnsupported(t *testing.T) {
-	configPath, err := filepath.Abs(filepath.Join("compile", "plugins", "gqlgen.yml"))
-	require.NoError(t, err)
-	t.Chdir(filepath.Dir(configPath))
-	cfg, err := config.LoadConfig(filepath.Base(configPath))
-	require.NoError(t, err)
-	//nolint:usetesting // the directory is inside the module, as in generateWith
-	dir, err := os.MkdirTemp(filepath.Dir(configPath), "_generated-")
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
-	cfg.Exec.Mode = config.ExecModeTable
-	cfg.Exec.Filename = filepath.Join(dir, "generated.go")
-	cfg.Model.Filename = filepath.Join(dir, "models-gen.go")
-	cfg.Model.Package = cfg.Exec.Package
-	cfg.Federation = config.PackageConfig{Filename: filepath.Join(dir, "federation.go")}
-	for _, f := range []string{cfg.Exec.Filename, cfg.Model.Filename} {
-		require.NoError(t, os.WriteFile(f, []byte("package plugins\n"), 0o600))
-	}
-	require.ErrorContains(t, api.Generate(cfg), "federation")
-	for _, f := range []string{cfg.Exec.Filename, cfg.Model.Filename} {
-		require.FileExists(t, f)
-	}
 }
 
 // typeErrors type-checks the package in dir and returns its errors.

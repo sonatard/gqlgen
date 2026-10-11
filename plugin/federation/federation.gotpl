@@ -172,7 +172,7 @@ func (ec *executionContext) resolveEntity(
 					case "{{.ResolverName}}":
 						{{- range $j, $keyField := .KeyFields }}
 						{{ if $useFunctionSyntaxForExecutionContext -}}
-						id{{$j}}, err := {{.Type.UnmarshalFunc}}(ctx, ec, rep["{{.Field.Join `"].(map[string]any)["`}}"])
+						id{{$j}}, err := {{.UnmarshalCall}}(ctx, ec, rep["{{.Field.Join `"].(map[string]any)["`}}"])
 						{{- else -}}
 						id{{$j}}, err := ec.{{.Type.UnmarshalFunc}}(ctx, rep["{{.Field.Join `"].(map[string]any)["`}}"])
 						{{- end }}
@@ -195,7 +195,7 @@ func (ec *executionContext) resolveEntity(
 									{{/* computed: resolved by a standalone field resolver, not unmarshaled here */}}
 								{{- else }}
 									{{ if $useFunctionSyntaxForExecutionContext -}}
-									entity.{{.Field.JoinGo `.`}}, err = {{.Type.UnmarshalFunc}}(ctx, ec, rep["{{.Field.Join `"].(map[string]any)["`}}"])
+									entity.{{.Field.JoinGo `.`}}, err = {{.UnmarshalCall}}(ctx, ec, rep["{{.Field.Join `"].(map[string]any)["`}}"])
 									{{- else -}}
 									entity.{{.Field.JoinGo `.`}}, err = ec.{{.Type.UnmarshalFunc}}(ctx, rep["{{.Field.Join `"].(map[string]any)["`}}"])
 									{{- end }}
@@ -252,7 +252,7 @@ func (ec *executionContext) resolveManyEntities(
 						for i, rep := range reps {
 							{{ range $i, $keyField := .KeyFields -}}
 							{{ if $useFunctionSyntaxForExecutionContext -}}
-							id{{$i}}, err := {{.Type.UnmarshalFunc}}(ctx, ec, rep.entity["{{.Field.Join `"].(map[string]any)["`}}"])
+							id{{$i}}, err := {{.UnmarshalCall}}(ctx, ec, rep.entity["{{.Field.Join `"].(map[string]any)["`}}"])
 							{{- else -}}
 							id{{$i}}, err := ec.{{.Type.UnmarshalFunc}}(ctx, rep.entity["{{.Field.Join `"].(map[string]any)["`}}"])
 							{{- end }}
@@ -272,7 +272,7 @@ func (ec *executionContext) resolveManyEntities(
 									{{/* computed: resolved by a field resolver, not preloaded onto the input */}}
 								{{- else }}
 									{{ if $useFunctionSyntaxForExecutionContext -}}
-										representation.{{.Field.JoinGo `.`}}, err = {{.Type.UnmarshalFunc}}(ctx, ec, rep.entity["{{.Field.Join `"].(map[string]any)["`}}"])
+										representation.{{.Field.JoinGo `.`}}, err = {{.UnmarshalCall}}(ctx, ec, rep.entity["{{.Field.Join `"].(map[string]any)["`}}"])
 										{{- else -}}
 										representation.{{.Field.JoinGo `.`}}, err = ec.{{.Type.UnmarshalFunc}}(ctx, rep.entity["{{.Field.Join `"].(map[string]any)["`}}"])
 									{{- end }}
@@ -305,7 +305,7 @@ func (ec *executionContext) resolveManyEntities(
 						for i, rep := range reps {
 							{{ range $i, $keyField := .KeyFields -}}
 							{{ if $useFunctionSyntaxForExecutionContext -}}
-							id{{$i}}, err := {{.Type.UnmarshalFunc}}(ctx, ec, rep.entity["{{.Field.Join `"].(map[string]any)["`}}"])
+							id{{$i}}, err := {{.UnmarshalCall}}(ctx, ec, rep.entity["{{.Field.Join `"].(map[string]any)["`}}"])
 							{{- else -}}
 							id{{$i}}, err := ec.{{.Type.UnmarshalFunc}}(ctx, rep.entity["{{.Field.Join `"].(map[string]any)["`}}"])
 							{{- end }}
@@ -345,7 +345,7 @@ func (ec *executionContext) resolveManyEntities(
 									{{/* already handled above by the Populate hook */}}
 								{{- else }}
 									{{ if $useFunctionSyntaxForExecutionContext -}}
-										entity.{{.Field.JoinGo `.`}}, err = {{.Type.UnmarshalFunc}}(ctx, ec, reps[i].entity["{{.Field.Join `"].(map[string]any)["`}}"])
+										entity.{{.Field.JoinGo `.`}}, err = {{.UnmarshalCall}}(ctx, ec, reps[i].entity["{{.Field.Join `"].(map[string]any)["`}}"])
 										{{- else -}}
 										entity.{{.Field.JoinGo `.`}}, err = ec.{{.Type.UnmarshalFunc}}(ctx, reps[i].entity["{{.Field.Join `"].(map[string]any)["`}}"])
 									{{- end }}

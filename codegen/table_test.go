@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -737,4 +738,84 @@ func TestTableDerived(t *testing.T) {
 	require.False(t, d.tableDerived(&list, true))
 	require.False(t, d.tableDerived(&nested, true))
 	require.Equal(t, "t.marshalNUser2ᚖmodelᚐUser", d.TableOut(ptr))
+}
+
+// A plugin that adds a call to an unmarshaler gets a function that the code it generates
+// can call, where table mode would otherwise build the unmarshaler without a type
+// parameter.
+func TestAddUnmarshalerCall(t *testing.T) {
+	list := &config.TypeReference{
+		Definition: &ast.Definition{Name: "String", Kind: ast.Scalar},
+		GQL:        ast.NonNullListType(ast.NonNullNamedType("String", nil), nil),
+		GO:         types.NewSlice(types.Typ[types.String]),
+	}
+	data := func(mode config.ExecMode) *Data {
+		return &Data{
+			Config:          &config.Config{Exec: config.ExecConfig{Mode: mode}},
+			ReferencedTypes: map[string]*config.TypeReference{list.GQL.String(): list},
+		}
+	}
+
+	d := data(config.ExecModeTable)
+	require.Panics(t, func() { d.UnmarshalCall(list) })
+
+	d = data(config.ExecModeTable)
+	d.AddUnmarshalerCall(list)
+	require.Equal(t, "ec.tables.unmarshalNString2ᚕstringᚄ.Unmarshal", d.UnmarshalCall(list))
+	// A call that a later plugin adds after the tables were derived is kept too.
+	ints := &config.TypeReference{
+		Definition: &ast.Definition{Name: "Int", Kind: ast.Scalar},
+		GQL:        ast.NonNullListType(ast.NonNullNamedType("Int", nil), nil),
+		GO:         types.NewSlice(types.Typ[types.Int]),
+	}
+	d.ReferencedTypes[ints.GQL.String()] = ints
+	require.Panics(t, func() { d.UnmarshalCall(ints) })
+	d.AddUnmarshalerCall(ints)
+	require.Equal(t, "ec.tables.unmarshalNInt2ᚕintᚄ.Unmarshal", d.UnmarshalCall(ints))
+	require.Equal(t, "ec.tables.unmarshalNString2ᚕstringᚄ.Unmarshal", d.UnmarshalCall(list))
+
+	d = data(config.ExecModeFunctions)
+	d.AddUnmarshalerCall(list)
+	require.Equal(t, "ec.unmarshalNString2ᚕstringᚄ", d.UnmarshalCall(list))
+}
+
+// Deriving the tables again keeps the names that code generated before refers to, also
+// where a type added since would take the same short name.
+func TestTableRederiveKeepsNames(t *testing.T) {
+	list := func(path string) *config.TypeReference {
+		pkg := types.NewPackage(path, "uuid")
+		id := types.NewNamed(types.NewTypeName(0, pkg, "UUID", nil), types.Typ[types.Int], nil)
+		return &config.TypeReference{
+			Definition: &ast.Definition{Name: "UUID", Kind: ast.Scalar},
+			GQL:        ast.NonNullListType(ast.NonNullNamedType("UUID", nil), nil),
+			GO:         types.NewSlice(id),
+		}
+	}
+	a, b := list("github.com/a/uuid"), list("github.com/b/uuid")
+	data := func(refs ...*config.TypeReference) *Data {
+		d := &Data{
+			Config:          &config.Config{Exec: config.ExecConfig{Mode: config.ExecModeTable}},
+			ReferencedTypes: map[string]*config.TypeReference{},
+		}
+		for i, ref := range refs {
+			d.ReferencedTypes[strconv.Itoa(i)] = ref
+		}
+		return d
+	}
+
+	d := data(a)
+	d.AddUnmarshalerCall(a)
+	short := d.UnmarshalCall(a)
+	// A later plugin adds a type whose short name is that of a.
+	d.ReferencedTypes["b"] = b
+	d.AddUnmarshalerCall(b)
+	require.Equal(t, short, d.UnmarshalCall(a))
+	require.NotEqual(t, short, d.UnmarshalCall(b))
+
+	// Derived once with both, neither takes the short name.
+	d = data(a, b)
+	d.AddUnmarshalerCall(a)
+	d.AddUnmarshalerCall(b)
+	require.NotEqual(t, short, d.UnmarshalCall(a))
+	require.NotEqual(t, short, d.UnmarshalCall(b))
 }

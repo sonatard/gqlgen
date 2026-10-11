@@ -139,19 +139,3 @@ func (r *ExecConfig) Pkg() *types.Package {
 func (r *ExecConfig) IsDefined() bool {
 	return r.Filename != "" || r.DirName != ""
 }
-
-// CheckTableMode returns an error when the configuration enables a feature that exec.mode
-// table does not support yet: federation. api.Generate runs it before it removes the
-// generated files, Init before the plugins write any file, and api.Generate again after
-// the plugins that change the configuration.
-func (c *Config) CheckTableMode() error {
-	if !c.Exec.IsTable() {
-		return nil
-	}
-	if c.Federation.IsDefined() {
-		return errors.New(
-			"exec.mode table does not support federation yet; use exec.mode functions",
-		)
-	}
-	return nil
-}

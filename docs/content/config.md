@@ -361,20 +361,22 @@ of `codegen/testserver/tablemode`, a request takes about as long as in the defau
 makes about 5% fewer allocations. The generated code is much smaller: the
 `_examples/starwars` executor goes from 5,359 to 1,147 lines.
 
-Table mode does not support Apollo Federation yet. Generation fails with an error that names
-the feature when the configuration enables it; use the default mode then.
-
 What changes for code that uses the generated package:
 
 - The resolver interfaces, `ResolverRoot`, `DirectiveRoot`, `ComplexityRoot`, `Config` and
   `NewExecutableSchema` stay the same, so resolvers and directive implementations do not change.
 - The generated package no longer has the per-field functions such as `ec._Query_hero`,
   `ec.fieldContext_Query_hero` and `ec.field_Query_hero_args`, nor the per-object marshalers
-  such as `ec._Human`. The subscription type keeps its function, such as `_Subscription`.
-- The remaining generated functions take the execution context as a parameter, as with
+  such as `ec._Human`. The subscription type keeps its function, such as `_Subscription`, and
+  the fields of batch resolvers keep theirs, such as `ec.resolveBatch_User_posts`.
+- The remaining marshalers and unmarshalers take the execution context as a parameter, as with
   `use_function_syntax_for_execution_context`, which has no effect in table mode.
-- Plugins whose templates call the per-field functions or the methods of the execution
-  context, such as `ec._Query_hero`, do not work with table mode.
+- Plugins whose templates call the per-field functions or the marshalers and unmarshalers of
+  the generated package, such as `ec._Query_hero` or `ec.unmarshalNString2string`, do not work
+  with table mode as they are. A plugin that unmarshals values, as the federation plugin does,
+  adds the type references with `codegen.Data.AddUnmarshalerCall` in its `GenerateCode`, then
+  calls the function that `codegen.Data.UnmarshalCall` returns, with the execution context as
+  the second argument.
 - Plugins that change `codegen.Data` after gqlgen builds it, in what the runtime reads from
   the schema, such as the directives of a field, fail the generation with an error that names
   the change. Such plugins can change the schema with a `plugin.SchemaMutator` instead.

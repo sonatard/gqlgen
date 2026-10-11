@@ -42,6 +42,12 @@ type Data struct {
 	TableLinkedSchema string
 	// tableBuilt is the tableState of table mode when BuildData returned it.
 	tableBuilt map[string]string
+	// unmarshalerCalls holds the unmarshalers that the code that plugins generate calls.
+	// See AddUnmarshalerCall.
+	unmarshalerCalls map[string]bool
+	// tableNamesKept are the names of the tables that table mode derived before it derived
+	// them again. See tableRederive.
+	tableNamesKept map[string]string
 
 	// allBatchFieldTypes is the schema-wide result of collectBatchFieldTypes. Like
 	// AllDirectives it is set when a schema is split into one Data instance per schema

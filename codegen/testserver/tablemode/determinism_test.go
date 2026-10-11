@@ -89,6 +89,9 @@ func generateWith(
 	if cfg.Model.Package == "" {
 		cfg.Model.Package = cfg.Exec.Package
 	}
+	if cfg.Federation.IsDefined() {
+		cfg.Federation.Filename = filepath.Join(dir, "federation.go")
+	}
 	cfg.Resolver = config.ResolverConfig{}
 	cfg.SkipValidation = true
 	cfg.SkipModTidy = true

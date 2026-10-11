@@ -23,6 +23,8 @@ import (
 	aliasestable "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliases/table"
 	caseargsfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/caseargs/functions"
 	caseargstable "github.com/99designs/gqlgen/codegen/testserver/tablemode/caseargs/table"
+	federationfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/federation/functions"
+	federationtable "github.com/99designs/gqlgen/codegen/testserver/tablemode/federation/table"
 	"github.com/99designs/gqlgen/codegen/testserver/tablemode/functions"
 	introspectedfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/introspected/functions"
 	introspectedtable "github.com/99designs/gqlgen/codegen/testserver/tablemode/introspected/table"
@@ -539,6 +541,107 @@ func TestTableModeMatchesFunctionsMode(t *testing.T) {
 // while it generates the code, a schema with a type called Query that is not its query
 // type, which gqlgen replaces with an empty one, directives on the types of introspection,
 // and call_argument_directives_with_null.
+// entities is the query of the entities of representations, with the fields of every
+// entity type of the federation schema.
+const entities = `query($r: [_Any!]!) { _entities(representations: $r) { __typename
+	... on Hello { name greeting }
+	... on World { foo bar hello { name greeting } }
+	... on Planet { name size }
+	... on MultiHello { name }
+	... on Product { id display tax discount }
+	... on Item { id label }
+} }`
+
+// federationRequests are the requests of a router to the federation schema.
+var federationRequests = []request{
+	{name: "service", query: `{ _service { sdl } }`, contains: []string{`type Hello @key`}},
+	{
+		name:  "an entity with one key",
+		query: entities,
+		variables: map[string]any{"r": []any{
+			map[string]any{"__typename": "Hello", "name": "a"},
+			map[string]any{"__typename": "Hello", "name": "fail"},
+			map[string]any{"__typename": "Hello", "name": "nil"},
+			map[string]any{"__typename": "Hello", "name": 1},
+		}},
+		contains: []string{`"HELLO A"`, `no hello called fail`},
+	},
+	{
+		name:  "an entity with a nested key and a second key",
+		query: entities,
+		variables: map[string]any{"r": []any{
+			map[string]any{"__typename": "World", "hello": map[string]any{"name": "h"}, "foo": "f"},
+			map[string]any{"__typename": "World", "bar": 3},
+			map[string]any{"__typename": "World", "foo": "x"},
+			map[string]any{"__typename": "World", "hello": "h", "foo": "y"},
+		}},
+		contains: []string{`"foo3"`, `missing Key Field`},
+	},
+	{
+		name:  "a field that an entity requires",
+		query: entities,
+		variables: map[string]any{"r": []any{
+			map[string]any{"__typename": "Planet", "name": "p", "diameter": 12},
+			map[string]any{"__typename": "Planet", "name": "q", "diameter": "big"},
+			map[string]any{"__typename": "Planet", "name": "r"},
+		}},
+		contains: []string{`"size":120`},
+	},
+	{
+		name:  "entities resolved together, with errors of their own",
+		query: entities,
+		variables: map[string]any{"r": []any{
+			map[string]any{"__typename": "MultiHello", "name": "a"},
+			map[string]any{"__typename": "MultiHello", "name": "fail"},
+			map[string]any{"__typename": "MultiHello", "name": "b"},
+		}},
+		contains: []string{`no multi hello 1`},
+	},
+	{
+		name:  "fields required before the call, and computed by field and batch resolvers",
+		query: entities,
+		variables: map[string]any{"r": []any{
+			map[string]any{"__typename": "Product", "id": "1", "category": "c", "price": 100},
+			map[string]any{"__typename": "Product", "id": "2", "category": "d", "price": 55},
+			map[string]any{"__typename": "Product", "id": "3", "category": "e"},
+			map[string]any{"__typename": "Product", "id": "4", "category": "f", "price": "cheap"},
+		}},
+		contains: []string{`"display":"1 in c"`, `"tax":10`, `price cheap is not a number`},
+	},
+	{
+		name:  "fields computed by a batch resolver",
+		query: entities,
+		variables: map[string]any{"r": []any{
+			map[string]any{"__typename": "Product", "id": "1", "category": "c", "price": 100},
+			map[string]any{"__typename": "Hello", "name": "a"},
+			map[string]any{"__typename": "Product", "id": "2", "category": "d"},
+		}},
+		contains: []string{`"discount":20`},
+	},
+	{
+		name:  "an entity that is an interface, and its implementation",
+		query: entities,
+		variables: map[string]any{"r": []any{
+			map[string]any{"__typename": "Node", "id": "n1"},
+			map[string]any{"__typename": "Item", "id": "i1"},
+			map[string]any{"__typename": "Item", "id": "none"},
+		}},
+		contains: []string{`"node n1"`, `no item none`},
+	},
+	{
+		name:  "entities of several types, of an unknown type and without a type",
+		query: entities,
+		variables: map[string]any{"r": []any{
+			map[string]any{"__typename": "Hello", "name": "a"},
+			map[string]any{"__typename": "Planet", "name": "p", "diameter": 1},
+			map[string]any{"__typename": "Unknown", "id": "u"},
+			map[string]any{"name": "x"},
+			map[string]any{"__typename": "MultiHello", "name": "m"},
+		}},
+		contains: []string{`unknown type`, `__typename must be an existing string`},
+	},
+}
+
 func TestOtherSchemas(t *testing.T) {
 	for _, tc := range []struct {
 		name             string
@@ -608,6 +711,12 @@ func TestOtherSchemas(t *testing.T) {
 				{name: "schema", query: `{ __schema { queryType { name } } }`, contains: []string{`directive seen`}},
 				{name: "type", query: `{ __type(name: "Query") { name fields { type { name } } } }`, contains: []string{`directive seen`}},
 			},
+		},
+		{
+			name:      "federation",
+			functions: federationfunctions.NewSchema,
+			table:     federationtable.NewSchema,
+			requests:  federationRequests,
 		},
 		{
 			name:      "call_argument_directives_with_null",

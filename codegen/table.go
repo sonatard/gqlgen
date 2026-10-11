@@ -1175,14 +1175,15 @@ func (d *Data) tableCheckDirectives() error {
 // tableState returns what the runtime reads from the schema, as d holds it for the
 // functions mode, by the element it is about: the directives that the functions mode runs
 // on the fields, arguments and inputs, whether it runs those of absent arguments, the
-// types of the fields, arguments and input fields, the batch resolvers, which decide the
-// lists that keep the functions of the functions mode, the defaults of the input fields,
+// types of the fields, arguments and input fields, the defaults of the input fields,
 // and whether an object is a root, implements interfaces or resolves its fields one after
 // another. It also holds what decides the schema that the runtime reads: the sources as
 // the generated code holds them, the linked schema, and the directives that the tables
 // declare. BuildData keeps it, and the generation fails where a plugin changes it in d
 // afterwards: one mode would follow the change, and the other not. The inputs that
-// unmarshal themselves are left out, as neither mode reads their fields.
+// unmarshal themselves are left out, as neither mode reads their fields, and so are the
+// objects that no field returns, which neither mode resolves, such as the type Entity that
+// the federation plugin makes a root in its GenerateCode.
 func (d *Data) tableState() map[string]string {
 	dirs := func(list []*Directive) string {
 		var b strings.Builder
@@ -1224,7 +1225,11 @@ func (d *Data) tableState() map[string]string {
 	for _, dir := range d.TableDirectiveDefs() {
 		state["directive @"+dir.Name] = ""
 	}
+	returned := d.tableReturned()
 	for _, o := range d.Objects {
+		if !returned[o.Name] {
+			continue
+		}
 		var implements []string
 		for _, i := range o.Implements {
 			implements = append(implements, i.Name)
@@ -1232,8 +1237,8 @@ func (d *Data) tableState() map[string]string {
 		state["type "+o.Name] = fmt.Sprintf("root=%t sequential=%t stream=%t implements=%v",
 			o.Root, o.DisableConcurrency, o.Stream, implements)
 		for _, f := range o.Fields {
-			state[o.Name+"."+f.Name] = fmt.Sprintf("%s batch=%t%s",
-				gqlType(f.TypeReference, f.Type), f.IsBatch(), dirs(f.ImplDirectives()))
+			state[o.Name+"."+f.Name] = fmt.Sprintf("%s%s",
+				gqlType(f.TypeReference, f.Type), dirs(f.ImplDirectives()))
 			for _, a := range f.Args {
 				state[o.Name+"."+f.Name+"("+a.Name+":)"] = fmt.Sprintf("%s with_null=%t%s",
 					gqlType(a.TypeReference, a.Type), a.CallArgumentDirectivesWithNull,
@@ -1256,6 +1261,33 @@ func (d *Data) tableState() map[string]string {
 		}
 	}
 	return state
+}
+
+// tableReturned returns the names of the root operation types of the schema and of the
+// types that a field of the schema returns, with the implementations of the interfaces and
+// the members of the unions among them.
+func (d *Data) tableReturned() map[string]bool {
+	returned := map[string]bool{}
+	for _, root := range []*ast.Definition{d.Schema.Query, d.Schema.Mutation, d.Schema.Subscription} {
+		if root != nil {
+			returned[root.Name] = true
+		}
+	}
+	for _, def := range d.Schema.Types {
+		for _, f := range def.Fields {
+			name := f.Type.Name()
+			if returned[name] {
+				continue
+			}
+			returned[name] = true
+			if typ := d.Schema.Types[name]; typ != nil && typ.IsAbstractType() {
+				for _, p := range d.Schema.GetPossibleTypes(typ) {
+					returned[p.Name] = true
+				}
+			}
+		}
+	}
+	return returned
 }
 
 // tableCheckState returns an error for an element whose tableState a plugin changed since
@@ -1386,6 +1418,38 @@ func (d *Data) MarshalCall(t *config.TypeReference) string {
 		panic("codegen: the typed marshaler of " + t.MarshalFunc() + " is not generated")
 	}
 	return d.ECDot() + t.MarshalFunc()
+}
+
+// AddUnmarshalerCall records that code that a plugin generates into the package of the
+// executor calls the unmarshaler of t, which UnmarshalCall returns. Table mode then keeps
+// the unmarshaler typed, as the function of the functions mode or in an exec.InFor of the
+// tables, where it would otherwise build it without a type parameter, which generated
+// code cannot call. A plugin adds a call from its GenerateCode, before it asks
+// UnmarshalCall for it.
+func (d *Data) AddUnmarshalerCall(t *config.TypeReference) {
+	if !d.Config.Exec.IsTable() {
+		return
+	}
+	if d.unmarshalerCalls == nil {
+		d.unmarshalerCalls = map[string]bool{}
+	}
+	d.unmarshalerCalls[t.UnmarshalFunc()] = true
+	// An earlier plugin may have asked for an unmarshaler already, which derived what the
+	// tables hold from the calls it knew of.
+	d.tableRederive()
+}
+
+// tableRederive drops what table mode derived from d, and the objects with batch
+// resolvers, so that they are derived again from d as it is then: see tableInfo. The
+// names of the marshalers and unmarshalers in the tables stay, as code that a plugin
+// generated may refer to them.
+func (d *Data) tableRederive() {
+	if d.table != nil {
+		d.tableNamesKept = d.table.names
+	}
+	d.table = nil
+	d.tableGroups = nil
+	d.cachedBatchFieldTypes = nil
 }
 
 // UnmarshalCall is MarshalCall for the unmarshaler of t.
@@ -1831,7 +1895,8 @@ func (d *Data) TableIn(t *config.TypeReference) string {
 // could be built without a type parameter: those of the elements of the type references
 // the combinators do not cover, which the functions generated for them call, and those of
 // the arguments of directives, which the functions that parse the arguments of the
-// directives of queries call, and the inner lists of nested lists, which the outer list
+// directives of queries call, the unmarshalers that plugins call (see
+// AddUnmarshalerCall), and the inner lists of nested lists, which the outer list
 // marshals with a typed marshaler: through an Out, each inner slice would be boxed in an
 // any. The elements of lists do not count otherwise: the lists take the combinator of an
 // erased element, or its Out or In.
@@ -1861,6 +1926,9 @@ func (d *Data) tableTypedCalls() map[string]bool {
 		for _, a := range dir.Args {
 			typed[a.TypeReference.UnmarshalFunc()] = true
 		}
+	}
+	for name := range d.unmarshalerCalls {
+		typed[name] = true
 	}
 	return typed
 }
@@ -1979,6 +2047,17 @@ func (d *Data) tableNames() map[string]string {
 			if len(fullNames) == 1 {
 				names[name] = short
 			}
+		}
+	}
+	if d.tableNamesKept != nil {
+		// The tables were derived before: the names they had stay, and the types added
+		// since have their full names, which no short name takes.
+		for name := range names {
+			kept, ok := d.tableNamesKept[name]
+			if !ok {
+				kept = name
+			}
+			names[name] = kept
 		}
 	}
 	return names

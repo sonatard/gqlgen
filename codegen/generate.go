@@ -30,6 +30,9 @@ func GenerateCode(data *Data) error {
 	if err := data.tableCheckState(); err != nil {
 		return err
 	}
+	// A plugin that asked for an unmarshaler of table mode had it derive the tables from the
+	// data as it was then, which a later plugin may have changed.
+	data.tableRederive()
 
 	switch data.Config.Exec.Layout {
 	case config.ExecLayoutSingleFile:

@@ -722,31 +722,6 @@ func TestBatchResolverUnsupportedReason(t *testing.T) {
 	}
 }
 
-func TestCheckTableMode(t *testing.T) {
-	newConfig := func() *Config {
-		return &Config{Exec: ExecConfig{Mode: ExecModeTable}}
-	}
-
-	require.NoError(t, newConfig().CheckTableMode())
-
-	c := newConfig()
-	c.Schema = &ast.Schema{Subscription: &ast.Definition{Name: "Subscription"}}
-	require.NoError(t, c.CheckTableMode())
-
-	c = newConfig()
-	c.Federation = PackageConfig{Filename: "federation.go"}
-	require.ErrorContains(t, c.CheckTableMode(), "does not support federation")
-
-	c = newConfig()
-	c.Resolver.Batch.Enabled = true
-	require.NoError(t, c.CheckTableMode())
-
-	c = newConfig()
-	c.Federation = PackageConfig{Filename: "federation.go"}
-	c.Exec.Mode = ExecModeFunctions
-	require.NoError(t, c.CheckTableMode())
-}
-
 func TestExecModeFromYAML(t *testing.T) {
 	var c Config
 	require.NoError(t, yaml.Unmarshal([]byte("exec:\n  mode: table\n"), &c))

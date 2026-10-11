@@ -56,5 +56,6 @@ does not generate, starts with `//go:build !exectable`.
 `codegen/testserver/tablemode` generates one schema in both modes into separate packages and
 checks that both executors give the same response to every request.
 
-CI also runs `.github/workflows/check-table-mode`, which regenerates the examples and the
-integration server in table mode and runs their tests and the integration spec against them.
+CI also runs `.github/workflows/check-table-mode`, which regenerates the examples, the
+integration server and the test servers of the federation plugin in table mode and runs their
+tests, the integration spec and the federation spec against them.
