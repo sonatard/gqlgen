@@ -793,6 +793,71 @@ func (d *Data) TableKeepsMarshaler(t *config.TypeReference) bool {
 	return d.tableMarshalKind(t) == tableKindFunc
 }
 
+// TableMarshalChecks returns the statements that check, when the package compiles, that
+// the Go types of d that marshal themselves are graphql.Marshalers, as the functions mode
+// returns them, for those that table mode does not keep the marshalers of: a method of a
+// pointer receiver on a value, or of another signature, fails to compile as in the
+// functions mode. The template puts them into a function without parameters that is not
+// called: the marshalers of the functions mode name the type only in their signatures.
+func (d *Data) TableMarshalChecks() []string {
+	var checks []string
+	for _, t := range d.tableSelfMarshalers() {
+		if t.MarshalFunc() == "" || d.TableKeepsMarshaler(t) {
+			continue
+		}
+		iface := "graphql.Marshaler"
+		if t.IsContext {
+			iface = "graphql.ContextMarshaler"
+		}
+		checks = append(checks, "var _ "+iface+" = *new("+
+			templates.CurrentImports.LookupType(t.GO)+")")
+	}
+	slices.Sort(checks)
+	return slices.Compact(checks)
+}
+
+// TableUnmarshalChecks is TableMarshalChecks for the unmarshalers, which call UnmarshalGQL
+// with an any. The template puts them into a function with the parameters ec, ctx and v,
+// as the unmarshalers of the functions mode have, which hide packages of those names in
+// both.
+func (d *Data) TableUnmarshalChecks() []string {
+	var checks []string
+	for _, t := range d.tableSelfMarshalers() {
+		if t.UnmarshalFunc() == "" || t.Unmarshaler != nil || d.TableKeepsUnmarshaler(t) {
+			continue
+		}
+		// The functions mode calls the method on a variable of the type, or on a new
+		// value of the type it points to, of which a pointer has the same methods.
+		res := t.GO
+		if t.IsNilable() && t.Elem() != nil {
+			res = t.Elem().GO
+		}
+		call := ".UnmarshalGQL(v)"
+		if t.IsContext {
+			call = ".UnmarshalGQLContext(ctx, v)"
+		}
+		checks = append(checks, "_ = graphql.ErrorOnPath(ctx, new("+
+			templates.CurrentImports.LookupType(res)+")"+call+")")
+	}
+	// The references of a type and of a pointer to it check the same unmarshaler.
+	slices.Sort(checks)
+	return slices.Compact(checks)
+}
+
+// tableSelfMarshalers returns the type references of d that marshal or unmarshal
+// themselves, other than the lists and pointers to them, whose marshalers and
+// unmarshalers call those of their elements, in the order of their keys.
+func (d *Data) tableSelfMarshalers() []*config.TypeReference {
+	var refs []*config.TypeReference
+	for _, key := range slices.Sorted(maps.Keys(d.ReferencedTypes)) {
+		t := d.ReferencedTypes[key]
+		if t.IsMarshaler && !t.IsSlice() && !t.IsPtrToSlice() && !t.IsPtrToIntf() {
+			refs = append(refs, t)
+		}
+	}
+	return refs
+}
+
 // TableKeepsUnmarshaler is TableKeepsMarshaler for the unmarshaler of t.
 func (d *Data) TableKeepsUnmarshaler(t *config.TypeReference) bool {
 	return d.tableUnmarshalKind(t) == tableKindFunc

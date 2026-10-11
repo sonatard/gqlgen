@@ -47,7 +47,9 @@ func TestTableModeCompiles(t *testing.T) {
 // and an input bound to two, a map implements an interface by a value receiver, and an
 // input unmarshals itself without marshaling itself.
 func TestTableModeFailsToCompile(t *testing.T) {
-	for _, name := range []string{"multimodel", "nilableimpl", "unmarshalonly"} {
+	for _, name := range []string{
+		"multimodel", "nilableimpl", "unmarshalonly", "ptrmarshal", "badunmarshal", "shadowv",
+	} {
 		t.Run(name, func(t *testing.T) {
 			configPath, err := filepath.Abs(filepath.Join("compile", name, "gqlgen.yml"))
 			require.NoError(t, err)

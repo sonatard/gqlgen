@@ -272,3 +272,27 @@
 	 )
 	{{- end }}
 {{- end }}
+
+{{- if $.Config.Exec.IsTable }}
+{{- with $.TableMarshalChecks }}
+
+// The Go types that marshal themselves are graphql.Marshalers, as the functions mode returns
+// them, which the package checks when it compiles.
+func _() {
+	{{- range . }}
+	{{ . }}
+	{{- end }}
+}
+{{- end }}
+{{- with $.TableUnmarshalChecks }}
+
+// The Go types that unmarshal themselves have the methods that the functions mode calls,
+// which the package checks when it compiles, with the names that the unmarshalers of the
+// functions mode have.
+func _(ec *executionContext, ctx context.Context, v any) {
+	{{- range . }}
+	{{ . }}
+	{{- end }}
+}
+{{- end }}
+{{- end }}

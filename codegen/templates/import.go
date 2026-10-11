@@ -14,6 +14,10 @@ type Import struct {
 	Name  string
 	Path  string
 	Alias string
+
+	// given is set for the imports that Options.Imports gives, which yield their alias to
+	// a package that the templates reserve it for.
+	given bool
 }
 
 type Imports struct {
@@ -67,10 +71,16 @@ func (s *Imports) Reserve(path string, aliases ...string) (string, error) {
 		if existing.Alias == alias {
 			return "", nil
 		}
-		return "", errors.New("ambient import already exists")
+		if !existing.given || s.findByAlias(alias) != nil {
+			return "", errors.New("ambient import already exists")
+		}
+		existing.Alias = alias
+		existing.given = false
+		return "", nil
 	}
 
-	if alias := s.findByAlias(alias); alias != nil {
+	taken := s.findByAlias(alias)
+	if taken != nil && !taken.given {
 		return "", errors.New("ambient import collides on an alias")
 	}
 
@@ -79,6 +89,13 @@ func (s *Imports) Reserve(path string, aliases ...string) (string, error) {
 		Path:  path,
 		Alias: alias,
 	})
+	if taken != nil {
+		// The given import takes another alias, as a lookup after the reservation would
+		// give it.
+		taken.Alias = ""
+		taken.Alias = s.freeAlias(taken.Name)
+		taken.given = false
+	}
 
 	return "", nil
 }
@@ -104,19 +121,24 @@ func (s *Imports) Lookup(path string) string {
 		Path: path,
 	}
 	s.imports = append(s.imports, imp)
+	imp.Alias = s.freeAlias(imp.Name)
 
-	alias := imp.Name
+	return imp.Alias
+}
+
+// freeAlias returns name, or name with the lowest number after it that no import has as
+// its alias.
+func (s *Imports) freeAlias(name string) string {
+	alias := name
 	i := 1
 	for s.findByAlias(alias) != nil {
-		alias = imp.Name + strconv.Itoa(i)
+		alias = name + strconv.Itoa(i)
 		i++
 		if i > 1000 {
 			panic(fmt.Errorf("too many collisions, last attempt was %s", alias))
 		}
 	}
-	imp.Alias = alias
-
-	return imp.Alias
+	return alias
 }
 
 func (s *Imports) LookupType(t types.Type) string {

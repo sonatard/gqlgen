@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/vektah/gqlparser/v2/ast"
@@ -44,8 +45,37 @@ func GenerateCode(data *Data) error {
 	return fmt.Errorf("unrecognized exec layout %s", data.Config.Exec.Layout)
 }
 
+// renderExec renders a file of the executor. A file of table mode that holds an input
+// with INPUT_OBJECT directives gets the import aliases of the functions mode, which names
+// the Go type of the input with its alias in the message of the error of a directive
+// that returns another type: the functions mode looks the packages up in another order,
+// which numbers the aliases of packages with the same name otherwise.
+func renderExec(opts templates.Options) error {
+	if data := opts.Data.(*Data); data.Config.Exec.IsTable() &&
+		slices.ContainsFunc(data.Inputs, func(in *Object) bool {
+			return !in.HasUnmarshal() && len(in.InputObjectDirectives()) > 0
+		}) {
+		functions := opts
+		functions.Data = data.functionsMode()
+		var err error
+		if opts.Imports, err = templates.ImportsOf(functions); err != nil {
+			return err
+		}
+	}
+	return templates.Render(opts)
+}
+
+// functionsMode returns d with the configuration of the functions mode.
+func (d *Data) functionsMode() *Data {
+	cfg := *d.Config
+	cfg.Exec.Mode = config.ExecModeFunctions
+	functions := *d
+	functions.Config = &cfg
+	return &functions
+}
+
 func generateSingleFile(data *Data) error {
-	return templates.Render(templates.Options{
+	return renderExec(templates.Options{
 		PackageName:     data.Config.Exec.Package,
 		Filename:        data.Config.Exec.Filename,
 		Data:            data,
@@ -98,7 +128,7 @@ func generatePerSchema(data *Data) error {
 		dir := data.Config.Exec.DirName
 		path := filepath.Join(dir, filename)
 
-		err = templates.Render(templates.Options{
+		err = renderExec(templates.Options{
 			PackageName:     data.Config.Exec.Package,
 			Filename:        path,
 			Data:            build,

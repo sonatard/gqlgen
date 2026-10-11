@@ -89,3 +89,19 @@ func UnmarshalDate(v any) (time.Time, error) {
 	s, _ := v.(string)
 	return time.Parse(time.DateOnly, s)
 }
+
+// PtrMarshal marshals itself with a pointer receiver, so that a value of it is not a
+// graphql.Marshaler, which the functions mode does not compile.
+type PtrMarshal int
+
+func (p *PtrMarshal) MarshalGQL(w io.Writer) {}
+
+func (p *PtrMarshal) UnmarshalGQL(v any) error { return nil }
+
+// BadUnmarshal unmarshals itself from a string, so that the functions mode, which passes
+// it an any, does not compile.
+type BadUnmarshal int
+
+func (b BadUnmarshal) MarshalGQL(w io.Writer) {}
+
+func (b *BadUnmarshal) UnmarshalGQL(v string) error { return nil }

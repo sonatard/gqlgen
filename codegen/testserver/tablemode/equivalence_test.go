@@ -21,6 +21,10 @@ import (
 
 	aliasesfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliases/functions"
 	aliasestable "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliases/table"
+	aliasesfsfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliasesfs/functions"
+	aliasesfstable "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliasesfs/table"
+	aliasesfs2functions "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliasesfs2/functions"
+	aliasesfs2table "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliasesfs2/table"
 	caseargsfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/caseargs/functions"
 	caseargstable "github.com/99designs/gqlgen/codegen/testserver/tablemode/caseargs/table"
 	federationfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/federation/functions"
@@ -690,6 +694,30 @@ func TestOtherSchemas(t *testing.T) {
 			table:     aliasestable.NewSchema,
 			requests: []request{
 				{name: "INPUT_OBJECT directives that return another type", query: `{ a(in: { x: 1 }) b(in: { y: 2 }) }`, contains: []string{`should be`}},
+			},
+		},
+		{
+			name:      "inputs bound to the types of two packages with the same name, in the follow-schema layout",
+			functions: aliasesfsfunctions.NewSchema,
+			table:     aliasesfstable.NewSchema,
+			requests: []request{
+				{
+					name:     "INPUT_OBJECT directives that return another type",
+					query:    `{ a(in: { x: 1 }) holder { b(in: { y: 2 }) } }`,
+					contains: []string{`should be model1.Input`, `should be model.Input`},
+				},
+			},
+		},
+		{
+			name:      "an input of a file that refers to the package of another only through a directive",
+			functions: aliasesfs2functions.NewSchema,
+			table:     aliasesfs2table.NewSchema,
+			requests: []request{
+				{
+					name:     "INPUT_OBJECT directives that return another type",
+					query:    `{ a(in: { x: 1 }) b(in: { y: 2 }) }`,
+					contains: []string{`should be model1.Input`},
+				},
 			},
 		},
 		{
