@@ -360,6 +360,10 @@ func (c *Config) Init() error {
 
 	c.applyGlobalBatchResolverDefaults()
 
+	if err := c.CheckTableMode(); err != nil {
+		return err
+	}
+
 	c.Packages.LoadAll(c.packageList()...)
 
 	err = c.autobind()

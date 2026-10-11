@@ -1,3 +1,4 @@
+{{- if not $.Config.Exec.IsTable }}
 {{- range $object := .Objects }}{{- range $field := $object.Fields }}
 
 func {{$.FuncReceiver}}_{{$object.Name}}_{{$field.Name}}(ctx context.Context, {{$.ECFuncParam}}field graphql.CollectedField{{ if not $object.Root }}, obj {{$object.Reference | ref}}{{end}}) (ret {{ $field.MarshalerReturnType }}) {
@@ -147,6 +148,7 @@ func (ec *executionContext) resolveBatch_{{$object.Name}}_{{$field.Name}}(ctx co
 {{- end }}
 
 {{- end }}{{- end}}
+{{- end }}
 
 {{ define "fieldDefinition" }}
 	{{- if and .IsBatch (not .Object.Root) }}
@@ -164,7 +166,7 @@ func (ec *executionContext) resolveBatch_{{$object.Name}}_{{$field.Name}}(ctx co
 	{{ end }}
 	{{- if .IsResolver -}}
 		return ec.Resolvers.{{ .ShortInvocation }}
-	{{- else if .IsMap -}}
+	{{- else if .IsMap }}
 		switch v := {{.GoReceiverName}}[{{.Name|quote}}].(type) {
 		case {{if .Stream}}<-chan {{end}}{{.TypeReference.GO | ref}}:
 			return v, nil

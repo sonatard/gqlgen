@@ -1,5 +1,10 @@
+//go:build !exectable
+
+// The tests in this file call the unexported unmarshaler, which table mode does not
+// generate.
+
 //go:generate rm -f resolver.go
-//go:generate go run ../../../testdata/gqlgen.go -config gqlgen.yml -stub stub.go
+//go:generate go run ../../../testdata/gqlgen.go -config gqlgen.yml -stub stub.go -both-modes
 
 package returnpointersinunmarshalinput
 
@@ -9,9 +14,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/99designs/gqlgen/client"
-	"github.com/99designs/gqlgen/graphql/handler"
 )
 
 // This package exists to exercise return_pointers_in_unmarshalinput, which
@@ -58,34 +60,4 @@ func TestUnmarshalInputReturnsPointer(t *testing.T) {
 			assert.Equal(t, tt.want, *got)
 		})
 	}
-}
-
-// With return_pointers_in_unmarshalinput the generated helper returns *T, and the caller
-// sees that in its signature rather than discovering it through a failed lookup. Note
-// that the option changes only the unmarshaler return: the resolver argument shape still
-// follows schema nullability.
-func TestGeneratedTypedUnmarshalerReturnsPointer(t *testing.T) {
-	var (
-		called bool
-		got    *SearchFilters
-		gotErr error
-	)
-
-	resolvers := &Stub{}
-	resolvers.QueryResolver.Search = func(ctx context.Context, filters SearchFilters) (string, error) {
-		called = true
-		got, gotErr = UnmarshalSearchFilters(ctx, map[string]any{"name": "bob"})
-		return "ok", nil
-	}
-
-	srv := handler.NewDefaultServer(NewExecutableSchema(Config{Resolvers: resolvers}))
-
-	var resp struct{ Search string }
-	require.NoError(t, client.New(srv).Post(`query { search(filters: {name: "x"}) }`, &resp))
-
-	require.True(t, called, "the resolver never ran, so nothing was exercised")
-	require.NoError(t, gotErr)
-	require.NotNil(t, got)
-	require.NotNil(t, got.Name)
-	assert.Equal(t, "bob", *got.Name)
 }

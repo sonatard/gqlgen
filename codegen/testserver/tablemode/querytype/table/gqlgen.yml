@@ -1,0 +1,7 @@
+schema:
+  - ../schema.graphql
+skip_validation: true
+exec:
+  filename: generated.go
+  package: table
+  mode: table
