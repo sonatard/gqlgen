@@ -37,31 +37,14 @@ type Data struct {
 	SubscriptionRoot *Object
 	AugmentedSources []AugmentedSource
 	Plugins          []any
-	// TableLinkedSchema is the schema in SDL that the tables of table mode are linked
-	// to, when it is not the schema of the sources. See tableLinkedSchema.
-	TableLinkedSchema string
-	// tableBuilt is the tableState of table mode when BuildData returned it.
-	tableBuilt map[string]string
-	// unmarshalerCalls holds the unmarshalers that the code that plugins generate calls.
-	// See AddUnmarshalerCall.
-	unmarshalerCalls map[string]bool
-	// tableNamesKept are the names of the tables that table mode derived before it derived
-	// them again. See tableRederive.
-	tableNamesKept map[string]string
+	// tableData is what table mode keeps of the data. See table_generate.go.
+	tableData
 
 	// allBatchFieldTypes is the schema-wide result of collectBatchFieldTypes. Like
 	// AllDirectives it is set when a schema is split into one Data instance per schema
 	// file, because each instance then holds only the objects declared in its own file
 	// and cannot see whether a type declared elsewhere has batch fields.
 	allBatchFieldTypes map[string]bool
-
-	// table is what table mode derives from the whole schema, which the files of the
-	// follow-schema layout share. See tableInfo.
-	table *tableInfo
-	// tableGroups are the groups of tables that the generated file of this Data
-	// builds: those of its own types for a file of the follow-schema layout, and all
-	// of them for the root file and the single-file layout. See TableInitGroups.
-	tableGroups [][]*Object
 
 	// cachedBatchFieldTypes is populated on first use by batchFieldTypes.
 	cachedBatchFieldTypes map[string]bool
@@ -495,21 +478,8 @@ func BuildData(cfg *config.Config, plugins ...any) (*Data, error) {
 		})
 	}
 	s.AugmentedSources = aSources
-	if cfg.Exec.IsTable() {
-		if err := s.tableCheckDirectives(); err != nil {
-			return nil, err
-		}
-		tableFuncNames(cfg.Schema, s.Objects)
-		tableFuncNames(cfg.Schema, s.Inputs)
-		skipRuntime := func(name string) bool { return cfg.Directives[name].SkipRuntime }
-		if s.TableLinkedSchema, err = tableLinkedSchema(
-			cfg.Schema,
-			tableSources(sources, aSources, cfg.Exec.Dir()),
-			skipRuntime,
-		); err != nil {
-			return nil, err
-		}
-		s.tableBuilt = s.tableState()
+	if err := s.tableBuild(sources); err != nil {
+		return nil, err
 	}
 
 	return &s, nil

@@ -4,9 +4,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"io/fs"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/vektah/gqlparser/v2/ast"
@@ -32,13 +30,9 @@ func GenerateCode(data *Data) error {
 	if !data.Config.Exec.IsDefined() {
 		return errors.New("missing exec config")
 	}
-	// Plugins may have changed the data since BuildData.
-	if err := data.tableCheckState(); err != nil {
+	if err := data.tableGenerate(); err != nil {
 		return err
 	}
-	// A plugin that asked for an unmarshaler of table mode had it derive the tables from the
-	// data as it was then, which a later plugin may have changed.
-	data.tableRederive()
 
 	switch data.Config.Exec.Layout {
 	case config.ExecLayoutSingleFile:
@@ -48,41 +42,6 @@ func GenerateCode(data *Data) error {
 	}
 
 	return fmt.Errorf("unrecognized exec layout %s", data.Config.Exec.Layout)
-}
-
-// renderExec renders a file of the executor of data with opts, which hold the templates of
-// the functions mode. Table mode renders the templates table instead, without region
-// tags. A file of table mode that holds an input with INPUT_OBJECT directives gets the
-// import aliases of the functions mode, which names the Go type of the input with its
-// alias in the message of the error of a directive that returns another type: the
-// functions mode looks the packages up in another order, which numbers the aliases of
-// packages with the same name otherwise.
-func renderExec(data *Data, opts templates.Options, table fs.FS) error {
-	if !data.Config.Exec.IsTable() {
-		return templates.Render(opts)
-	}
-	functions := opts
-	opts.TemplateFS = table
-	opts.RegionTags = false
-	_, err := fs.Stat(table, "input_table.gotpl")
-	if err == nil && slices.ContainsFunc(data.Inputs, func(in *Object) bool {
-		return !in.HasUnmarshal() && len(in.InputObjectDirectives()) > 0
-	}) {
-		functions.Data = data.functionsMode()
-		if opts.Imports, err = templates.ImportsOf(functions); err != nil {
-			return err
-		}
-	}
-	return templates.Render(opts)
-}
-
-// functionsMode returns d with the configuration of the functions mode.
-func (d *Data) functionsMode() *Data {
-	cfg := *d.Config
-	cfg.Exec.Mode = config.ExecModeFunctions
-	functions := *d
-	functions.Config = &cfg
-	return &functions
 }
 
 func generateSingleFile(data *Data) error {
@@ -191,13 +150,7 @@ func addBuild(filename string, p *ast.Position, data *Data, builds *map[string]*
 		// for the implementors that happen to share the interface's file.
 		allBatchFieldTypes: data.batchFieldTypes(),
 	}
-	if data.Config.Exec.IsTable() {
-		// The file holds only some of the types, so it shares what table mode derives
-		// from the whole schema, and builds the tables of its own types.
-		info := data.tableInfo()
-		(*builds)[filename].table = info
-		(*builds)[filename].tableGroups = info.groupsByFile[filename]
-	}
+	data.tableShare((*builds)[filename], filename)
 }
 
 // Root file contains top-level definitions that should not be duplicated across the generated

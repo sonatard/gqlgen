@@ -2,7 +2,6 @@ package codegen
 
 import (
 	"fmt"
-	"go/types"
 	"slices"
 	"strings"
 
@@ -202,48 +201,6 @@ func (d *Directive) ResolveArgs(obj string, next int) string {
 	}
 
 	return strings.Join(args, ", ")
-}
-
-// TableCallArgs is CallArgs for the Call function of an exec.DirectiveDef, which receives
-// the object as directiveObj and the arguments as directiveArgs: names that a package of
-// the Go types of the arguments is unlikely to have, which they would hide. An argument of
-// the empty interface type is passed as it is, since it is nil when it is absent or null.
-// An argument of another interface type is nil in the map when it is absent, as the
-// functions mode passes nil then, so it is read without a type assertion that would
-// panic on nil.
-func (d *Directive) TableCallArgs() string {
-	args := []string{"ctx", "directiveObj", "n"}
-	for _, arg := range d.Args {
-		goType := templates.CurrentImports.LookupType(arg.TypeReference.GO)
-		switch iface, ok := types.Unalias(arg.TypeReference.GO).(*types.Interface); {
-		case ok && iface.Empty():
-			args = append(args, fmt.Sprintf("directiveArgs[%q]", arg.Name))
-		case types.IsInterface(arg.TypeReference.GO):
-			args = append(args, fmt.Sprintf(
-				"func() (v %s) { v, _ = directiveArgs[%q].(%s); return v }()",
-				goType, arg.Name, goType,
-			))
-		default:
-			args = append(args, fmt.Sprintf("directiveArgs[%q].(%s)", arg.Name, goType))
-		}
-	}
-	return strings.Join(args, ", ")
-}
-
-// TableVar returns the name of the field of the tables that holds the exec.DirectiveDef
-// generated for the directive in table mode.
-func (d *Directive) TableVar() string {
-	return "directive" + d.CallName()
-}
-
-// TableImplemented returns the implemented function of the exec.DirectiveDef generated for
-// the directive in table mode: nil for a built-in directive, which always has an
-// implementation.
-func (d *Directive) TableImplemented() string {
-	if d.IsBuiltIn() {
-		return "nil"
-	}
-	return "func(ec *executionContext) bool { return " + d.CallPath() + " != nil }"
 }
 
 func (d *Directive) CallName() string {
