@@ -1,7 +1,7 @@
 {{- range $type := .ReferencedTypes }}
 	{{ with $type.UnmarshalFunc }}
 		{{- /* In table mode a combinator of the runtime is a field of the tables. */}}
-		{{- if $.TableKeepsUnmarshaler $type }}
+		{{- if $.GeneratesUnmarshaler $type }}
 		func {{$.FuncReceiver}}{{ . }}(ctx context.Context, {{$.ECFuncParam}}v any) ({{ $type.GO | ref }}, error) {
 			{{- if and $type.IsNilable (not $type.GQL.NonNull) (not $type.IsPtrToPtr) }}
 				if v == nil { return nil, nil }
@@ -74,13 +74,7 @@
 					{{- end }}
 						return res, graphql.ErrorOnPath(ctx, err)
 				{{- else }}
-					{{- if $.Config.Exec.IsTable }}
-					{{- /* The Go type of the input, which the functions mode unmarshals, so that a
-					   reference bound to another model fails to compile in the same way. */}}
-					res, err := exec.Input{{ if $type.PointersInUnmarshalInput }}Pointer{{ else }}Value{{ end }}[*executionContext, {{ $.TableGoType $type.GQL.Name | ref }}](ctx, ec, &ec.tables.input{{ $type.GQL.Name }}, v)
-					{{- else }}
-					res, err := {{$.ECDot}}unmarshalInput{{ $type.GQL.Name }}(ctx, {{$.ECArg}}v)
-					{{- end }}
+					{{- template "unmarshalInputCall" (dict "Data" $ "Type" $type) }}
 					{{- if and $type.IsNilable (not $type.IsMap) (not $type.PointersInUnmarshalInput) }}
 						return &res, graphql.ErrorOnPath(ctx, err)
 					{{- else if and (not $type.IsNilable) $type.PointersInUnmarshalInput }}
@@ -98,7 +92,7 @@
 		{{- /* eventCtx: the Subscription root marshaler returns a per-event context tuple when the
 		   subscription_context_field option is on. Computed once here; reused below. */ -}}
 		{{- $eventCtx := and (eq $type.Definition.Name "Subscription") $.Config.SubscriptionContextField -}}
-		{{- if $.TableKeepsMarshaler $type }}
+		{{- if $.GeneratesMarshaler $type }}
 		func {{$.FuncReceiver}}{{ . }}(ctx context.Context, {{$.ECFuncParam}}sel ast.SelectionSet, v {{ $type.GO | ref }}) {{- if $eventCtx }}(context.Context, {{- end}}graphql.Marshaler{{- if $eventCtx }}){{- end}} {
 			{{- if or $type.IsPtrToSlice $type.IsPtrToIntf }}
 				if v == nil {
@@ -237,16 +231,7 @@
 				{{- else }}
 					{{- $v := "v" }}
 					{{- if not $type.IsNilable }}{{ $v = "&v" }}{{ end }}
-					{{- if and $.Config.Exec.IsTable (eq $type.Definition.Kind "OBJECT") ($.TableChecksReference $type) }}
-						{{- /* The table takes the object as any. The functions mode passes it in
-						   this Go type, so that a reference bound to another model fails to
-						   compile in the same way. Interfaces and unions keep their typed
-						   function. */}}
-						var obj {{ $.TableObjectReference $type.Definition.Name | ref }} = {{ $v }}
-						return {{ $.ObjectMarshal $type.Definition.Name "sel" "obj" }}
-					{{- else }}
-					return {{ $.ObjectMarshal $type.Definition.Name "sel" $v }}
-					{{- end }}
+					{{- template "objectMarshalReturn" (dict "Data" $ "Type" $type "V" $v) }}
 				{{- end }}
 			{{- end }}
 		}
@@ -273,26 +258,4 @@
 	{{- end }}
 {{- end }}
 
-{{- if $.Config.Exec.IsTable }}
-{{- with $.TableMarshalChecks }}
-
-// The Go types that marshal themselves are graphql.Marshalers, as the functions mode returns
-// them, which the package checks when it compiles.
-func _() {
-	{{- range . }}
-	{{ . }}
-	{{- end }}
-}
-{{- end }}
-{{- with $.TableUnmarshalChecks }}
-
-// The Go types that unmarshal themselves have the methods that the functions mode calls,
-// which the package checks when it compiles, with the names that the unmarshalers of the
-// functions mode have.
-func _(ec *executionContext, ctx context.Context, v any) {
-	{{- range . }}
-	{{ . }}
-	{{- end }}
-}
-{{- end }}
-{{- end }}
+{{- template "typeChecks" . }}

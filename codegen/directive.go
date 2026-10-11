@@ -236,6 +236,16 @@ func (d *Directive) TableVar() string {
 	return "directive" + d.CallName()
 }
 
+// TableImplemented returns the implemented function of the exec.DirectiveDef generated for
+// the directive in table mode: nil for a built-in directive, which always has an
+// implementation.
+func (d *Directive) TableImplemented() string {
+	if d.IsBuiltIn() {
+		return "nil"
+	}
+	return "func(ec *executionContext) bool { return " + d.CallPath() + " != nil }"
+}
+
 func (d *Directive) CallName() string {
 	return ucFirst(d.Name)
 }

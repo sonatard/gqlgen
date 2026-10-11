@@ -695,29 +695,51 @@ func (d *Data) TableObjectReference(name string) types.Type {
 	return types.NewPointer(t)
 }
 
-// TableChecksReference reports whether the function that table mode keeps for t, a
-// reference to an object, assigns the value to the Go type in which the functions mode
-// passes it to the marshaler of the object, before the table of the object takes it as
-// any: only where the value does not have that type. The assignment converts a value that
-// can be assigned to that type, as the functions mode does, which the resolve function of
-// the object asserts, and fails to compile for the second model of @goModel, as the
-// functions mode does.
-func (d *Data) TableChecksReference(t *config.TypeReference) bool {
+// TableMarshalReference returns the statements that the function that table mode keeps for
+// t, a reference to an object, interface or union, returns the marshaled value v with. See
+// tableMarshalObject.
+func (d *Data) TableMarshalReference(t *config.TypeReference, v string) string {
 	value := t.GO
 	if !t.IsNilable() {
 		value = types.NewPointer(t.GO)
 	}
-	return !types.Identical(value, d.TableObjectReference(t.Definition.Name))
+	return d.tableMarshalObject(t.Definition.Name, value, v, "obj")
 }
 
-// TableChecksImplementor is TableChecksReference for the case of the implementation i in
-// the marshaler of an interface or a union.
-func (d *Data) TableChecksImplementor(i InterfaceImplementor) bool {
+// TableMarshalImplementor is TableMarshalReference for the case of the implementation i in
+// the marshaler of an interface or a union, which marshals obj.
+func (d *Data) TableMarshalImplementor(i InterfaceImplementor, obj string) string {
 	value := i.Type
 	if i.TakeRef {
 		value = types.NewPointer(i.Type)
 	}
-	return !types.Identical(value, d.TableObjectReference(i.Name))
+	return d.tableMarshalObject(i.Name, value, obj, "o")
+}
+
+// tableMarshalObject returns the statements that return v, a value of Go type value, marshaled
+// as the type called name. An object is marshaled by its table, which takes it as any. Where
+// the value does not have the Go type in which the functions mode passes it to the marshaler
+// of the object, it is first assigned to a variable called local of that type: the
+// assignment converts a value that can be assigned to that type, as the functions mode does,
+// which the resolve function of the object asserts, and fails to compile for the second
+// model of @goModel, as the functions mode does. Interfaces and unions keep their typed
+// function.
+func (d *Data) tableMarshalObject(name string, value types.Type, v, local string) string {
+	if !d.tableChecksObject(name, value) {
+		return "return " + d.ObjectMarshal(name, "sel", v)
+	}
+	return fmt.Sprintf("var %s %s = %s\nreturn %s",
+		local, tableType(d.TableObjectReference(name)), v,
+		d.ObjectMarshal(name, "sel", local))
+}
+
+// tableChecksObject reports whether tableMarshalObject assigns a value of Go type value to
+// the Go type in which the functions mode passes the type called name to its marshaler: only
+// for an object, where the value does not have that type.
+func (d *Data) tableChecksObject(name string, value types.Type) bool {
+	def := d.Config.Schema.Types[name]
+	return def != nil && def.Kind == ast.Object &&
+		!types.Identical(value, d.TableObjectReference(name))
 }
 
 // tableMarshalBase is tableMarshalKind before the calls of the generated code are taken
@@ -787,9 +809,10 @@ func (d *Data) TableMarshal(t *config.TypeReference) string {
 	return ""
 }
 
-// TableKeepsMarshaler reports whether table mode keeps the function that the functions
-// mode generates for the marshaler of t.
-func (d *Data) TableKeepsMarshaler(t *config.TypeReference) bool {
+// GeneratesMarshaler reports whether the generated code declares the function of the
+// marshaler of t: the functions mode always does, and table mode where it keeps the
+// function that the functions mode generates.
+func (d *Data) GeneratesMarshaler(t *config.TypeReference) bool {
 	return d.tableMarshalKind(t) == tableKindFunc
 }
 
@@ -802,7 +825,7 @@ func (d *Data) TableKeepsMarshaler(t *config.TypeReference) bool {
 func (d *Data) TableMarshalChecks() []string {
 	var checks []string
 	for _, t := range d.tableSelfMarshalers() {
-		if t.MarshalFunc() == "" || d.TableKeepsMarshaler(t) {
+		if t.MarshalFunc() == "" || d.GeneratesMarshaler(t) {
 			continue
 		}
 		iface := "graphql.Marshaler"
@@ -823,7 +846,7 @@ func (d *Data) TableMarshalChecks() []string {
 func (d *Data) TableUnmarshalChecks() []string {
 	var checks []string
 	for _, t := range d.tableSelfMarshalers() {
-		if t.UnmarshalFunc() == "" || t.Unmarshaler != nil || d.TableKeepsUnmarshaler(t) {
+		if t.UnmarshalFunc() == "" || t.Unmarshaler != nil || d.GeneratesUnmarshaler(t) {
 			continue
 		}
 		// The functions mode calls the method on a variable of the type, or on a new
@@ -858,8 +881,8 @@ func (d *Data) tableSelfMarshalers() []*config.TypeReference {
 	return refs
 }
 
-// TableKeepsUnmarshaler is TableKeepsMarshaler for the unmarshaler of t.
-func (d *Data) TableKeepsUnmarshaler(t *config.TypeReference) bool {
+// GeneratesUnmarshaler is GeneratesMarshaler for the unmarshaler of t.
+func (d *Data) GeneratesUnmarshaler(t *config.TypeReference) bool {
 	return d.tableUnmarshalKind(t) == tableKindFunc
 }
 
@@ -1419,7 +1442,7 @@ func (d *Data) TableOutTypes() []*config.TypeReference {
 	for _, o := range d.Objects {
 		for _, f := range o.Fields {
 			name := f.TypeReference.MarshalFunc()
-			if !seen[name] && d.TableKeepsMarshaler(f.TypeReference) {
+			if !seen[name] && d.GeneratesMarshaler(f.TypeReference) {
 				seen[name] = true
 				res = append(res, f.TypeReference)
 			}
@@ -1435,7 +1458,7 @@ func (d *Data) TableInTypes() []*config.TypeReference {
 	seen := map[string]bool{}
 	var res []*config.TypeReference
 	add := func(t *config.TypeReference) {
-		if name := t.UnmarshalFunc(); !seen[name] && d.TableKeepsUnmarshaler(t) {
+		if name := t.UnmarshalFunc(); !seen[name] && d.GeneratesUnmarshaler(t) {
 			seen[name] = true
 			res = append(res, t)
 		}
@@ -2254,8 +2277,11 @@ func (d *Data) TableArgOrder(f *Field) string {
 }
 
 // TableDirectiveIns is TableFieldIns for the arguments of a directive, which are all
-// bound to Go.
+// bound to Go, or nil for a directive without arguments.
 func (d *Data) TableDirectiveIns(dir *Directive) string {
+	if len(dir.Args) == 0 {
+		return "nil"
+	}
 	ins := make([]string, len(dir.Args))
 	for i, arg := range dir.Args {
 		ins[i] = d.TableIn(arg.TypeReference)

@@ -1,9 +1,11 @@
 package codegen
 
 import (
+	"embed"
 	"go/types"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"testing"
@@ -253,9 +255,9 @@ func TestTableGetExpr(t *testing.T) {
 			goType:          goType,
 		}
 	}
-	require.Equal(t, "obj.Name", field(str).TableGetExpr())
-	require.Equal(t, "obj.Name", field(nil).TableGetExpr())
-	require.Empty(t, field(types.NewStruct(nil, nil)).TableGetExpr())
+	require.Equal(t, "obj.Name", field(str).tableGetExpr())
+	require.Equal(t, "obj.Name", field(nil).tableGetExpr())
+	require.Empty(t, field(types.NewStruct(nil, nil)).tableGetExpr())
 }
 
 // The tables give the order of the arguments when the method of a field takes them in
@@ -675,25 +677,21 @@ func TestTableSources(t *testing.T) {
 // The function that table mode keeps for a reference to an object assigns the value to the
 // Go type in which the functions mode passes it, which converts a value of another type
 // that can be assigned to it, as the resolve function of the object asserts that type.
-func TestTableChecksReference(t *testing.T) {
+func TestTableChecksObject(t *testing.T) {
 	pkg := types.NewPackage("github.com/x/app/model", "model")
 	model := types.NewMap(types.Typ[types.String], types.NewInterfaceType(nil, nil))
 	profile := types.NewNamed(types.NewTypeName(0, pkg, "Profile", nil), model, nil)
 	def := &ast.Definition{Name: "Profile", Kind: ast.Object}
 	d := &Data{
-		Config:          &config.Config{Exec: config.ExecConfig{Mode: config.ExecModeTable}},
+		Config: &config.Config{
+			Exec:   config.ExecConfig{Mode: config.ExecModeTable},
+			Schema: &ast.Schema{Types: map[string]*ast.Definition{"Profile": def}},
+		},
 		Objects:         Objects{{Definition: def, Type: model}},
 		ReferencedTypes: map[string]*config.TypeReference{},
 	}
-	ref := func(goType types.Type) *config.TypeReference {
-		return &config.TypeReference{
-			Definition: def,
-			GQL:        ast.NamedType("Profile", nil),
-			GO:         goType,
-		}
-	}
-	require.False(t, d.TableChecksReference(ref(model)))
-	require.True(t, d.TableChecksReference(ref(profile)))
+	require.False(t, d.tableChecksObject("Profile", model))
+	require.True(t, d.tableChecksObject("Profile", profile))
 }
 
 // The runtime derives the Out of the pointers to an object and of the lists of them,
@@ -818,4 +816,19 @@ func TestTableRederiveKeepsNames(t *testing.T) {
 	d.AddUnmarshalerCall(b)
 	require.NotEqual(t, short, d.UnmarshalCall(a))
 	require.NotEqual(t, short, d.UnmarshalCall(b))
+}
+
+// The templates of the functions mode, which table mode shares but for the files of its
+// own and table_.gotpl, do not refer to table mode.
+func TestTemplatesOfTheFunctionsMode(t *testing.T) {
+	tableMode := regexp.MustCompile(`IsTable|[.$]Table[A-Z]`)
+	for _, fsys := range []embed.FS{rootTemplateFS, schemaTemplateFS, singleFileTemplateFS} {
+		entries, err := fsys.ReadDir(".")
+		require.NoError(t, err)
+		for _, e := range entries {
+			b, err := fsys.ReadFile(e.Name())
+			require.NoError(t, err)
+			require.Empty(t, tableMode.FindAll(b, -1), e.Name())
+		}
+	}
 }

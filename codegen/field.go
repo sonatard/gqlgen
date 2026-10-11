@@ -793,13 +793,13 @@ func (f *Field) TableObj() string {
 	return "obj"
 }
 
-// TableGetExpr returns the expression that reads the field from obj, the object with its
+// tableGetExpr returns the expression that reads the field from obj, the object with its
 // Go type, in table mode, for fields bound to a struct field, or to a method that takes
 // no context or arguments and returns no error. It returns "" for other fields, and for
 // those whose Go type the marshaler of the field does not take, such as an Omittable that
 // marshals itself: the functions mode returns the value as any, and the field checks its
 // type when it resolves.
-func (f *Field) TableGetExpr() string {
+func (f *Field) tableGetExpr() string {
 	if f.IsBatch() || f.HasHaser || f.VOkFunc || f.IsResolver || f.GoReceiverName != "obj" {
 		return ""
 	}
@@ -816,13 +816,13 @@ func (f *Field) TableGetExpr() string {
 	return ""
 }
 
-// TableResolveBody returns the body of the case of the field in the exec.Resolve of its
+// tableResolveBody returns the body of the case of the field in the exec.Resolve of its
 // object in table mode, written as a single statement that reads the object from obj and
 // the arguments from fieldArgs. It returns "" when the field needs more than one statement;
 // the template then writes the body the functions mode uses, which reads the arguments from
 // the field context: the runtime passes fieldArgs from the field context, so they are the
 // same.
-func (f *Field) TableResolveBody() string {
+func (f *Field) tableResolveBody() string {
 	if f.IsBatch() || f.HasHaser || f.VOkFunc {
 		return ""
 	}
@@ -858,6 +858,42 @@ func (f *Field) TableResolveBody() string {
 		return ""
 	}
 	return body
+}
+
+// TableCaseBody returns the body of the case of the field in the exec.Resolve of its object
+// in table mode. A field of a root operation type resolves to a fresh value of the type. A
+// field read from its object declares the value with the Go type of the field's marshaler
+// before it returns it as any, so that the compiler checks that the field has the type the
+// marshaler marshals, as the typed call of the functions mode does. It returns "" when the
+// field needs the body that the functions mode uses, which the template then writes.
+func (f *Field) TableCaseBody() string {
+	if f.TypeReference.IsRoot {
+		if f.TypeReference.IsPtr() {
+			return "return &" + tableType(f.TypeReference.Elem().GO) + "{}, nil"
+		}
+		return "return " + tableType(f.TypeReference.GO) + "{}, nil"
+	}
+	if get := f.tableGetExpr(); get != "" {
+		return "var v " + tableType(f.TypeReference.GO) + " = " + get + "\nreturn v, nil"
+	}
+	return f.tableResolveBody()
+}
+
+// TableSetStmt returns the statement of the case of the input field in the Set of its input
+// in table mode, which stores v into the input: m, its map, or p, the pointer to its Go
+// type. It asserts v, which the runtime passes as any, to the Go type of the field's
+// unmarshaler, so that the compiler checks that the field has the type the unmarshaler
+// unmarshals, as the typed call of the functions mode does. A nil stores the zero value.
+func (f *Field) TableSetStmt() string {
+	goType := tableType(f.TypeReference.GO)
+	switch {
+	case f.Object.IsMap():
+		return fmt.Sprintf("m[%q], _ = v.(%s)", f.Name, goType)
+	case f.TypeReference.IsOmittable:
+		return fmt.Sprintf("x, _ := v.(%s)\np.%s = graphql.OmittableOf(x)", goType, f.GoFieldName)
+	default:
+		return fmt.Sprintf("p.%s, _ = v.(%s)", f.GoFieldName, goType)
+	}
 }
 
 // TableInputInvocation returns the resolver call that sets an input field from fieldValue

@@ -4,6 +4,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -14,13 +15,17 @@ import (
 	"github.com/99designs/gqlgen/codegen/templates"
 )
 
-//go:embed api!.gotpl internal!.gotpl directives_.gotpl
+// The templates of the functions mode. Those of table mode, in table_generate.go, have files
+// of their own for the objects, the inputs and the fields, and functions_.gotpl and
+// table_.gotpl define the parts of the others where the modes differ.
+
+//go:embed api!.gotpl internal!.gotpl directives_.gotpl functions_.gotpl
 var rootTemplateFS embed.FS
 
-//go:embed args.gotpl field.gotpl input.gotpl interface.gotpl object.gotpl type.gotpl generated!.gotpl directives_.gotpl
+//go:embed args.gotpl field.gotpl field_.gotpl input.gotpl input_.gotpl interface.gotpl object.gotpl type.gotpl generated!.gotpl directives_.gotpl functions_.gotpl
 var schemaTemplateFS embed.FS
 
-//go:embed api!.gotpl internal!.gotpl args.gotpl field.gotpl input.gotpl interface.gotpl object.gotpl type.gotpl generated!.gotpl directives_.gotpl
+//go:embed api!.gotpl internal!.gotpl args.gotpl field.gotpl field_.gotpl input.gotpl input_.gotpl interface.gotpl object.gotpl type.gotpl generated!.gotpl directives_.gotpl functions_.gotpl
 var singleFileTemplateFS embed.FS
 
 func GenerateCode(data *Data) error {
@@ -45,19 +50,25 @@ func GenerateCode(data *Data) error {
 	return fmt.Errorf("unrecognized exec layout %s", data.Config.Exec.Layout)
 }
 
-// renderExec renders a file of the executor. A file of table mode that holds an input
-// with INPUT_OBJECT directives gets the import aliases of the functions mode, which names
-// the Go type of the input with its alias in the message of the error of a directive
-// that returns another type: the functions mode looks the packages up in another order,
-// which numbers the aliases of packages with the same name otherwise.
-func renderExec(opts templates.Options) error {
-	if data := opts.Data.(*Data); data.Config.Exec.IsTable() &&
-		slices.ContainsFunc(data.Inputs, func(in *Object) bool {
-			return !in.HasUnmarshal() && len(in.InputObjectDirectives()) > 0
-		}) {
-		functions := opts
+// renderExec renders a file of the executor of data with opts, which hold the templates of
+// the functions mode. Table mode renders the templates table instead, without region
+// tags. A file of table mode that holds an input with INPUT_OBJECT directives gets the
+// import aliases of the functions mode, which names the Go type of the input with its
+// alias in the message of the error of a directive that returns another type: the
+// functions mode looks the packages up in another order, which numbers the aliases of
+// packages with the same name otherwise.
+func renderExec(data *Data, opts templates.Options, table fs.FS) error {
+	if !data.Config.Exec.IsTable() {
+		return templates.Render(opts)
+	}
+	functions := opts
+	opts.TemplateFS = table
+	opts.RegionTags = false
+	_, err := fs.Stat(table, "input_table.gotpl")
+	if err == nil && slices.ContainsFunc(data.Inputs, func(in *Object) bool {
+		return !in.HasUnmarshal() && len(in.InputObjectDirectives()) > 0
+	}) {
 		functions.Data = data.functionsMode()
-		var err error
 		if opts.Imports, err = templates.ImportsOf(functions); err != nil {
 			return err
 		}
@@ -75,16 +86,16 @@ func (d *Data) functionsMode() *Data {
 }
 
 func generateSingleFile(data *Data) error {
-	return renderExec(templates.Options{
+	return renderExec(data, templates.Options{
 		PackageName:     data.Config.Exec.Package,
 		Filename:        data.Config.Exec.Filename,
 		Data:            data,
-		RegionTags:      !data.Config.Exec.IsTable(),
+		RegionTags:      true,
 		GeneratedHeader: true,
 		Packages:        data.Config.Packages,
 		TemplateFS:      singleFileTemplateFS,
 		PruneOptions:    data.Config.GetPruneOptions(),
-	})
+	}, tableSingleFileTemplateFS)
 }
 
 func generatePerSchema(data *Data) error {
@@ -128,16 +139,16 @@ func generatePerSchema(data *Data) error {
 		dir := data.Config.Exec.DirName
 		path := filepath.Join(dir, filename)
 
-		err = renderExec(templates.Options{
+		err = renderExec(build, templates.Options{
 			PackageName:     data.Config.Exec.Package,
 			Filename:        path,
 			Data:            build,
-			RegionTags:      !data.Config.Exec.IsTable(),
+			RegionTags:      true,
 			GeneratedHeader: true,
 			Packages:        data.Config.Packages,
 			TemplateFS:      schemaTemplateFS,
 			PruneOptions:    data.Config.GetPruneOptions(),
-		})
+		}, tableSchemaTemplateFS)
 		if err != nil {
 			return err
 		}
@@ -195,7 +206,7 @@ func generateRootFile(data *Data) error {
 	dir := data.Config.Exec.DirName
 	path := filepath.Join(dir, "root_.generated.go")
 
-	return templates.Render(templates.Options{
+	return renderExec(data, templates.Options{
 		PackageName:     data.Config.Exec.Package,
 		Filename:        path,
 		Data:            data,
@@ -204,7 +215,7 @@ func generateRootFile(data *Data) error {
 		Packages:        data.Config.Packages,
 		TemplateFS:      rootTemplateFS,
 		PruneOptions:    data.Config.GetPruneOptions(),
-	})
+	}, tableRootTemplateFS)
 }
 
 func addObjects(data *Data, builds *map[string]*Data) error {
