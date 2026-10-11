@@ -15,6 +15,7 @@ func (Resolver) Query() QueryResolver                 { return resolvers.Query{}
 func (Resolver) Mutation() MutationResolver           { return resolvers.Mutation{} }
 func (Resolver) Human() HumanResolver                 { return resolvers.Human{} }
 func (Resolver) Droid() DroidResolver                 { return resolvers.Droid{} }
+func (Resolver) Starship() StarshipResolver           { return resolvers.Starship{} }
 func (Resolver) ResolvedInput() ResolvedInputResolver { return resolvers.ResolvedInput{} }
 func (Resolver) Subscription() SubscriptionResolver   { return resolvers.Subscription{} }
 

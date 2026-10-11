@@ -778,6 +778,15 @@ func (f *Field) ShortInvocation() string {
 	return fmt.Sprintf("%s().%s(%s)", caser.String(f.Object.Name), f.GoFieldName, f.CallArgs())
 }
 
+// TableBatch reports whether the field is resolved by the function of its batch resolver,
+// which the functions mode generates for the fields of the objects that are not roots, in
+// table mode. The table of the object calls it in place of the Resolve of the object, with
+// the field as the request selects it. A field that returns a root operation type resolves
+// to an empty value of the type instead, as in the functions mode.
+func (f *Field) TableBatch() bool {
+	return f.IsBatch() && !f.Object.Root && !f.TypeReference.IsRoot
+}
+
 // TableObj returns the expression of the field's object in table mode: obj, which the
 // exec.Resolve of the object asserts to its Go type once, before it switches on the field.
 func (f *Field) TableObj() string {

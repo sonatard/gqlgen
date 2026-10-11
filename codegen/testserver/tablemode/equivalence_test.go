@@ -480,6 +480,42 @@ var requests = []request{
 		query:    `{ __typename }`,
 		contains: []string{`"Query"`},
 	},
+	{
+		name: "batch resolvers",
+		query: `{ fleets { id crew miscount again: crew }
+			ship: starship(id: "3000") { crew rating rating10: rating(scale: 10) } }`,
+		contains: []string{`"crew":3`, `returned 3 results for 2 parents`, `"rating10":3.437`},
+	},
+	{
+		name: "batch resolver of a field that returns the query type",
+		query: `{ fleets { query { __typename } }
+			ship: starship(id: "3000") { query { __typename ship: starship(id: "3001") { id } } } }`,
+		contains: []string{`"__typename":"Query"`, `"id":"3001"`},
+	},
+	{
+		name: "batch resolver with an error for one parent",
+		query: `{ luke: human(id: "1000") { starships { id rating(scale: 10) } }
+			ship: starship(id: "3001") { rating } }`,
+		contains: []string{`X-Wing has no rating`},
+	},
+	{
+		name: "batch resolvers of the implementations of an interface and a union",
+		query: `{ search(text: "-") { __typename ... on Droid { name lastSeen } ... on Starship { id crew } }
+			c: search(text: "C") { ... on Droid { lastSeen } }
+			luke: human(id: "1000") { friends { name ... on Droid { lastSeen } } } }`,
+		contains: []string{`R2-D2 is hiding`, `"C-3PO on Tatooine"`},
+	},
+	{
+		name:                "batch resolver without a field context",
+		query:               `{ fleets { crew } }`,
+		withoutFieldContext: "crew",
+		contains:            []string{`"crew":3`},
+	},
+	{
+		name:     "batch resolvers in a deferred fragment",
+		query:    `{ fleets { id ... @defer { crew miscount } } }`,
+		contains: []string{`returned 3 results for 2 parents`},
+	},
 }
 
 func TestTableModeMatchesFunctionsMode(t *testing.T) {

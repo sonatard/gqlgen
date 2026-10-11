@@ -1,5 +1,7 @@
-{{- if not $.Config.Exec.IsTable }}
+{{- /* Table mode resolves the fields with the functions of the objects, and keeps those of
+   the batch resolvers. */}}
 {{- range $object := .Objects }}{{- range $field := $object.Fields }}
+{{- if not $.Config.Exec.IsTable }}
 
 func {{$.FuncReceiver}}_{{$object.Name}}_{{$field.Name}}(ctx context.Context, {{$.ECFuncParam}}field graphql.CollectedField{{ if not $object.Root }}, obj {{$object.Reference | ref}}{{end}}) (ret {{ $field.MarshalerReturnType }}) {
 	{{- $null := "graphql.Null" }}
@@ -101,6 +103,7 @@ func {{$.FuncReceiver}}{{ $field.FieldContextFunc }}({{ if not $field.Args }}_{{
 	return fc, nil
 }
 {{- end }}
+{{- end }}
 
 {{- if and $field.IsBatch (not $object.Root) }}
 func (ec *executionContext) resolveBatch_{{$object.Name}}_{{$field.Name}}(ctx context.Context, field graphql.CollectedField, obj {{$object.Reference | ref}}) (any, error) {
@@ -148,7 +151,6 @@ func (ec *executionContext) resolveBatch_{{$object.Name}}_{{$field.Name}}(ctx co
 {{- end }}
 
 {{- end }}{{- end}}
-{{- end }}
 
 {{ define "fieldDefinition" }}
 	{{- if and .IsBatch (not .Object.Root) }}

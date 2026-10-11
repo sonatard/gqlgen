@@ -361,11 +361,8 @@ of `codegen/testserver/tablemode`, a request takes about as long as in the defau
 makes about 5% fewer allocations. The generated code is much smaller: the
 `_examples/starwars` executor goes from 5,359 to 1,147 lines.
 
-Table mode does not support these features yet. Generation fails with an error that names
-the feature when the configuration enables one of them; use the default mode then.
-
-- Apollo Federation
-- batch resolvers
+Table mode does not support Apollo Federation yet. Generation fails with an error that names
+the feature when the configuration enables it; use the default mode then.
 
 What changes for code that uses the generated package:
 

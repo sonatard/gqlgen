@@ -490,9 +490,6 @@ func BuildData(cfg *config.Config, plugins ...any) (*Data, error) {
 	}
 	s.AugmentedSources = aSources
 	if cfg.Exec.IsTable() {
-		if err := s.tableCheckBatch(); err != nil {
-			return nil, err
-		}
 		if err := s.tableCheckDirectives(); err != nil {
 			return nil, err
 		}

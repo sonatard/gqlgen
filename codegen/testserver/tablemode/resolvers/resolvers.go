@@ -479,6 +479,13 @@ func (Query) RetypedInput(ctx context.Context, input models.RetypeInput) (*strin
 
 func (Query) RetypedField(ctx context.Context) ([]byte, error) { return []byte("raw"), nil }
 
+func (Query) Fleets(ctx context.Context) ([][]*models.Starship, error) {
+	return [][]*models.Starship{
+		{starships["3000"], starships["3001"]},
+		{starships["3001"]},
+	}, nil
+}
+
 func (Query) Fleet(ctx context.Context) ([]*models.Starship, error) {
 	return []*models.Starship{starships["3000"], starships["3001"], starships["3000"], nil}, nil
 }
@@ -565,6 +572,96 @@ type Droid struct{}
 func (Droid) Friends(ctx context.Context, obj *models.Droid) ([]models.Character, error) {
 	RecordingOf(ctx).Add("resolver Droid.friends obj=%s", Describe(obj))
 	return friends(obj.FriendIDs), nil
+}
+
+// starshipIDs returns the ids of objs, which the batch resolvers record. The parents of
+// a list hold its nil elements too.
+func starshipIDs(objs []*models.Starship) string {
+	ids := make([]string, len(objs))
+	for i, s := range objs {
+		ids[i] = "nil"
+		if s != nil {
+			ids[i] = s.ID
+		}
+	}
+	return strings.Join(ids, ",")
+}
+
+// LastSeen fails for all the droids of objs when R2-D2 is one of them.
+func (Droid) LastSeen(ctx context.Context, objs []*models.Droid) ([]*string, error) {
+	ids := make([]string, len(objs))
+	res := make([]*string, len(objs))
+	for i, d := range objs {
+		ids[i] = d.ID
+		res[i] = new(d.Name + " on Tatooine")
+	}
+	RecordingOf(ctx).Add("batch Droid.lastSeen objs=%s", strings.Join(ids, ","))
+	for _, d := range objs {
+		if d.ID == "2001" {
+			return nil, errors.New("R2-D2 is hiding")
+		}
+	}
+	return res, nil
+}
+
+type Starship struct{}
+
+func (Starship) Crew(ctx context.Context, objs []*models.Starship) ([]*int, error) {
+	RecordingOf(ctx).Add("batch Starship.crew objs=%s", starshipIDs(objs))
+	res := make([]*int, len(objs))
+	for i, s := range objs {
+		if s != nil && s.LengthM >= 0 {
+			res[i] = new(int(s.LengthM) / 10)
+		}
+	}
+	return res, nil
+}
+
+// Rating fails for the starships of unknown length, with an error of their own.
+func (Starship) Rating(
+	ctx context.Context,
+	objs []*models.Starship,
+	scale *int,
+) ([]float64, error) {
+	RecordingOf(ctx).Add(
+		"batch Starship.rating objs=%s scale=%s",
+		starshipIDs(objs),
+		Describe(scale),
+	)
+	n := 5
+	if scale != nil {
+		n = *scale
+	}
+	res := make([]float64, len(objs))
+	errs := make(graphql.BatchErrorList, len(objs))
+	failed := false
+	for i, s := range objs {
+		if s == nil {
+			continue
+		}
+		if s.LengthM < 0 {
+			errs[i] = fmt.Errorf("%s has no rating", s.Name)
+			failed = true
+			continue
+		}
+		res[i] = s.LengthM * float64(n) / 100
+	}
+	if failed {
+		return res, errs
+	}
+	return res, nil
+}
+
+// Miscount returns one result more than there are starships.
+func (Starship) Miscount(ctx context.Context, objs []*models.Starship) ([]*int, error) {
+	RecordingOf(ctx).Add("batch Starship.miscount objs=%s", starshipIDs(objs))
+	return make([]*int, len(objs)+1), nil
+}
+
+// Query is never called: a field that returns the query type resolves to an empty value of
+// the type.
+func (Starship) Query(ctx context.Context, objs []*models.Starship) ([]*models.Query, error) {
+	return nil, errors.New("the batch resolver of Starship.query was called")
 }
 
 type ResolvedInput struct{}

@@ -739,16 +739,10 @@ func TestCheckTableMode(t *testing.T) {
 
 	c = newConfig()
 	c.Resolver.Batch.Enabled = true
-	require.ErrorContains(t, c.CheckTableMode(), "does not support batch resolvers")
-
-	// The batch resolvers of single fields fail the generation once the schema says
-	// which fields have one.
-	batch := true
-	c = newConfig()
-	c.Models = TypeMap{"User": {Fields: map[string]TypeMapField{"posts": {Batch: &batch}}}}
 	require.NoError(t, c.CheckTableMode())
-	c.Resolver.Batch.Enabled = true
 
+	c = newConfig()
+	c.Federation = PackageConfig{Filename: "federation.go"}
 	c.Exec.Mode = ExecModeFunctions
 	require.NoError(t, c.CheckTableMode())
 }

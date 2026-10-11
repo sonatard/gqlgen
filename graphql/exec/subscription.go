@@ -164,7 +164,7 @@ func (o *Object[EC]) resolveStream(
 		}()
 	}
 
-	res, err := o.resolve(&ctx, ec, f, nil)
+	res, err := o.resolve(&ctx, ec, f, field, nil)
 	if err != nil {
 		oc.Error(ctx, graphql.AddFieldLocationToError(ctx, err))
 		return nil

@@ -723,7 +723,8 @@ func (d *Data) TableChecksImplementor(i InterfaceImplementor) bool {
 // tableMarshalBase is tableMarshalKind before the calls of the generated code are taken
 // into account.
 func (d *Data) tableMarshalBase(t *config.TypeReference) tableKind {
-	if !d.tableCombinable(t) || t.IsRoot || (t.IsContext && t.Marshaler == nil) {
+	if !d.tableCombinable(t) || t.IsRoot || (t.IsContext && t.Marshaler == nil) ||
+		d.tableBatchList(t) {
 		return tableKindFunc
 	}
 	ptr, isPtr := t.GO.(*types.Pointer)
@@ -762,6 +763,14 @@ func (d *Data) tableMarshalBase(t *config.TypeReference) tableKind {
 		}
 	}
 	return tableKindFunc
+}
+
+// tableBatchList reports whether the marshaler of the list t registers its elements as
+// the parents of batch resolvers, which the function of the functions mode does: see
+// type.gotpl. Table mode keeps the function, so that the batch resolvers receive the same
+// parents.
+func (d *Data) tableBatchList(t *config.TypeReference) bool {
+	return t.IsSlice() && !t.Elem().IsSlice() && d.tableInfo().batchParents[t.Definition.Name]
 }
 
 // TableMarshal returns the Go expression that builds the marshaler of t for the tables in
@@ -1120,23 +1129,6 @@ func (d *Data) tableCombinable(t *config.TypeReference) bool {
 		!t.IsPtrToSlice() && !t.IsPtrToIntf() && !t.IsPtrToPtr()
 }
 
-// tableCheckBatch returns an error for a field that a batch resolver resolves, which table
-// mode does not support yet.
-func (d *Data) tableCheckBatch() error {
-	for _, o := range d.Objects {
-		for _, f := range o.Fields {
-			if f.IsBatch() {
-				return fmt.Errorf(
-					"exec.mode table does not support batch resolvers yet (%s.%s); use exec.mode functions",
-					o.Name,
-					f.Name,
-				)
-			}
-		}
-	}
-	return nil
-}
-
 // tableCheckDirectives returns an error for a directive that the functions mode runs on a
 // field, an argument or an input object, but that the tables do not declare: one that a
 // plugin declared outside the schema files of the configuration, which the functions mode
@@ -1183,9 +1175,9 @@ func (d *Data) tableCheckDirectives() error {
 // tableState returns what the runtime reads from the schema, as d holds it for the
 // functions mode, by the element it is about: the directives that the functions mode runs
 // on the fields, arguments and inputs, whether it runs those of absent arguments, the
-// types of the fields, arguments and input fields, the batch resolvers, which table mode
-// does not support, the defaults of the input fields, and
-// whether an object is a root, implements interfaces or resolves its fields one after
+// types of the fields, arguments and input fields, the batch resolvers, which decide the
+// lists that keep the functions of the functions mode, the defaults of the input fields,
+// and whether an object is a root, implements interfaces or resolves its fields one after
 // another. It also holds what decides the schema that the runtime reads: the sources as
 // the generated code holds them, the linked schema, and the directives that the tables
 // declare. BuildData keeps it, and the generation fails where a plugin changes it in d
@@ -1913,6 +1905,9 @@ type tableInfo struct {
 	goTypes map[string]types.Type
 	// unmarshalsItself holds the inputs that unmarshal themselves, which have no table.
 	unmarshalsItself map[string]bool
+	// batchParents holds the objects that resolve a field through a batch resolver, and
+	// the interfaces and unions that one of them implements, by name. See tableBatchList.
+	batchParents map[string]bool
 }
 
 // tableInfo returns what table mode derives from the whole schema, building it on the
@@ -1931,6 +1926,15 @@ func (d *Data) tableInfo() *tableInfo {
 		}
 		for name, i := range d.Interfaces {
 			d.table.goTypes[name] = i.Type
+		}
+		d.table.batchParents = map[string]bool{}
+		for name := range d.batchFieldTypes() {
+			d.table.batchParents[name] = true
+		}
+		for name := range d.Interfaces {
+			if len(d.BatchImplementors(name)) > 0 {
+				d.table.batchParents[name] = true
+			}
 		}
 		d.table.names = d.tableNames()
 		d.table.typedCalls = d.tableTypedCalls()

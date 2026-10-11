@@ -7,9 +7,8 @@
 set -euo pipefail
 export GO111MODULE=on
 
-# Examples that use features table mode does not support yet: batch resolvers
-# (batchresolver) and Apollo Federation (the others).
-unsupported='^_examples/(batchresolver|embedding/subdir|federation/.*|multi-entity-tests/.*)$'
+# Examples that use Apollo Federation, which table mode does not support yet.
+unsupported='^_examples/(embedding/subdir|federation/.*|multi-entity-tests/.*)$'
 
 # config_of prints the configs that the go:generate lines of directory $1 use.
 config_of() {
@@ -72,7 +71,7 @@ done
 
 echo "### testing the examples"
 for m in _examples _examples/large-project-structure/main _examples/mini-habr-with-subscriptions _examples/websocket-initfunc/server; do
-	excluded=$(cd "$m" && go list ./... | grep -E 'batchresolver|embedding/subdir|federation|multi-entity-tests' || true)
+	excluded=$(cd "$m" && go list ./... | grep -E 'embedding/subdir|federation|multi-entity-tests' || true)
 	# With no exclusion, the fixed string ^ matches no package path.
 	packages=$(cd "$m" && go list ./... | grep -vxF -e "${excluded:-^}")
 	(cd "$m" && go vet $packages && go test -race $packages)

@@ -141,11 +141,9 @@ func (r *ExecConfig) IsDefined() bool {
 }
 
 // CheckTableMode returns an error when the configuration enables a feature that exec.mode
-// table does not support yet: federation, and batch resolvers for every field. api.Generate
-// runs it before it removes the generated files, Init before the plugins write any file,
-// and api.Generate again after the plugins that change the configuration. The batch
-// resolvers of single fields, which the schema enables and disables with @goField, fail
-// the generation once the fields are built.
+// table does not support yet: federation. api.Generate runs it before it removes the
+// generated files, Init before the plugins write any file, and api.Generate again after
+// the plugins that change the configuration.
 func (c *Config) CheckTableMode() error {
 	if !c.Exec.IsTable() {
 		return nil
@@ -153,11 +151,6 @@ func (c *Config) CheckTableMode() error {
 	if c.Federation.IsDefined() {
 		return errors.New(
 			"exec.mode table does not support federation yet; use exec.mode functions",
-		)
-	}
-	if c.Resolver.Batch.Enabled {
-		return errors.New(
-			"exec.mode table does not support batch resolvers yet; use exec.mode functions",
 		)
 	}
 	return nil

@@ -105,6 +105,11 @@ type Field[EC Context] struct {
 	// Stream is set for the fields of the subscription type. It receives the events
 	// from the channel the resolver returns, and Out marshals each of them.
 	Stream *Stream
+	// ResolveBatch is set for the fields that a batch resolver resolves, in place of the
+	// Resolve of the object. It takes the field as the request selects it, by whose
+	// response name the batch resolver shares its results between the parents, and reads
+	// the arguments from the field context, as in the functions mode.
+	ResolveBatch func(ctx context.Context, ec EC, obj any, field graphql.CollectedField) (any, error)
 
 	// index is the position of the field in the table, by which the Resolve of the object
 	// resolves it.
@@ -480,7 +485,7 @@ func (o *Object[EC]) resolveField(
 		return f.marshal(ctx, ec, field.Selections, fc, res)
 	}
 
-	res, err := o.resolve(&ctx, ec, f, obj)
+	res, err := o.resolve(&ctx, ec, f, field, obj)
 	if err != nil {
 		oc.Error(ctx, graphql.AddFieldLocationToError(ctx, err))
 		if fc.NonNull && !f.nonNull {
@@ -508,17 +513,28 @@ func (o *Object[EC]) resolve(
 	ctx *context.Context,
 	ec EC,
 	f *Field[EC],
+	field graphql.CollectedField,
 	obj any,
 ) (any, error) {
-	next := func(rctx context.Context) (any, error) {
-		*ctx = rctx // use context from middleware stack in children
-		var args map[string]any
-		// Only the resolvers and the methods take arguments, whose values the functions
-		// mode reads from the field context there. Middleware may have replaced it.
-		if len(f.args) > 0 && (f.IsResolver || f.IsMethod) {
-			args = graphql.GetFieldContext(rctx).Args
+	var next graphql.Resolver
+	if f.ResolveBatch != nil {
+		// Only this closure holds the field, so that the others stay as small.
+		next = func(rctx context.Context) (any, error) {
+			*ctx = rctx
+			return f.ResolveBatch(rctx, ec, obj, field)
 		}
-		return o.resolver(rctx, ec, obj, f.index, args)
+	} else {
+		next = func(rctx context.Context) (any, error) {
+			*ctx = rctx // use context from middleware stack in children
+			var args map[string]any
+			// Only the resolvers and the methods take arguments, whose values the
+			// functions mode reads from the field context there. Middleware may have
+			// replaced it.
+			if len(f.args) > 0 && (f.IsResolver || f.IsMethod) {
+				args = graphql.GetFieldContext(rctx).Args
+			}
+			return o.resolver(rctx, ec, obj, f.index, args)
+		}
 	}
 	failed := failure{zero: f.Out.zero}
 	if f.children != nil {

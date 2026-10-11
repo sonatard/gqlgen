@@ -239,14 +239,15 @@ func tableFuncNames(schema *ast.Schema, objects Objects) {
 
 // TableReadsObject reports whether a case of the exec.Resolve of this object in table mode
 // reads the object: that of every field but those that return a root operation type,
-// which resolve to an empty value of the type. The Resolve of an object that has no other
-// fields does not assert the object to its Go type.
+// which resolve to an empty value of the type, and those of batch resolvers, which have no
+// case. The Resolve of an object that has no other fields does not assert the object to
+// its Go type.
 func (o *Object) TableReadsObject() bool {
 	if o.Root {
 		return false
 	}
 	for _, f := range o.Fields {
-		if !f.TypeReference.IsRoot {
+		if !f.TypeReference.IsRoot && !f.TableBatch() {
 			return true
 		}
 	}

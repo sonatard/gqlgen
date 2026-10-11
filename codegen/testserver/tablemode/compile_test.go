@@ -85,7 +85,7 @@ func (addedDirective) MutateSchema(s *ast.Schema) error {
 	return nil
 }
 
-// batchID makes User.id a batch resolver, which config.Init has checked before.
+// batchID makes User.id a batch resolver in the configuration.
 type batchID struct{}
 
 func (batchID) Name() string { return "batch" }
@@ -197,8 +197,8 @@ func (batchData) GenerateCode(data *codegen.Data) error {
 // Table mode fails the generation, with an error that names what it does not support,
 // where a plugin makes the functions mode run what the tables cannot: a directive that
 // the configuration does not declare, which the functions mode does not compile either,
-// a batch resolver, which table mode does not support, and changes to the data of the
-// generated code that the runtime reads from the schema instead.
+// and changes to the data of the generated code that the runtime reads from the schema
+// instead.
 func TestTableModeRejectsPluginChanges(t *testing.T) {
 	configPath, err := filepath.Abs(filepath.Join("compile", "plugins", "gqlgen.yml"))
 	require.NoError(t, err)
@@ -208,7 +208,6 @@ func TestTableModeRejectsPluginChanges(t *testing.T) {
 		err    string
 	}{
 		{"a directive outside the sources", addedDirective{}, "@added"},
-		{"a batch resolver", batchID{}, "batch"},
 		{"a directive in the data", guardedData{}, "Query.guarded"},
 		{"sequential fields in the data", sequentialQuery{}, "type Query"},
 		{"directives of absent arguments in the data", nullArgs{}, "Query.noted(x:)"},
@@ -276,9 +275,10 @@ func (rawDefault) GenerateCode(data *codegen.Data) error {
 	return nil
 }
 
-// Table mode generates the code where a plugin changes the data of the generated code in
-// what the tables hold, such as the resolvers, or in what neither mode runs, such as the
-// fields of an input that unmarshals itself.
+// Table mode generates the code where a plugin changes the configuration, such as to make
+// a field a batch resolver, or the data of the generated code in what the tables hold,
+// such as the resolvers, or in what neither mode runs, such as the fields of an input that
+// unmarshals itself.
 func TestTableModeFollowsPluginChanges(t *testing.T) {
 	configPath, err := filepath.Abs(filepath.Join("compile", "plugins", "gqlgen.yml"))
 	require.NoError(t, err)
@@ -286,6 +286,7 @@ func TestTableModeFollowsPluginChanges(t *testing.T) {
 		name   string
 		plugin plugin.Plugin
 	}{
+		{"a batch resolver in the configuration", batchID{}},
 		{"a resolver", userResolver{}},
 		{"an input that unmarshals itself", rawDefault{}},
 		{"a directive declared outside the sources on an input that unmarshals itself", rawDirective{}},

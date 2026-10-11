@@ -10,6 +10,7 @@ directive @goField(
   name: String
   omittable: Boolean
   type: String
+  batch: Boolean
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 directive @defer(if: Boolean = true, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
@@ -149,6 +150,9 @@ type Droid implements Character & Node @auth(role: USER) {
   appearsIn: [Episode!]!
   primaryFunction: String!
   serial: Int
+  # lastSeen is resolved by a batch resolver, which fails for all the droids it resolves
+  # together with R2-D2.
+  lastSeen: String @goField(batch: true)
 }
 
 type Starship {
@@ -156,6 +160,15 @@ type Starship {
   name: String!
   length(unit: LengthUnit = METER): Float!
   history: [[Int!]!]!
+  # The batch resolvers of Starship resolve the starships of a list together. crew is
+  # null for a starship of unknown length, rating fails for it, and miscount returns one
+  # result too many.
+  crew: Int @goField(batch: true)
+  rating(scale: Int = 5): Float! @goField(batch: true)
+  miscount: Int @goField(batch: true)
+  # query returns the query type, which resolves to an empty value of the type without
+  # calling its batch resolver.
+  query: Query! @goField(batch: true)
 }
 
 union SearchResult = Human | Droid | Starship
@@ -340,6 +353,9 @@ type Query {
   stubbed: String @upper
   # fleet holds a null after its second element, where the elements must not be null.
   fleet: [Starship!]
+  # fleets holds lists of starships, whose inner lists group the parents of the batch
+  # resolvers.
+  fleets: [[Starship!]!]!
 }
 
 type Tick {

@@ -194,6 +194,7 @@ func {{ $object.TableFunc }}(ctx context.Context, ec *executionContext, {{ $para
 	{{- end }}
 	switch fieldIndex {
 	{{- range $i, $field := $object.Fields }}
+	{{- if not $field.TableBatch }}
 	case {{ $i }}:
 		{{- /* A field read from its object declares the value with the Go type of the
 		   field's marshaler before it returns it as any, so that the compiler checks that
@@ -219,6 +220,7 @@ func {{ $object.TableFunc }}(ctx context.Context, ec *executionContext, {{ $para
 		{{- template "fieldDefinition" $field }}
 		{{- end }}
 	{{- end }}
+	{{- end }}
 	}
 	return nil, exec.NoField(fieldIndex)
 }
@@ -232,6 +234,10 @@ func {{ $object.TableFunc }}(ctx context.Context, ec *executionContext, {{ $para
 {{- $field := .Field -}}
 Name: {{ $field.Name | quote }}
 {{- if $field.IsResolver }}, IsResolver: true
+{{- if $field.TableBatch }}, ResolveBatch: func(ctx context.Context, ec *executionContext, o any, collectedField graphql.CollectedField) (any, error) {
+	return ec.resolveBatch_{{ $field.Object.Name }}_{{ $field.Name }}(ctx, collectedField, o.({{ $field.Object.Reference | ref }}))
+}
+{{- end }}
 {{- else }}
 {{- if $field.IsConcurrent }}, Concurrent: true{{ end }}
 {{- if $field.IsMethod }}, IsMethod: true{{ end }}

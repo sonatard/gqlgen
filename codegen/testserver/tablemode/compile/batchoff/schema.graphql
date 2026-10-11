@@ -1,5 +1,5 @@
-# The configuration makes User.friends a batch resolver, which table mode does not support,
-# and the schema turns that off again.
+# The configuration makes User.friends a batch resolver, and the schema turns that off
+# again.
 directive @goField(
   forceResolver: Boolean
   name: String
