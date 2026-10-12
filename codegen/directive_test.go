@@ -42,3 +42,34 @@ func TestDirectiveCallArgs(t *testing.T) {
 
 	assert.Equal(t, `ctx, obj, n, args["def1"].(string), args["def2"].(struct{})`, got)
 }
+
+func TestDirectiveArgVarNames(t *testing.T) {
+	args := func(names ...string) ast.ArgumentDefinitionList {
+		list := make(ast.ArgumentDefinitionList, len(names))
+		for i, name := range names {
+			list[i] = &ast.ArgumentDefinition{Name: name}
+		}
+		return list
+	}
+
+	t.Run("names of the generated code get a suffix", func(t *testing.T) {
+		assert.Equal(t, map[string]string{
+			"obj":     "objArg",
+			"rawArgs": "rawArgsArg",
+			"asMap":   "asMapArg",
+			"it":      "itArg",
+			"nil":     "nilArg",
+			"true":    "trueArg",
+			"false":   "falseArg",
+			"value":   "value",
+		}, directiveArgVarNames(args("obj", "rawArgs", "asMap", "it", "nil", "true", "false", "value")))
+	})
+
+	t.Run("the suffix does not take the name of another argument", func(t *testing.T) {
+		assert.Equal(t, map[string]string{
+			"rawArgs":       "rawArgsArgArgArg",
+			"rawArgsArg":    "rawArgsArg",
+			"rawArgsArgArg": "rawArgsArgArg",
+		}, directiveArgVarNames(args("rawArgs", "rawArgsArg", "rawArgsArgArg")))
+	})
+}
