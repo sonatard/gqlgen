@@ -25,6 +25,12 @@ import (
 	aliasesfstable "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliasesfs/table"
 	aliasesfs2functions "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliasesfs2/functions"
 	aliasesfs2table "github.com/99designs/gqlgen/codegen/testserver/tablemode/aliasesfs2/table"
+	batchfsfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/batchfs/functions"
+	batchfstable "github.com/99designs/gqlgen/codegen/testserver/tablemode/batchfs/table"
+	batchglobalfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/batchglobal/functions"
+	batchglobaltable "github.com/99designs/gqlgen/codegen/testserver/tablemode/batchglobal/table"
+	batchvaluesfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/batchvalues/functions"
+	batchvaluestable "github.com/99designs/gqlgen/codegen/testserver/tablemode/batchvalues/table"
 	caseargsfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/caseargs/functions"
 	caseargstable "github.com/99designs/gqlgen/codegen/testserver/tablemode/caseargs/table"
 	federationfunctions "github.com/99designs/gqlgen/codegen/testserver/tablemode/federation/functions"
@@ -753,6 +759,65 @@ func TestOtherSchemas(t *testing.T) {
 			requests: []request{
 				{name: "absent argument that a directive sets", query: `{ posts }`, contains: []string{`u1`}},
 				{name: "argument", query: `{ posts(authorID: "x") }`, contains: []string{`x`}},
+			},
+		},
+		// The batch resolvers put the size of their batch into the values they return, and
+		// record the parents of each call, so that a mode that does not collect the parents
+		// of a list into one call differs from the functions mode.
+		{
+			name:      "batch resolvers from resolver.batch",
+			functions: batchglobalfunctions.NewSchema,
+			table:     batchglobaltable.NewSchema,
+			requests: []request{
+				{
+					name:  "a batch resolver configured as a resolver and one forced by the model",
+					query: `{ users { id name posts { id title author { id } } } }`,
+					contains: []string{
+						`batch User.posts [u1 u2 u3]`,
+						`"post by Luke:p1/3"`,
+						`batch Post.author [p1 p2]`,
+						`"author:p3/1"`,
+					},
+				},
+				{
+					name:     "introspection, which resolver.batch leaves unbatched",
+					query:    `{ __type(name: "User") { fields { name } } users { id } }`,
+					contains: []string{`"posts"`},
+				},
+			},
+		},
+		{
+			name:      "batch resolvers of the values of a slice, with omit_slice_element_pointers",
+			functions: batchvaluesfunctions.NewSchema,
+			table:     batchvaluestable.NewSchema,
+			requests: []request{
+				{
+					name:     "parents of a value slice",
+					query:    `{ users { id posts { id author { id } } } }`,
+					contains: []string{`batch Post.author [p1 p2 p3]`, `"author:p1/3"`, `"author:p4/1"`},
+				},
+			},
+		},
+		{
+			name:      "batch resolvers of implementations declared in another file, in the follow-schema layout",
+			functions: batchfsfunctions.NewSchema,
+			table:     batchfstable.NewSchema,
+			requests: []request{
+				{
+					name:  "both implementations",
+					query: `{ animals { id ... on Dog { batchProp } ... on Cat { batchProp } } }`,
+					contains: []string{
+						`batch Dog.batchProp [d1 d2 d3]`,
+						`batch Cat.batchProp [c1 c2]`,
+						`"dog:d2/3"`,
+						`"cat:c2/2"`,
+					},
+				},
+				{
+					name:     "the implementation of the other file only",
+					query:    `{ animals { __typename ... on Cat { batchProp } } }`,
+					contains: []string{`"cat:c1/2"`},
+				},
 			},
 		},
 	} {
