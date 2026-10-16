@@ -1,3 +1,6 @@
+//go:generate rm -f resolver.go
+//go:generate go run ../../../testdata/gqlgen.go -config gqlgen.yml -stub stub.go -both-modes
+
 package returnpointersinunmarshalinput
 
 import (

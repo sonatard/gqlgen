@@ -1,10 +1,8 @@
 //go:build !exectable
 
 // The tests in this file call the unexported unmarshaler, which table mode does not
-// generate.
-
-//go:generate rm -f resolver.go
-//go:generate go run ../../../testdata/gqlgen.go -config gqlgen.yml -stub stub.go -both-modes
+// generate. The go:generate lines of the package are in typed_unmarshaler_test.go, which
+// go generate reads whatever the build tags.
 
 package returnpointersinunmarshalinput
 
