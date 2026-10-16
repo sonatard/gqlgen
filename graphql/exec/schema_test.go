@@ -62,7 +62,8 @@ func linkTestSchema(t *testing.T) (map[string]*Object[*testEC], *Input[*testEC])
 		return nil, nil
 	}
 	var tag, onInput DirectiveDef[*testEC]
-	tag.Init(s, "tag", []Arg[*testEC]{{Name: "name", In: inString.In}, {Name: "level", In: inInt.In}}, call, nil)
+	tagArgs := []Arg[*testEC]{{Name: "name", In: inString.In}, {Name: "level", In: inInt.In}}
+	tag.Init(s, "tag", tagArgs, call, nil)
 	onInput.Init(s, "onInput", []Arg[*testEC]{{Name: "x", In: inInt.In}}, call, nil)
 
 	objects := map[string]*Object[*testEC]{}
@@ -75,7 +76,14 @@ func linkTestSchema(t *testing.T) (map[string]*Object[*testEC], *Input[*testEC])
 	})
 	objects["Cat"].Init(s, "Cat", nil, []Field[*testEC]{{Name: "id"}})
 	objects["Query"].Init(s, "Query", nil, []Field[*testEC]{
-		{Name: "dog", IsResolver: true, Args: []Arg[*testEC]{{Name: "id", In: inString.In}, {Name: "limit", In: inInt.In}}},
+		{
+			Name:       "dog",
+			IsResolver: true,
+			Args: []Arg[*testEC]{
+				{Name: "id", In: inString.In},
+				{Name: "limit", In: inInt.In},
+			},
+		},
 		{Name: "pets", IsResolver: true},
 		{Name: "node", IsResolver: true},
 		{Name: "when"},
@@ -247,7 +255,8 @@ func TestLinkArgsByName(t *testing.T) {
 			Args: []Arg[*testEC]{{Name: "n", In: inInt.In}, {Name: "s", In: inString.In}},
 		}})
 		var d DirectiveDef[*testEC]
-		d.Init(s, "d", []Arg[*testEC]{{Name: "n", In: inInt.In}, {Name: "s", In: inString.In}}, call, nil)
+		dArgs := []Arg[*testEC]{{Name: "n", In: inInt.In}, {Name: "s", In: inString.In}}
+		d.Init(s, "d", dArgs, call, nil)
 		s.Link()
 		return &query, &d
 	}

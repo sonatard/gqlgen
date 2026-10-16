@@ -39,11 +39,12 @@ func TestServersGenerateBothModes(t *testing.T) {
 		s := bufio.NewScanner(f)
 		for s.Scan() {
 			line := s.Text()
-			if !strings.HasPrefix(line, "//go:generate go run ") || !strings.Contains(line, "testdata/gqlgen.go") {
+			if !strings.HasPrefix(line, "//go:generate go run ") ||
+				!strings.Contains(line, "testdata/gqlgen.go") {
 				continue
 			}
 			lines++
-			require.Contains(t, line, " -both-modes", "%s: the test server is not generated in table mode", path)
+			require.Contains(t, line, " -both-modes", "%s: not generated in table mode", path)
 		}
 		return s.Err()
 	})

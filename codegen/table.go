@@ -2164,7 +2164,8 @@ func (d *Data) TableFieldArgs(f *Field) string {
 		args = append(args, d.tableArg(arg))
 	}
 	for _, decl := range f.Arguments {
-		if !slices.ContainsFunc(f.Args, func(arg *FieldArgument) bool { return arg.Name == decl.Name }) {
+		named := func(arg *FieldArgument) bool { return arg.Name == decl.Name }
+		if !slices.ContainsFunc(f.Args, named) {
 			args = append(args, "{Name: "+strconv.Quote(decl.Name)+"}")
 		}
 	}
@@ -2265,7 +2266,7 @@ func (d *Data) TableDirectiveArgs(dir *Directive) string {
 	}
 	args := make([]string, len(dir.Args))
 	for i, arg := range dir.Args {
-		args[i] = "{Name: " + strconv.Quote(arg.Name) + ", In: " + d.TableIn(arg.TypeReference) + "}"
+		args[i] = fmt.Sprintf("{Name: %q, In: %s}", arg.Name, d.TableIn(arg.TypeReference))
 	}
 	return "[]tableArg{" + strings.Join(args, ", ") + "}"
 }
