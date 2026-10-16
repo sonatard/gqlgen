@@ -301,10 +301,7 @@ func (o *Object[EC]) Marshal(
 	}
 
 	out := graphql.NewFieldSet(fields)
-	var (
-		deferred *graphql.FieldSet
-		views    map[string]*graphql.FieldSetView
-	)
+	var deferred graphql.DeferredGroup
 	for i, field := range fields {
 		if field.Name == "__typename" {
 			out.Values[i] = graphql.MarshalString(o.Name)
@@ -340,60 +337,20 @@ func (o *Object[EC]) Marshal(
 			continue
 		}
 
-		resolve := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-			if !o.omitPanicHandler {
-				defer func() {
-					if r := recover(); r != nil {
-						oc.Error(ctx, oc.Recover(ctx, r))
-					}
-				}()
-			}
-			res = o.resolveField(ctx, ec, f, field, obj)
-			if f.isInvalid(res) {
-				atomic.AddUint32(&fs.Invalids, 1)
-			}
-			return res
+		// The concurrent fields are scheduled as the functions mode schedules them.
+		resolve := func(ctx context.Context) graphql.Marshaler {
+			return o.resolveField(ctx, ec, f, field, obj)
 		}
-
 		if o.root {
-			out.Concurrently(i, func(context.Context) graphql.Marshaler {
-				return oc.RootResolverMiddleware(
-					rootCtx,
-					func(ctx context.Context) graphql.Marshaler {
-						return resolve(ctx, out)
-					},
-				)
-			})
+			out.ResolveRootConcurrently(rootCtx, oc, i, !o.omitPanicHandler, f.nonNull, resolve)
 			continue
 		}
-
-		if field.IsDeferred() {
-			if deferred == nil {
-				deferred = graphql.NewFieldSet(nil)
-				views = make(map[string]*graphql.FieldSetView)
-			}
-			deferred.AddField(field)
-			fieldIndex := len(deferred.Values) - 1
-			fs := deferred
-			deferred.Concurrently(fieldIndex, func(ctx context.Context) graphql.Marshaler {
-				return resolve(ctx, fs)
-			})
-			for _, deferrable := range field.Deferrables {
-				view, ok := views[deferrable.Label]
-				if !ok {
-					view = deferred.NewView()
-					views[deferrable.Label] = view
-				}
-				view.AddIndices(fieldIndex)
-			}
-			// The field is sent with its deferred group, not in this response.
-			out.Values[i] = graphql.Null
-			continue
+		// The functions mode makes the group for every object; it is only needed for a
+		// deferred field, so it is made for the first.
+		if field.IsDeferred() && deferred.FieldSet == nil {
+			deferred = graphql.NewDeferredGroup(ctx)
 		}
-
-		out.Concurrently(i, func(ctx context.Context) graphql.Marshaler {
-			return resolve(ctx, out)
-		})
+		out.ResolveConcurrently(oc, &deferred, i, !o.omitPanicHandler, f.nonNull, resolve)
 	}
 
 	out.Dispatch(ctx)
@@ -401,14 +358,9 @@ func (o *Object[EC]) Marshal(
 		return graphql.Null
 	}
 
-	if len(views) > 0 {
-		ec.AddDeferred(int32(min(len(views), math.MaxInt32)))
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Defers:   views,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: deferred,
-			Context:  ctx,
-		})
+	if n := len(deferred.Defers); n > 0 {
+		ec.AddDeferred(int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
 	}
 
 	return out
