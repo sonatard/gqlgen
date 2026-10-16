@@ -56,7 +56,9 @@ does not generate, starts with `//go:build !exectable`. Keep the `go:generate` l
 a file, since `go generate` skips the files that the build tags leave out.
 
 `codegen/testserver/tablemode` generates one schema in both modes into separate packages and
-checks that both executors give the same response to every request.
+checks that both executors give the same response to every request. Its tests that run the
+generator do not build with `-race`, so run `go test ./codegen/testserver/tablemode/` without it
+to include them.
 
 CI also runs `.github/workflows/check-table-mode`, which regenerates the examples, the
 integration server and the test servers of the federation plugin in table mode and runs their

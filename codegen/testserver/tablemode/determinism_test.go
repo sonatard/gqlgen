@@ -1,3 +1,7 @@
+//go:build !race
+
+// See compile_test.go for why the tests that run the generator do not build with -race.
+
 package tablemode_test
 
 import (

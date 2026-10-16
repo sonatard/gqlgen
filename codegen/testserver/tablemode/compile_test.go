@@ -1,3 +1,9 @@
+//go:build !race
+
+// The tests of this file and determinism_test.go run the generator dozens of times. It
+// starts no goroutines, so the race detector finds nothing in them while it makes them
+// several times slower; CI runs them without -race in a step of their own.
+
 package tablemode_test
 
 import (
