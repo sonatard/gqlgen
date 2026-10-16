@@ -74,8 +74,9 @@ func (s *Schema[EC]) Link() {
 	for name, in := range s.inputs {
 		in.link(s, name)
 	}
-	// The fields hold what Link derived, which nothing looks up any more.
-	s.outs, s.ins = nil, nil
+	// The fields hold what Link derived, which nothing looks up any more, and nothing
+	// reads the schema after Link, which may be one loaded only to link the tables.
+	s.outs, s.ins, s.schema = nil, nil, nil
 }
 
 func (s *Schema[EC]) definition(name string) *ast.Definition {

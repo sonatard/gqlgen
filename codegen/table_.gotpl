@@ -52,16 +52,20 @@ type executableSchema struct {
 // linkedSchema loads the schema that the code is generated for, which is not the schema
 // of the sources: plugins of the generator changed it, or gqlgen added an empty query type.
 // The tables are linked to it, and requests are validated against parsedSchema, as in the
-// functions mode. It is loaded when NewExecutableSchema first builds the tables.
-var linkedSchema = sync.OnceValue(func() *ast.Schema {
+// functions mode. It is loaded when NewExecutableSchema first builds the tables, and
+// nothing holds it once they are linked.
+func linkedSchema() *ast.Schema {
 	return gqlparser.MustLoadSchema(&ast.Source{Name: "linked_schema.graphql", Input: {{ .TableLinkedSchema | rawQuote }}})
-})
+}
 {{- end }}
 
 // builtTables builds the tables when NewExecutableSchema is first called, for every
 // executable schema of the package: they do not depend on the Config and are only read
-// once built. They are linked to the schema as it is then, which code may change later
+// once built.
+{{- if .TableLinkedSchema }} They are linked to linkedSchema.
+{{- else }} They are linked to the schema as it is then, which code may change later
 // through Schema, while the functions mode runs the code it was generated for.
+{{- end }}
 var builtTables = sync.OnceValue(func() *tables {
 	return newTables({{ if .TableLinkedSchema }}linkedSchema(){{ else }}parsedSchema{{ end }})
 })
