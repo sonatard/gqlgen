@@ -84,7 +84,8 @@ var (
 // plugins. If Options.Template is empty, the Render function will look for `.gotpl`
 // files inside the directory where you wrote the plugin.
 func Render(cfg Options) error {
-	buf, err := execute(cfg)
+	_, callerFile, _, _ := runtime.Caller(1)
+	buf, err := execute(cfg, filepath.Dir(callerFile))
 	if err != nil {
 		return err
 	}
@@ -124,15 +125,18 @@ func Render(cfg Options) error {
 // returns the imports that they looked up and reserved, in their order and with the
 // aliases they got, which may be given to another file in Options.Imports.
 func ImportsOf(cfg Options) ([]*Import, error) {
-	_, err := execute(cfg)
+	_, callerFile, _, _ := runtime.Caller(1)
+	_, err := execute(cfg, filepath.Dir(callerFile))
 	imports := CurrentImports.imports
 	CurrentImports = nil
 	return imports, err
 }
 
 // execute executes the templates of cfg into the returned buffer, with CurrentImports
-// holding the imports that they look up.
-func execute(cfg Options) (*bytes.Buffer, error) {
+// holding the imports that they look up. Without Template and TemplateFS, the templates
+// are the .gotpl files in callerDir, the directory of the source file calling Render or
+// ImportsOf.
+func execute(cfg Options, callerDir string) (*bytes.Buffer, error) {
 	if CurrentImports != nil {
 		panic(errors.New("recursive or concurrent call to RenderToFile detected"))
 	}
@@ -147,7 +151,7 @@ func execute(cfg Options) (*bytes.Buffer, error) {
 	maps.Copy(funcs, cfg.Funcs)
 
 	t := template.New("").Funcs(funcs)
-	t, err := parseTemplates(cfg, t)
+	t, err := parseTemplates(cfg, t, callerDir)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +210,7 @@ func execute(cfg Options) (*bytes.Buffer, error) {
 	return &buf, nil
 }
 
-func parseTemplates(cfg Options, t *template.Template) (*template.Template, error) {
+func parseTemplates(cfg Options, t *template.Template, callerDir string) (*template.Template, error) {
 	if cfg.Template != "" {
 		var err error
 		t, err = t.New("template.gotpl").Parse(cfg.Template)
@@ -230,9 +234,7 @@ func parseTemplates(cfg Options, t *template.Template) (*template.Template, erro
 		fileSystem = cfg.TemplateFS
 	} else {
 		// load path relative to calling source file
-		_, callerFile, _, _ := runtime.Caller(2)
-		rootDir := filepath.Dir(callerFile)
-		fileSystem = os.DirFS(rootDir)
+		fileSystem = os.DirFS(callerDir)
 	}
 
 	t, err := t.ParseFS(fileSystem, "*.gotpl")
