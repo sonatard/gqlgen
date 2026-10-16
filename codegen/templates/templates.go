@@ -126,21 +126,28 @@ func Render(cfg Options) error {
 // aliases they got, which may be given to another file in Options.Imports.
 func ImportsOf(cfg Options) ([]*Import, error) {
 	_, callerFile, _, _ := runtime.Caller(1)
-	_, err := execute(cfg, filepath.Dir(callerFile))
+	if _, err := execute(cfg, filepath.Dir(callerFile)); err != nil {
+		return nil, err
+	}
 	imports := CurrentImports.imports
 	CurrentImports = nil
-	return imports, err
+	return imports, nil
 }
 
 // execute executes the templates of cfg into the returned buffer, with CurrentImports
 // holding the imports that they look up. Without Template and TemplateFS, the templates
 // are the .gotpl files in callerDir, the directory of the source file calling Render or
-// ImportsOf.
-func execute(cfg Options, callerDir string) (*bytes.Buffer, error) {
+// ImportsOf. When it fails, it leaves no CurrentImports, so that the next call can run.
+func execute(cfg Options, callerDir string) (_ *bytes.Buffer, err error) {
 	if CurrentImports != nil {
 		panic(errors.New("recursive or concurrent call to RenderToFile detected"))
 	}
 	CurrentImports = &Imports{packages: cfg.Packages, destDir: filepath.Dir(cfg.Filename)}
+	defer func() {
+		if err != nil {
+			CurrentImports = nil
+		}
+	}()
 	for _, imp := range cfg.Imports {
 		given := *imp
 		given.given = true
@@ -151,7 +158,7 @@ func execute(cfg Options, callerDir string) (*bytes.Buffer, error) {
 	maps.Copy(funcs, cfg.Funcs)
 
 	t := template.New("").Funcs(funcs)
-	t, err := parseTemplates(cfg, t, callerDir)
+	t, err = parseTemplates(cfg, t, callerDir)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +217,11 @@ func execute(cfg Options, callerDir string) (*bytes.Buffer, error) {
 	return &buf, nil
 }
 
-func parseTemplates(cfg Options, t *template.Template, callerDir string) (*template.Template, error) {
+func parseTemplates(
+	cfg Options,
+	t *template.Template,
+	callerDir string,
+) (*template.Template, error) {
 	if cfg.Template != "" {
 		var err error
 		t, err = t.New("template.gotpl").Parse(cfg.Template)
