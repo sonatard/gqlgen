@@ -213,7 +213,7 @@ input In { s: Shout }
 `}))
 	var query Object[*testEC]
 	query.Init(s, "Query", nil, []Field[*testEC]{
-		{Name: "echo", Args: []any{(**shout)(nil), nil}, Type: (**shout)(nil)},
+		{Name: "echo", Args: []Arg[*testEC]{{Name: "s", Type: (**shout)(nil)}, {Name: "n"}},Type: (**shout)(nil)},
 	})
 	var in Input[*testEC]
 	in.Init(s, Input[*testEC]{

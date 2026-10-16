@@ -166,7 +166,7 @@ func TestTableType(t *testing.T) {
 	require.Equal(t, "[]string", tableType(types.NewSlice(types.Typ[types.String])))
 }
 
-func TestTableFieldIns(t *testing.T) {
+func TestTableFieldArgs(t *testing.T) {
 	// A cast keeps the generated unmarshal function, whose In the tables declare.
 	ref := &config.TypeReference{
 		Definition: &ast.Definition{Name: "Int", Kind: ast.Scalar},
@@ -180,17 +180,26 @@ func TestTableFieldIns(t *testing.T) {
 	}
 	a := &ast.ArgumentDefinition{Name: "a"}
 	b := &ast.ArgumentDefinition{Name: "b"}
+	c := &ast.ArgumentDefinition{Name: "c"}
 	field := &Field{
 		FieldDefinition: &ast.FieldDefinition{
 			Name:      "f",
-			Arguments: ast.ArgumentDefinitionList{a, b},
+			Arguments: ast.ArgumentDefinitionList{a, b, c},
 		},
-		// The method of the field takes b only, and after a in Args.
-		Args: []*FieldArgument{{ArgumentDefinition: b, TypeReference: ref}},
+		// The method of the field takes c and a, in that order, and not b.
+		Args: []*FieldArgument{
+			{ArgumentDefinition: c, TypeReference: ref},
+			{ArgumentDefinition: a, TypeReference: ref},
+		},
 	}
 
-	// The arguments are in the order of the schema, and a, which Go does not take, nil.
-	require.Equal(t, "[]any{nil, t.inUnmarshalNInt2int.In}", data.TableFieldIns(field))
+	// The arguments are named, in the order of the parameters of the method, and b, which
+	// Go does not take, comes last without an In.
+	require.Equal(
+		t,
+		`[]tableArg{{Name: "c", In: t.inUnmarshalNInt2int.In}, {Name: "a", In: t.inUnmarshalNInt2int.In}, {Name: "b"}}`,
+		data.TableFieldArgs(field),
+	)
 }
 
 // The tables give the Go type of an argument or input field that errors name when the
@@ -258,31 +267,6 @@ func TestTableGetExpr(t *testing.T) {
 	require.Equal(t, "obj.Name", field(str).tableGetExpr())
 	require.Equal(t, "obj.Name", field(nil).tableGetExpr())
 	require.Empty(t, field(types.NewStruct(nil, nil)).tableGetExpr())
-}
-
-// The tables give the order of the arguments when the method of a field takes them in
-// another order than the schema declares them.
-func TestTableArgOrder(t *testing.T) {
-	a := &ast.ArgumentDefinition{Name: "a"}
-	b := &ast.ArgumentDefinition{Name: "b"}
-	c := &ast.ArgumentDefinition{Name: "c"}
-	field := func(args ...*ast.ArgumentDefinition) *Field {
-		f := &Field{FieldDefinition: &ast.FieldDefinition{
-			Name:      "f",
-			Arguments: ast.ArgumentDefinitionList{a, b, c},
-		}}
-		for _, arg := range args {
-			f.Args = append(f.Args, &FieldArgument{ArgumentDefinition: arg})
-		}
-		return f
-	}
-	data := &Data{}
-
-	require.Empty(t, data.TableArgOrder(field(a, b, c)))
-	// An argument that the method does not take leaves the others in order.
-	require.Empty(t, data.TableArgOrder(field(a, c)))
-	require.Equal(t, "[]int{2, 0}", data.TableArgOrder(field(c, a)))
-	require.Equal(t, "[]int{1, 0, 2}", data.TableArgOrder(field(b, a, c)))
 }
 
 // The tables are linked to the schema that the code is generated for when plugins

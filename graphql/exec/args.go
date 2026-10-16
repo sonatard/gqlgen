@@ -22,17 +22,27 @@ type arg[EC Context] struct {
 	// typ unmarshals the argument.
 	typ *In[EC]
 	// goType is the Go type of the argument that errors name, when it is not the name of
-	// typ. See WithGoType.
+	// typ. See Arg.GoType.
 	goType string
 }
 
-// WithGoType is an entry of Field.Args that also gives the Go type of the argument, which
-// errors name, as the generated package writes it. Generated code gives it where the
-// runtime would write the type otherwise: reflect does not tell []byte from []uint8, nor
-// interface{} from any.
-type WithGoType struct {
-	// Arg is the entry of the argument, as Field.Args describes it.
-	Arg    any
+// Arg describes how one argument of a field or directive is unmarshaled from Go.
+// Generated code sets its name and what ties it to Go; Schema.Link finds the argument of
+// that name in the schema and reads the rest from there, so that the tables keep working
+// when the schema declares the arguments in another order, and Link panics when the
+// schema has no argument of that name.
+type Arg[EC Context] struct {
+	Name string
+	// In unmarshals the argument.
+	In *In[EC]
+	// Type is set instead of In when Link derives the In from the type of the argument
+	// and its Go type, which Type gives as a nil pointer to it. An argument with neither
+	// In nor Type is not bound to Go, such as one that the method of the field does not
+	// take: it is left out, as the functions mode leaves it out of its arguments function.
+	Type any
+	// GoType is the Go type of the argument that errors name, as the generated package
+	// writes it. Generated code gives it where the runtime would write the type
+	// otherwise: reflect does not tell []byte from []uint8, nor interface{} from any.
 	GoType string
 }
 

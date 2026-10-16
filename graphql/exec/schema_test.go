@@ -62,8 +62,8 @@ func linkTestSchema(t *testing.T) (map[string]*Object[*testEC], *Input[*testEC])
 		return nil, nil
 	}
 	var tag, onInput DirectiveDef[*testEC]
-	tag.Init(s, "tag", []*In[*testEC]{inString.In, inInt.In}, call, nil)
-	onInput.Init(s, "onInput", []*In[*testEC]{inInt.In}, call, nil)
+	tag.Init(s, "tag", []Arg[*testEC]{{Name: "name", In: inString.In}, {Name: "level", In: inInt.In}}, call, nil)
+	onInput.Init(s, "onInput", []Arg[*testEC]{{Name: "x", In: inInt.In}}, call, nil)
 
 	objects := map[string]*Object[*testEC]{}
 	for _, name := range []string{"Dog", "Cat", "Query", "Mutation"} {
@@ -75,14 +75,14 @@ func linkTestSchema(t *testing.T) (map[string]*Object[*testEC], *Input[*testEC])
 	})
 	objects["Cat"].Init(s, "Cat", nil, []Field[*testEC]{{Name: "id"}})
 	objects["Query"].Init(s, "Query", nil, []Field[*testEC]{
-		{Name: "dog", IsResolver: true, Args: []any{inString.In, inInt.In}},
+		{Name: "dog", IsResolver: true, Args: []Arg[*testEC]{{Name: "id", In: inString.In}, {Name: "limit", In: inInt.In}}},
 		{Name: "pets", IsResolver: true},
 		{Name: "node", IsResolver: true},
 		{Name: "when"},
 		{Name: "query"},
 	})
 	objects["Mutation"].Init(s, "Mutation", nil, []Field[*testEC]{
-		{Name: "rename", IsResolver: true, Args: []any{inInt.In}},
+		{Name: "rename", IsResolver: true, Args: []Arg[*testEC]{{Name: "input", In: inInt.In}}},
 	})
 	var in Input[*testEC]
 	in.Init(s, Input[*testEC]{Name: "RenameInput"}, []InputField[*testEC]{
@@ -182,7 +182,7 @@ func TestLinkMismatch(t *testing.T) {
 	s = NewSchema[*testEC](schema)
 	new(Object[*testEC]).Init(s, "Query", nil, []Field[*testEC]{{Name: "dog"}})
 	new(Object[*testEC]).Init(s, "Dog", nil, nil)
-	require.PanicsWithValue(t, "exec: field dog has 2 arguments, the tables 0", s.Link)
+	require.PanicsWithValue(t, "exec: the tables have no argument id of field dog", s.Link)
 
 	s = NewSchema[*testEC](schema)
 	new(DirectiveDef[*testEC]).Init(s, "nope", nil, call, nil)
@@ -195,24 +195,13 @@ func TestLinkMismatch(t *testing.T) {
 	})
 }
 
-// An entry of Field.Args may give the Go type of the argument that errors name.
-func TestArgsWithGoType(t *testing.T) {
+// The tables give the arguments in the order in which the functions mode unmarshals them,
+// which Link keeps, and may give the Go type of an argument that errors name.
+func TestArgs(t *testing.T) {
 	s := NewSchema[*testEC](gqlparser.MustLoadSchema(&ast.Source{
-		Input: `type Query { f(a: Int, b: Int): Int }`,
+		Input: `type Query { f(a: Int, b: Int, c: Int): Int }`,
 	}))
 	decls := s.schema.Query.Fields.ForName("f").Arguments
-	args := s.args(decls, []any{inInt.In, WithGoType{Arg: inInt.In, GoType: "int32"}}, "field f")
-	require.Len(t, args, 2)
-	require.Empty(t, args[0].goType)
-	require.Equal(t, "int32", args[1].goType)
-	require.Same(t, inInt.In, args[1].typ)
-}
-
-// The tables give the order in which the functions mode unmarshals the arguments of a
-// field bound to a method.
-func TestOrderArgs(t *testing.T) {
-	decls := ast.ArgumentDefinitionList{{Name: "a"}, {Name: "b"}}
-	args := []arg[*testEC]{{name: "a"}, {name: "b"}}
 	names := func(args []arg[*testEC]) []string {
 		var res []string
 		for _, a := range args {
@@ -220,15 +209,83 @@ func TestOrderArgs(t *testing.T) {
 		}
 		return res
 	}
-	require.Equal(t, []string{"b", "a"}, names(orderArgs(args, decls, []int{1, 0}, "field f")))
+
+	args := s.args(decls, []Arg[*testEC]{
+		{Name: "c", In: inInt.In},
+		{Name: "a", In: inInt.In, GoType: "int32"},
+		// An argument that is not bound to Go is left out.
+		{Name: "b"},
+	}, "field f")
+	require.Equal(t, []string{"c", "a"}, names(args))
+	require.Empty(t, args[0].goType)
+	require.Equal(t, "int32", args[1].goType)
+	require.Same(t, inInt.In, args[1].typ)
+
 	// A method may take one argument in two parameters whose names differ in case only.
-	require.Equal(
-		t,
-		[]string{"a", "a"},
-		names(orderArgs(args[:1], decls[:1], []int{0, 0}, "field f")),
-	)
-	require.PanicsWithValue(t, "exec: field f has no argument 2 bound to Go", func() {
-		orderArgs(args, decls, []int{2}, "field f")
+	args = s.args(decls, []Arg[*testEC]{
+		{Name: "a", In: inInt.In},
+		{Name: "a", In: inInt.In},
+		{Name: "b"},
+		{Name: "c"},
+	}, "field f")
+	require.Equal(t, []string{"a", "a"}, names(args))
+}
+
+// Link matches the arguments of the tables with those of the schema by name: the
+// tables keep working when the schema declares the arguments in another order, as the
+// generated code reads them by name, and Link panics when the schema renames, adds or
+// removes one.
+func TestLinkArgsByName(t *testing.T) {
+	call := func(_ context.Context, _ *testEC, _ any, _ graphql.Resolver, args map[string]any) (any, error) {
+		return args, nil
+	}
+	link := func(schema string) (*Object[*testEC], *DirectiveDef[*testEC]) {
+		s := NewSchema[*testEC](gqlparser.MustLoadSchema(&ast.Source{Input: schema}))
+		var query Object[*testEC]
+		query.Init(s, "Query", nil, []Field[*testEC]{{
+			Name: "f",
+			Args: []Arg[*testEC]{{Name: "n", In: inInt.In}, {Name: "s", In: inString.In}},
+		}})
+		var d DirectiveDef[*testEC]
+		d.Init(s, "d", []Arg[*testEC]{{Name: "n", In: inInt.In}, {Name: "s", In: inString.In}}, call, nil)
+		s.Link()
+		return &query, &d
+	}
+
+	query, d := link(`
+		directive @d(s: String, n: Int) on FIELD_DEFINITION
+		type Query { f(s: String, n: Int): Int @d(s: "x", n: 2) }
+	`)
+	got, err := query.ParseArgs(context.Background(), nil, "f", map[string]any{"n": 1, "s": "y"})
+	require.NoError(t, err)
+	y := "y"
+	require.Equal(t, map[string]any{"n": 1, "s": &y}, got)
+	f := query.index["f"]
+	require.Len(t, f.directives, 1)
+	got, err = parseArgs(context.Background(), nil, d.args, f.directives[0].args, false)
+	require.NoError(t, err)
+	x := "x"
+	require.Equal(t, map[string]any{"n": 2, "s": &x}, got)
+
+	// A renamed argument.
+	require.PanicsWithValue(t, "exec: the tables have no argument t of field f", func() {
+		link(`
+			directive @d(n: Int, s: String) on FIELD_DEFINITION
+			type Query { f(n: Int, t: String): Int }
+		`)
+	})
+	// A removed argument.
+	require.PanicsWithValue(t, "exec: field f has no argument s", func() {
+		link(`
+			directive @d(n: Int, s: String) on FIELD_DEFINITION
+			type Query { f(n: Int): Int }
+		`)
+	})
+	require.PanicsWithValue(t, "exec: the tables have no argument m of directive @d", func() {
+		link(`
+			directive @d(m: Int, s: String) on FIELD_DEFINITION
+			type Query { f(n: Int, s: String): Int }
+		`)
 	})
 }
 

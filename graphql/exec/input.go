@@ -200,7 +200,7 @@ type InputField[EC Context] struct {
 	// not store.
 	SetWith func(ctx context.Context, ec EC, it, v any) error
 	// GoType is the Go type of the field that errors name, as the generated package
-	// writes it, where the runtime would write it otherwise. See WithGoType.
+	// writes it, where the runtime would write it otherwise. See Arg.GoType.
 	GoType string
 
 	// index is the position of the field in the table, by which the Set of the input

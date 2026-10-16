@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"slices"
 	"strconv"
 	"sync/atomic"
 
@@ -88,14 +87,11 @@ type Field[EC Context] struct {
 	// IsMethod is set for fields read by calling a method, besides the resolvers.
 	IsMethod   bool
 	IsResolver bool
-	// Args unmarshal the field's arguments, in the order the schema declares them: each
-	// is an *In, or a nil pointer to the Go type of the argument, whose In Link derives,
-	// either one in a WithGoType, or nil for an argument that is not bound to Go.
-	Args []any
-	// ArgOrder is set when the functions mode unmarshals the arguments in another order
-	// than the schema declares them, which is the order of the parameters of the method
-	// the field is bound to: the indexes in Args, in that order.
-	ArgOrder []int
+	// Args unmarshal the field's arguments, every one that the schema declares, in the
+	// order the functions mode unmarshals them: the order the schema declares them, or
+	// for a field bound to a method, the order of its parameters. Link matches them with
+	// the schema by name.
+	Args []Arg[EC]
 	// Out marshals the value of the field's Go type. A value of another type that
 	// implements graphql.Marshaler is used as it is.
 	Out *Out[EC]
@@ -253,9 +249,6 @@ func (f *Field[EC]) link(s *Schema[EC], fd *ast.FieldDefinition, sequential bool
 	}
 	f.directives = append(f.directives, s.applied(fd.Directives, "")...)
 	f.args = s.args(fd.Arguments, f.Args, "field "+fd.Name)
-	if f.ArgOrder != nil {
-		f.args = orderArgs(f.args, fd.Arguments, f.ArgOrder, "field "+fd.Name)
-	}
 	if f.Out == nil && f.Type != nil {
 		t, ok := goType(f.Type)
 		if !ok {
@@ -263,30 +256,6 @@ func (f *Field[EC]) link(s *Schema[EC], fd *ast.FieldDefinition, sequential bool
 		}
 		f.Out = s.derivedOut(fd.Type, t)
 	}
-}
-
-// orderArgs returns args, the arguments declared by decls, in the order of the indexes in
-// decls that order lists. An index may come twice, for a method that takes one argument in
-// two parameters whose names differ in case only, which the functions mode unmarshals
-// twice.
-func orderArgs[EC Context](
-	args []arg[EC],
-	decls ast.ArgumentDefinitionList,
-	order []int,
-	of string,
-) []arg[EC] {
-	res := make([]arg[EC], 0, len(order))
-	for _, i := range order {
-		j := -1
-		if i >= 0 && i < len(decls) {
-			j = slices.IndexFunc(args, func(a arg[EC]) bool { return a.name == decls[i].Name })
-		}
-		if j < 0 {
-			panic(fmt.Sprintf("exec: %s has no argument %d bound to Go", of, i))
-		}
-		res = append(res, args[j])
-	}
-	return res
 }
 
 // ParseArgs unmarshals the raw arguments of the field called name. The generated

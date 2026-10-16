@@ -70,6 +70,7 @@ var builtTables = sync.OnceValue(func() *tables {
 // The entries of the tables, for the generated files that build them.
 type (
 	tableField      = exec.Field[*executionContext]
+	tableArg        = exec.Arg[*executionContext]
 	tableInputField = exec.InputField[*executionContext]
 	tableOut        = *exec.Out[*executionContext]
 	tableIn         = *exec.In[*executionContext]
@@ -107,7 +108,7 @@ func newTables(schemaToLink *ast.Schema) *tables {
 	t.initMarshalers{{ $i }}()
 	{{- end }}
 	{{- range $directive := .TableDirectiveDefs }}
-	t.{{ $directive.TableVar }}.Init(t.schema, {{ $directive.Name | quote }}, {{ $.TableDirectiveIns $directive }}, func(ctx context.Context, ec *executionContext, directiveObj any, n graphql.Resolver, directiveArgs map[string]any) (any, error) {
+	t.{{ $directive.TableVar }}.Init(t.schema, {{ $directive.Name | quote }}, {{ $.TableDirectiveArgs $directive }}, func(ctx context.Context, ec *executionContext, directiveObj any, n graphql.Resolver, directiveArgs map[string]any) (any, error) {
 		return {{ $directive.CallPath }}({{ $directive.TableCallArgs }})
 	}, {{ $directive.TableImplemented }})
 	{{- end }}

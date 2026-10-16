@@ -2,6 +2,7 @@ package exec
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/vektah/gqlparser/v2/ast"
@@ -140,31 +141,33 @@ func (s *Schema[EC]) literalArgs(def *DirectiveDef[EC], d *ast.Directive) map[st
 	return args
 }
 
-// args returns the arguments declared by decls, unmarshaled by the types that the
-// generated code lists for them in the same order: an *In, or a nil pointer to the Go
-// type of the argument, whose In Link derives, either one in a WithGoType. An argument
-// whose type is nil is not bound to Go, such as one that the method of the field does not
-// take; it is left out, as the functions mode leaves it out of its arguments function.
-func (s *Schema[EC]) args(decls ast.ArgumentDefinitionList, types []any, of string) []arg[EC] {
-	if len(decls) != len(types) {
-		panic(fmt.Sprintf("exec: %s has %d arguments, the tables %d", of, len(decls), len(types)))
-	}
-	res := make([]arg[EC], 0, len(decls))
-	for i, decl := range decls {
-		var in *In[EC]
-		typ, goTypeName := types[i], ""
-		if w, ok := typ.(WithGoType); ok {
-			typ, goTypeName = w.Arg, w.GoType
+// args returns the arguments of the tables, in their order, with what decls, the
+// arguments the schema declares, says about them. The tables match the arguments with
+// decls by name, as the generated code reads them by name: they may list them in another
+// order, but name every argument that decls declares, and no other. One may come twice,
+// for a method that takes one argument in two parameters whose names differ in case
+// only, which the functions mode unmarshals twice. An argument that is not bound to Go is
+// left out.
+func (s *Schema[EC]) args(decls ast.ArgumentDefinitionList, table []Arg[EC], of string) []arg[EC] {
+	for _, decl := range decls {
+		if !slices.ContainsFunc(table, func(a Arg[EC]) bool { return a.Name == decl.Name }) {
+			panic(fmt.Sprintf("exec: the tables have no argument %s of %s", decl.Name, of))
 		}
-		switch t := typ.(type) {
-		case nil:
-			continue
-		case *In[EC]:
-			in = t
-		default:
-			goType, ok := goType(t)
+	}
+	res := make([]arg[EC], 0, len(table))
+	for _, a := range table {
+		decl := decls.ForName(a.Name)
+		if decl == nil {
+			panic(fmt.Sprintf("exec: %s has no argument %s", of, a.Name))
+		}
+		in := a.In
+		if in == nil {
+			if a.Type == nil {
+				continue
+			}
+			goType, ok := goType(a.Type)
 			if !ok {
-				panic(notGoType("argument "+decl.Name+" of "+of, t))
+				panic(notGoType("argument "+decl.Name+" of "+of, a.Type))
 			}
 			in = s.derivedIn(decl.Type, goType)
 		}
@@ -174,7 +177,7 @@ func (s *Schema[EC]) args(decls ast.ArgumentDefinitionList, types []any, of stri
 			directives: s.applied(decl.Directives, ""),
 			nilOK:      in.nilable,
 			withNull:   s.ArgumentDirectivesWithNull,
-			goType:     goTypeName,
+			goType:     a.GoType,
 		})
 	}
 	return res

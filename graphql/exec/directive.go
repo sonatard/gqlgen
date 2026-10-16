@@ -15,9 +15,9 @@ import (
 // code declares one per directive that the tables run, with Init.
 type DirectiveDef[EC Context] struct {
 	Name string
-	// Args unmarshal the arguments of the directive, in the order the schema declares
-	// them.
-	Args []*In[EC]
+	// Args unmarshal the arguments of the directive, every one that the schema declares,
+	// in the order the schema declares them. Link matches them with the schema by name.
+	Args []Arg[EC]
 	// Call calls the directive's implementation with the unmarshaled arguments.
 	Call func(ctx context.Context, ec EC, obj any, next graphql.Resolver, args map[string]any) (any, error)
 
@@ -37,7 +37,7 @@ type DirectiveDef[EC Context] struct {
 func (d *DirectiveDef[EC]) Init(
 	s *Schema[EC],
 	name string,
-	args []*In[EC],
+	args []Arg[EC],
 	call func(ctx context.Context, ec EC, obj any, next graphql.Resolver, args map[string]any) (any, error),
 	implemented func(ec EC) bool,
 ) {
@@ -54,13 +54,7 @@ func (d *DirectiveDef[EC]) link(s *Schema[EC], name string) {
 		panic("exec: the schema declares no directive " + strconv.Quote(name))
 	}
 	d.locations = decl.Locations
-	types := make([]any, len(d.Args))
-	for i, in := range d.Args {
-		if in != nil {
-			types[i] = in
-		}
-	}
-	d.args = s.args(decl.Arguments, types, "directive @"+name)
+	d.args = s.args(decl.Arguments, d.Args, "directive @"+name)
 	// The functions mode unmarshals the arguments of a directive in place, without the
 	// directives that the schema puts on the arguments of its definition.
 	for i := range d.args {

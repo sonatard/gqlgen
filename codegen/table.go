@@ -2151,34 +2151,39 @@ func (d *Data) tableNames() map[string]string {
 	return names
 }
 
-// TableFieldIns returns the Go expression of the unmarshalers of the arguments of f, in
-// the order the schema declares them, for the tables: the exec.In of each, or its Go type
-// when the runtime derives the In. An argument that is not bound to Go, such as one that
-// the method of the field does not take, is nil: the runtime leaves it out, as the
-// functions mode leaves it out of the arguments function of the field.
-func (d *Data) TableFieldIns(f *Field) string {
-	ins := make([]string, len(f.Arguments))
-	for i, decl := range f.Arguments {
-		ins[i] = "nil"
-		for _, arg := range f.Args {
-			if arg.Name != decl.Name {
-				continue
-			}
-			if d.tableDerived(arg.TypeReference, false) {
-				ins[i] = tableZero(arg.TypeReference)
-			} else {
-				ins[i] = d.TableIn(arg.TypeReference)
-			}
-			// The errors of the directives of the argument name its Go type.
-			goType := tableGoType(arg.TypeReference)
-			if goType != "" && len(arg.ImplDirectives()) > 0 {
-				ins[i] = fmt.Sprintf(
-					"exec.WithGoType{Arg: %s, GoType: %s}", ins[i], strconv.Quote(goType))
-			}
-			break
+// TableFieldArgs returns the Go expression of the arguments of f for the tables, which
+// the runtime matches with the schema by name: first those bound to Go, in the order in
+// which the functions mode unmarshals them, which is the order of the parameters of the
+// method of the field, with the exec.In of each, or its Go type when the runtime derives
+// the In. The others that the schema declares, such as those that the method does not
+// take, follow with their names only: the runtime leaves them out, as the functions mode
+// leaves them out of the arguments function of the field.
+func (d *Data) TableFieldArgs(f *Field) string {
+	args := make([]string, 0, len(f.Arguments))
+	for _, arg := range f.Args {
+		args = append(args, d.tableArg(arg))
+	}
+	for _, decl := range f.Arguments {
+		if !slices.ContainsFunc(f.Args, func(arg *FieldArgument) bool { return arg.Name == decl.Name }) {
+			args = append(args, "{Name: "+strconv.Quote(decl.Name)+"}")
 		}
 	}
-	return "[]any{" + strings.Join(ins, ", ") + "}"
+	return "[]tableArg{" + strings.Join(args, ", ") + "}"
+}
+
+// tableArg returns the entry of the tables of arg, an argument bound to Go.
+func (d *Data) tableArg(arg *FieldArgument) string {
+	var res string
+	if d.tableDerived(arg.TypeReference, false) {
+		res = "Type: " + tableZero(arg.TypeReference)
+	} else {
+		res = "In: " + d.TableIn(arg.TypeReference)
+	}
+	// The errors of the directives of the argument name its Go type.
+	if goType := tableGoType(arg.TypeReference); goType != "" && len(arg.ImplDirectives()) > 0 {
+		res += ", GoType: " + strconv.Quote(goType)
+	}
+	return "{Name: " + strconv.Quote(arg.Name) + ", " + res + "}"
 }
 
 // TableInputGoType returns the Go type of the input field f for the tables, which the
@@ -2251,40 +2256,16 @@ func tableReflectName(t types.Type) string {
 	return fmt.Sprintf(format, name)
 }
 
-// TableArgOrder returns the Go expression of the order in which the functions mode
-// unmarshals the arguments of f, as the indexes of their declarations in the schema, when
-// it is not the order of the schema: the arguments of a field bound to a method follow the
-// parameters of the method. It returns "" otherwise.
-func (d *Data) TableArgOrder(f *Field) string {
-	order := make([]string, len(f.Args))
-	sorted := true
-	last := -1
-	for i, arg := range f.Args {
-		decl := slices.IndexFunc(f.Arguments, func(decl *ast.ArgumentDefinition) bool {
-			return decl.Name == arg.Name
-		})
-		if decl < 0 {
-			return ""
-		}
-		sorted = sorted && decl > last
-		last = decl
-		order[i] = strconv.Itoa(decl)
-	}
-	if sorted {
-		return ""
-	}
-	return "[]int{" + strings.Join(order, ", ") + "}"
-}
-
-// TableDirectiveIns is TableFieldIns for the arguments of a directive, which are all
-// bound to Go, or nil for a directive without arguments.
-func (d *Data) TableDirectiveIns(dir *Directive) string {
+// TableDirectiveArgs is TableFieldArgs for the arguments of a directive, which are all
+// bound to Go and unmarshaled by their exec.In, or nil for a directive without
+// arguments.
+func (d *Data) TableDirectiveArgs(dir *Directive) string {
 	if len(dir.Args) == 0 {
 		return "nil"
 	}
-	ins := make([]string, len(dir.Args))
+	args := make([]string, len(dir.Args))
 	for i, arg := range dir.Args {
-		ins[i] = d.TableIn(arg.TypeReference)
+		args[i] = "{Name: " + strconv.Quote(arg.Name) + ", In: " + d.TableIn(arg.TypeReference) + "}"
 	}
-	return "[]tableIn{" + strings.Join(ins, ", ") + "}"
+	return "[]tableArg{" + strings.Join(args, ", ") + "}"
 }
