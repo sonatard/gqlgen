@@ -331,9 +331,18 @@ func (in *Input[EC]) newValue(
 ) (it, replacement any, err error) {
 	p := reflect.New(in.Type)
 	it = p.Interface()
-	want, current := in.Type, func() any { return p.Elem().Interface() }
+	want := in.Type
 	if pointer {
-		want, current = p.Type(), p.Interface
+		want = p.Type()
+	}
+	// current goes to the directives, through calls that make it escape, so it is only
+	// made for an input that has directives.
+	var current func() any
+	if len(in.directives) > 0 {
+		current = func() any { return p.Elem().Interface() }
+		if pointer {
+			current = p.Interface
+		}
 	}
 	res, replaced, err := in.unmarshal(ctx, ec, obj, it, current)
 	if err != nil || !replaced {
@@ -367,25 +376,37 @@ func (in *Input[EC]) unmarshal(
 	}
 
 	src := obj.(map[string]any)
-	asMap := make(map[string]any, len(src))
-	maps.Copy(asMap, src)
-	for i := range in.fields {
-		f := &in.fields[i]
-		if f.defaultValue == nil {
-			continue
-		}
-		if _, present := asMap[f.Name]; !present {
-			asMap[f.Name] = cloneValue(f.defaultValue)
+	// The directives receive the raw object with the defaults filled in. It goes to them
+	// through calls that make it escape, so it is only made for an input that has them;
+	// otherwise each field reads its raw value or default directly.
+	var asMap map[string]any
+	if len(in.directives) > 0 {
+		asMap = make(map[string]any, len(src))
+		maps.Copy(asMap, src)
+		for i := range in.fields {
+			f := &in.fields[i]
+			if f.defaultValue == nil {
+				continue
+			}
+			if _, present := asMap[f.Name]; !present {
+				asMap[f.Name] = cloneValue(f.defaultValue)
+			}
 		}
 	}
 
 	if in.IsMap {
-		*it.(*map[string]any) = make(map[string]any, len(asMap))
+		*it.(*map[string]any) = make(map[string]any, len(src))
 	}
 
 	for i := range in.fields {
 		f := &in.fields[i]
-		v, ok := asMap[f.Name]
+		var v any
+		var ok bool
+		if asMap != nil {
+			v, ok = asMap[f.Name]
+		} else if v, ok = src[f.Name]; !ok && f.defaultValue != nil {
+			v, ok = cloneValue(f.defaultValue), true
+		}
 		if !ok {
 			continue
 		}
