@@ -1,5 +1,5 @@
 //go:generate rm -f resolver.go
-//go:generate go run ../../../testdata/gqlgen.go -config gqlgen.yml -stub stub.go -both-modes
+//go:generate go run ../../../testdata/gqlgen.go -config gqlgen.yml -stub stub.go
 
 package returnpointersinunmarshalinput
 
@@ -17,10 +17,12 @@ import (
 // With return_pointers_in_unmarshalinput the generated helper returns *T, and the caller
 // sees that in its signature rather than discovering it through a failed lookup. Note
 // that the option changes only the unmarshaler return: the resolver argument shape still
-// follows schema nullability.
+// follows schema nullability. The package exists to exercise the option: before the
+// nil-object early return in input.gotpl was fixed, it produced a value where a pointer
+// was declared and no schema using it compiled at all.
 func TestGeneratedTypedUnmarshalerReturnsPointer(t *testing.T) {
 	// No fields and a null input yield a pointer to the zero value.
-	objs := []any{map[string]any{"name": "bob"}, map[string]any{}, nil}
+	objs := []any{map[string]any{"name": "bob", "limit": 7}, map[string]any{}, nil}
 	var (
 		called bool
 		got    []*SearchFilters
@@ -44,8 +46,8 @@ func TestGeneratedTypedUnmarshalerReturnsPointer(t *testing.T) {
 	require.NoError(t, client.New(srv).Post(`query { search(filters: {name: "x"}) }`, &resp))
 
 	require.True(t, called, "the resolver never ran, so nothing was exercised")
-	name := "bob"
-	for i, want := range []SearchFilters{{Name: &name}, {}, {}} {
+	name, limit := "bob", 7
+	for i, want := range []SearchFilters{{Name: &name, Limit: &limit}, {}, {}} {
 		require.NoError(t, gotErr[i])
 		require.NotNil(t, got[i], "the unmarshaler must never return a nil pointer")
 		assert.Equal(t, want, *got[i])

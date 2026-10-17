@@ -40,26 +40,18 @@ CI will run this and fail the build if the two files don't match.
 
 ### Testing table mode
 
-The test servers in `codegen/testserver` are generated twice. Their `go:generate` line runs
-`testdata/gqlgen.go` with `-both-modes`, which `TestServersGenerateBothModes` requires, and
-which generates the executor in the default functions
-mode and, into files named `*.table.go`, with `exec.mode: table`. The table-mode files only
-build with the `exectable` build tag, so the same tests run against both executors:
-
-```bash
-go test ./codegen/testserver/...                  # functions mode
-go test -tags exectable ./codegen/testserver/...  # table mode
-```
-
-A test that only applies to the functions mode, such as one that calls a function table mode
-does not generate, starts with `//go:build !exectable`. Keep the `go:generate` line out of such
-a file, since `go generate` skips the files that the build tags leave out.
+The test servers in `codegen/testserver` are committed in the default functions mode. CI runs
+their tests against table mode too: `.github/workflows/check-table-mode` sets `exec.mode: table`
+in their configs, generates them again and runs the same tests. It rewrites the working tree,
+so to run it locally, run it on a clean checkout and restore the files afterwards with
+`git checkout -- .`. Tests of the test servers should therefore use the exported API of the
+generated code, which both modes generate.
 
 `codegen/testserver/tablemode` generates one schema in both modes into separate packages and
 checks that both executors give the same response to every request. Its tests that run the
 generator do not build with `-race`, so run `go test ./codegen/testserver/tablemode/` without it
 to include them.
 
-CI also runs `.github/workflows/check-table-mode`, which regenerates the examples, the
-integration server and the test servers of the federation plugin in table mode and runs their
-tests, the integration spec and the federation spec against them.
+`check-table-mode` also regenerates the examples, the integration server and the test servers
+of the federation plugin in table mode and runs their tests, the integration spec and the
+federation spec against them.

@@ -1,4 +1,4 @@
-//go:generate go run ../../../../testdata/gqlgen.go -config gqlgen.yml -stub stub.go -both-modes
+//go:generate go run ../../../../testdata/gqlgen.go -config gqlgen.yml -stub stub.go
 
 package nopanichandler
 
