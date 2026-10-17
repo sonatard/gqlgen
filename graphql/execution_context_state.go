@@ -49,6 +49,17 @@ func NewExecutionContextState[R any, D any, C any](
 	}
 }
 
+// OpCtx returns the context of the operation being executed. The graphql/exec runtime
+// uses it to reach the operation from the generated executionContext.
+func (ec *ExecutionContextState[R, D, C]) OpCtx() *OperationContext {
+	return ec.OperationContext
+}
+
+// AddDeferred records that n more deferred results will be sent for the operation.
+func (ec *ExecutionContextState[R, D, C]) AddDeferred(n int32) {
+	atomic.AddInt32(&ec.Deferred, n)
+}
+
 func (ec *ExecutionContextState[R, D, C]) Schema() *ast.Schema {
 	if ec.SchemaData != nil {
 		return ec.SchemaData

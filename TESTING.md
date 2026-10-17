@@ -37,3 +37,21 @@ npm install
 will write the schema to `integration/schema-fetched.graphql`, compare that with `schema-expected.graphql`
 
 CI will run this and fail the build if the two files don't match.
+
+### Testing table mode
+
+The test servers in `codegen/testserver` are committed in the default functions mode. CI runs
+their tests against table mode too: `.github/workflows/check-table-mode` sets `exec.mode: table`
+in their configs, generates them again and runs the same tests. It rewrites the working tree,
+so to run it locally, run it on a clean checkout and restore the files afterwards with
+`git checkout -- .`. Tests of the test servers should therefore use the exported API of the
+generated code, which both modes generate.
+
+`codegen/testserver/tablemode` generates one schema in both modes into separate packages and
+checks that both executors give the same response to every request. Its tests that run the
+generator do not build with `-race`, so run `go test ./codegen/testserver/tablemode/` without it
+to include them.
+
+`check-table-mode` also regenerates the examples, the integration server and the test servers
+of the federation plugin in table mode and runs their tests, the integration spec and the
+federation spec against them.

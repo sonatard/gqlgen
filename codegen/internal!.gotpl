@@ -5,7 +5,7 @@
 	)
 {{ end }}
 
-type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
+{{- template "executableSchemaType" . }}
 
 func (e *executableSchema) Schema() *ast.Schema {
 	if e.SchemaData != nil {
@@ -31,7 +31,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 						break
 						}
 						{{ if $field.Args }}
-							args, err := {{$.ECDot}}{{ $field.ArgsFunc }}(ctx, {{$.ECArg}}rawArgs)
+							{{- template "complexityArgs" (dict "Data" $ "Object" $object "Field" $field) }}
 							if err != nil {
 							return 0, false
 							}
@@ -52,17 +52,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalers := func() *graphql.InputUnmarshalerIndex {
-		return graphql.NewInputUnmarshalerIndex(
-		{{- range $input := .Inputs -}}
-			{{ if not $input.HasUnmarshal }}
-				{{- if $.Config.UseFunctionSyntaxForExecutionContext }}
-				graphql.NewInputUnmarshaler({{ $input.Name | quote }}, graphql.BindUnmarshaler(ec, unmarshalInput{{ $input.Name }})),
-				{{- else }}
-				graphql.NewInputUnmarshaler({{ $input.Name | quote }}, ec.unmarshalInput{{ $input.Name }}),
-				{{- end }}
-			{{- end }}
-		{{- end }}
-		)
+		{{- template "inputUnmarshalers" . }}
 	}
 	first := true
 
@@ -76,10 +66,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				ctx = graphql.WithLazyInputUnmarshalerIndex(ctx, inputUnmarshalers)
 				{{ if .AllDirectives.LocationDirectives "QUERY" -}}
 					data = {{$.ECDot}}_queryMiddleware(ctx, {{$.ECArg}}opCtx.Operation, func(ctx context.Context) (any, error){
-						return {{$.ECDot}}_{{.QueryRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet), nil
+						return {{ $.ObjectMarshal .QueryRoot.Name "opCtx.Operation.SelectionSet" "" }}, nil
 					})
 				{{- else -}}
-					data = {{$.ECDot}}_{{.QueryRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet)
+					data = {{ $.ObjectMarshal .QueryRoot.Name "opCtx.Operation.SelectionSet" "" }}
 				{{- end }}
 			} else {
 				if atomic.LoadInt32(&ec.PendingDeferred) > 0 {
@@ -112,10 +102,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			ctx = graphql.WithLazyInputUnmarshalerIndex(ctx, inputUnmarshalers)
 			{{ if .AllDirectives.LocationDirectives "MUTATION" -}}
 				data := {{$.ECDot}}_mutationMiddleware(ctx, {{$.ECArg}}opCtx.Operation, func(ctx context.Context) (any, error){
-					return {{$.ECDot}}_{{.MutationRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet), nil
+					return {{ $.ObjectMarshal .MutationRoot.Name "opCtx.Operation.SelectionSet" "" }}, nil
 				})
 			{{- else -}}
-				data := {{$.ECDot}}_{{.MutationRoot.Name}}(ctx, {{$.ECArg}}opCtx.Operation.SelectionSet)
+				data := {{ $.ObjectMarshal .MutationRoot.Name "opCtx.Operation.SelectionSet" "" }}
 			{{- end }}
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
@@ -187,6 +177,7 @@ func (e *executableSchema) ExecWithEventContext(ctx context.Context) graphql.Res
 
 type executionContext struct {
 	*graphql.ExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot]
+	{{- template "executionContextFields" . }}
 }
 
 func newExecutionContext(
@@ -197,10 +188,11 @@ func newExecutionContext(
 	return &executionContext{
 		ExecutionContextState: graphql.NewExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot](
 			opCtx,
-			(*graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot])(execSchema),
+			{{- template "executionContextState" . }}
 			parsedSchema,
 			deferredResults,
 		),
+		{{- template "executionContextTables" . }}
 	}
 }
 
@@ -224,21 +216,6 @@ var sources = []*ast.Source{
 {{- end }}
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
-
-// childFields_* functions provide shared child field context lookups.
-// Each function is generated once per unique object type, deduplicating the
-// switch statements that were previously inlined in every fieldContext_* function.
-{{- range $ct := .UniqueChildFieldTypes }}
-
-func {{$.FuncReceiver}}childFields_{{ $ct.TypeName }}(ctx context.Context, {{$.ECFuncParam}}field graphql.CollectedField) (*graphql.FieldContext, error) {
-	switch field.Name {
-	{{- range $f := $ct.Definition.Fields }}
-	case "{{ $f.Name }}":
-		return {{$.ECDot}}fieldContext_{{ $ct.TypeName }}_{{ $f.Name }}(ctx, {{$.ECArg}}field)
-	{{- end }}
-	}
-	return nil, fmt.Errorf("no field named %q was found under type {{ $ct.TypeName }}", field.Name)
-}
-{{- end }}
+{{- template "execInternals" . }}
 
 {{ template "globalMiddleware" . }}

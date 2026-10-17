@@ -14,10 +14,11 @@
 {{ reserveImport "github.com/vektah/gqlparser/v2" "gqlparser" }}
 {{ reserveImport "github.com/vektah/gqlparser/v2/ast" }}
 {{ reserveImport "github.com/99designs/gqlgen/graphql" }}
+{{- template "apiImports" . }}
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
-	return &executableSchema{SchemaData: cfg.Schema, Resolvers: cfg.Resolvers, Directives: cfg.Directives, ComplexityRoot: cfg.Complexity}
+	{{- template "newExecutableSchema" . }}
 }
 
 type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]

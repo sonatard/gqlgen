@@ -45,6 +45,9 @@ type Field struct {
 	// option, resolved once at build time so UsesSubscriptionContext and the methods
 	// that depend on it stay nullary instead of threading the flag through the call chain.
 	SubscriptionContextField bool
+	// goType is the Go type of the var the field is bound to, or of the result of its
+	// method, which may not be the type that TypeReference marshals.
+	goType types.Type
 }
 
 func (b *builder) buildField(obj *Object, field *ast.FieldDefinition) (*Field, error) {
@@ -272,6 +275,7 @@ func (b *builder) bindField(obj *Object, f *Field) (errret error) {
 		f.GoFieldName = target.Name()
 		f.Args = newArgs
 		f.TypeReference = tr
+		f.goType = result.Type()
 
 		return nil
 	case *types.Var:
@@ -285,6 +289,7 @@ func (b *builder) bindField(obj *Object, f *Field) (errret error) {
 		f.GoReceiverName = "obj"
 		f.GoFieldName = target.Name()
 		f.TypeReference = tr
+		f.goType = target.Type()
 
 		return nil
 	default:
@@ -960,6 +965,12 @@ func (f *Field) ComplexityArgs() string {
 }
 
 func (f *Field) CallArgs() string {
+	return f.callArgs("fc.Args")
+}
+
+// callArgs returns the arguments of the call that resolves the field, reading the
+// arguments of the field from the map called argsVar.
+func (f *Field) callArgs(argsVar string) string {
 	args := make([]string, 0, len(f.Args)+2)
 
 	if f.IsResolver {
@@ -972,19 +983,21 @@ func (f *Field) CallArgs() string {
 		args = append(args, "ctx")
 	}
 
-	args = append(args, f.callArgExpressions("")...)
+	args = append(args, f.callArgExpressions("", argsVar)...)
 	return strings.Join(args, ", ")
 }
 
+// fieldArgExpression returns the expression that reads arg from the map called argsVar.
 func (f *Field) fieldArgExpression(
 	arg *FieldArgument,
 	federationRequiresReplacement string,
+	argsVar string,
 ) string {
 	if arg.Name == federationRequiresArgName && federationRequiresReplacement != "" {
 		return federationRequiresReplacement
 	}
 
-	tmp := "fc.Args[" + strconv.Quote(
+	tmp := argsVar + "[" + strconv.Quote(
 		arg.Name,
 	) + "].(" + templates.CurrentImports.LookupType(
 		arg.TypeReference.GO,
@@ -993,17 +1006,19 @@ func (f *Field) fieldArgExpression(
 	if iface, ok := types.Unalias(arg.TypeReference.GO).(*types.Interface); ok && iface.Empty() {
 		tmp = fmt.Sprintf(`
 				func () any {
-					if fc.Args["%s"] == nil {
+					if %[1]s["%[2]s"] == nil {
 						return nil
 					}
-					return fc.Args["%s"].(any)
-				}()`, arg.Name, arg.Name,
+					return %[1]s["%[2]s"].(any)
+				}()`, argsVar, arg.Name,
 		)
 	}
 	return tmp
 }
 
-func (f *Field) callArgExpressions(federationRequiresReplacement string) []string {
+// callArgExpressions returns the expressions of the arguments of the field, read from
+// the map called argsVar.
+func (f *Field) callArgExpressions(federationRequiresReplacement, argsVar string) []string {
 	args := make([]string, 0, len(f.Args))
 	var inlineInfo *InlineArgsInfo
 	if f.Object != nil && f.Object.Definition != nil {
@@ -1025,10 +1040,10 @@ func (f *Field) callArgExpressions(federationRequiresReplacement string) []strin
 				goType := templates.CurrentImports.LookupType(argRef.TypeReference.GO)
 				var entry string
 				if isMap {
-					entry = fmt.Sprintf("%q: fc.Args[%q].(%s)", argName, argName, goType)
+					entry = fmt.Sprintf("%q: %s[%q].(%s)", argName, argsVar, argName, goType)
 				} else {
 					fieldName := templates.ToGo(argName)
-					entry = fmt.Sprintf("%s: fc.Args[%q].(%s)", fieldName, argName, goType)
+					entry = fmt.Sprintf("%s: %s[%q].(%s)", fieldName, argsVar, argName, goType)
 				}
 				entries = append(entries, entry)
 			}
@@ -1040,12 +1055,15 @@ func (f *Field) callArgExpressions(federationRequiresReplacement string) []strin
 
 		for _, arg := range f.Args {
 			if !slices.Contains(inlineInfo.ExpandedArgs, arg.Name) {
-				args = append(args, f.fieldArgExpression(arg, federationRequiresReplacement))
+				args = append(
+					args,
+					f.fieldArgExpression(arg, federationRequiresReplacement, argsVar),
+				)
 			}
 		}
 	} else {
 		for _, arg := range f.Args {
-			args = append(args, f.fieldArgExpression(arg, federationRequiresReplacement))
+			args = append(args, f.fieldArgExpression(arg, federationRequiresReplacement, argsVar))
 		}
 	}
 
@@ -1062,7 +1080,7 @@ func (f *Field) BatchCallArgs(parentVar, federationRequiresReplacement string) s
 		args = append(args, parentVar)
 	}
 
-	args = append(args, f.callArgExpressions(federationRequiresReplacement)...)
+	args = append(args, f.callArgExpressions(federationRequiresReplacement, "fc.Args")...)
 	return strings.Join(args, ", ")
 }
 

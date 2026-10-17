@@ -1,0 +1,2 @@
+{{ reserveImport "strings" }}
+var _ = strings.ToUpper("{{ $.Name }} from the plugin template")

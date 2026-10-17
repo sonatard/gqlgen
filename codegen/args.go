@@ -119,6 +119,9 @@ nextArg:
 }
 
 func (d *Data) Args() map[string][]*FieldArgument {
+	if d.Config.Exec.IsTable() {
+		return d.tableArgs()
+	}
 	ret := map[string][]*FieldArgument{}
 	for _, o := range d.Objects {
 		for _, f := range o.Fields {

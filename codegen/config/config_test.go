@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vektah/gqlparser/v2"
@@ -402,6 +403,23 @@ func TestConfigCheck(t *testing.T) {
 					"exec and federation define the same import path (github.com/99designs/gqlgen/codegen/config/generated) with different package names (generated vs federation)",
 				)
 			})
+
+			t.Run("invalid exec mode", func(t *testing.T) {
+				config := Config{
+					Exec: ExecConfig{
+						Layout:   execLayout,
+						Mode:     "fast",
+						Filename: "generated/exec.go",
+						DirName:  "generated",
+					},
+				}
+
+				require.EqualError(
+					t,
+					config.check(),
+					"config.exec: invalid exec mode fast, use functions or table",
+				)
+			})
 		})
 	}
 }
@@ -702,4 +720,10 @@ func TestBatchResolverUnsupportedReason(t *testing.T) {
 			assert.False(t, cfg.TypeSupportsBatchResolver(tc.typeName, tc.schemaType))
 		})
 	}
+}
+
+func TestExecModeFromYAML(t *testing.T) {
+	var c Config
+	require.NoError(t, yaml.Unmarshal([]byte("exec:\n  mode: table\n"), &c))
+	require.True(t, c.Exec.IsTable())
 }

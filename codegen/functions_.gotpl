@@ -1,0 +1,77 @@
+{{- /* functions_.gotpl defines the parts of the templates that the functions mode writes where
+   table mode writes others: see table_.gotpl, which defines the same templates. */}}
+
+{{- define "apiImports" }}{{- end }}
+
+{{- define "newExecutableSchema" }}
+	return &executableSchema{SchemaData: cfg.Schema, Resolvers: cfg.Resolvers, Directives: cfg.Directives, ComplexityRoot: cfg.Complexity}
+{{- end }}
+
+{{- define "executableSchemaType" }}
+type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
+{{- end }}
+
+{{- define "complexityArgs" }}
+	args, err := {{ .Data.ECDot }}{{ .Field.ArgsFunc }}(ctx, {{ .Data.ECArg }}rawArgs)
+{{- end }}
+
+{{- define "inputUnmarshalers" }}
+		return graphql.NewInputUnmarshalerIndex(
+		{{- range $input := .Inputs -}}
+			{{ if not $input.HasUnmarshal }}
+				{{- if $.Config.UseFunctionSyntaxForExecutionContext }}
+				graphql.NewInputUnmarshaler({{ $input.Name | quote }}, graphql.BindUnmarshaler(ec, unmarshalInput{{ $input.Name }})),
+				{{- else }}
+				graphql.NewInputUnmarshaler({{ $input.Name | quote }}, ec.unmarshalInput{{ $input.Name }}),
+				{{- end }}
+			{{- end }}
+		{{- end }}
+		)
+{{- end }}
+
+{{- define "executionContextFields" }}{{- end }}
+
+{{- define "executionContextState" }}
+			(*graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot])(execSchema),
+{{- end }}
+
+{{- define "executionContextTables" }}{{- end }}
+
+{{- define "execInternals" }}
+
+// childFields_* functions provide shared child field context lookups.
+// Each function is generated once per unique object type, deduplicating the
+// switch statements that were previously inlined in every fieldContext_* function.
+{{- range $ct := .UniqueChildFieldTypes }}
+
+func {{$.FuncReceiver}}childFields_{{ $ct.TypeName }}(ctx context.Context, {{$.ECFuncParam}}field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	{{- range $f := $ct.Definition.Fields }}
+	case "{{ $f.Name }}":
+		return {{$.ECDot}}fieldContext_{{ $ct.TypeName }}_{{ $f.Name }}(ctx, {{$.ECArg}}field)
+	{{- end }}
+	}
+	return nil, fmt.Errorf("no field named %q was found under type {{ $ct.TypeName }}", field.Name)
+}
+{{- end }}
+{{- end }}
+
+{{- define "generatedImports" }}{{- end }}
+
+{{- define "fieldMiddlewareFunc" }}
+func {{$.FuncReceiver}}_fieldMiddleware(ctx context.Context, {{$.ECFuncParam}}obj any, next graphql.Resolver) graphql.Resolver {
+{{- end }}
+
+{{- define "unmarshalInputCall" }}
+					res, err := {{ .Data.ECDot }}unmarshalInput{{ .Type.GQL.Name }}(ctx, {{ .Data.ECArg }}v)
+{{- end }}
+
+{{- define "objectMarshalReturn" }}
+					return {{ .Data.ObjectMarshal .Type.Definition.Name "sel" .V }}
+{{- end }}
+
+{{- define "typeChecks" }}{{- end }}
+
+{{- define "implementorMarshalReturn" }}
+			return {{ .Data.ObjectMarshal .Implementor.Name "sel" .Obj }}
+{{- end }}

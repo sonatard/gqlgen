@@ -47,6 +47,15 @@ jobs:
         set -euo pipefail
         go mod download
         gotestsum --jsonfile go_test.json --junitfile report.xml --format-icons=hivis --format=pkgname-and-test-fails -- -race ./... -trimpath
+    - name: Generation tests
+      shell: bash
+      if: (success() || failure()) && matrix.os == 'ubuntu-latest'
+      run: |
+        set -euo pipefail
+        # The tests of tablemode that run the generator do not build with -race, which the
+        # previous steps use, since the race detector only slows them down. The tests of
+        # plugintest look up the templates beside their source file, which -trimpath hides.
+        gotestsum --junitfile go_generation_report.xml --format-icons=hivis --format=pkgname-and-test-fails -- ./codegen/testserver/tablemode/ ./codegen/templates/internal/plugintest/
     - name: Example tests
       shell: bash
       if: success() || failure() # always run even if the previous step fails
@@ -79,6 +88,7 @@ jobs:
       with:
         report_paths: |
           report.xml
+          go_table_report.xml
           go_examples_report.xml
           go_proptests_report.xml
     - name: robherley/go-test-action announcement
@@ -114,5 +124,6 @@ jobs:
         show: "fail, skip"
         paths: |
           report.xml
+          go_table_report.xml
           go_examples_report.xml
           go_proptests_report.xml

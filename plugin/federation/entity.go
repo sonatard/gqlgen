@@ -128,6 +128,9 @@ type KeyField struct {
 	// Using a single stored name keeps the SDL input field, the modelgen struct
 	// field, and the template's struct literal in agreement.
 	GoName string
+	// UnmarshalCall is the function that the generated code calls to unmarshal the
+	// field: see codegen.Data.UnmarshalCall.
+	UnmarshalCall string
 }
 
 // Requires represents an @requires clause
@@ -135,6 +138,9 @@ type Requires struct {
 	Name  string                // the name of the field
 	Field fieldset.Field        // source Field, len > 1 for nested fields
 	Type  *config.TypeReference // The Go representation of that field type
+	// UnmarshalCall is the function that the generated code calls to unmarshal the
+	// field: see codegen.Data.UnmarshalCall.
+	UnmarshalCall string
 	// Computed reports whether this @requires field is delivered via a standalone
 	// field resolver (the computed strategy) rather than through the entity
 	// resolver. It is true when the field carries @computedRequires, or when the whole

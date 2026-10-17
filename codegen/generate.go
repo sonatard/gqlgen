@@ -13,18 +13,25 @@ import (
 	"github.com/99designs/gqlgen/codegen/templates"
 )
 
-//go:embed api!.gotpl internal!.gotpl directives_.gotpl
+// The templates of the functions mode. Those of table mode, in table_generate.go, have files
+// of their own for the objects, the inputs and the fields, and functions_.gotpl and
+// table_.gotpl define the parts of the others where the modes differ.
+
+//go:embed api!.gotpl internal!.gotpl directives_.gotpl functions_.gotpl
 var rootTemplateFS embed.FS
 
-//go:embed args.gotpl field.gotpl input.gotpl interface.gotpl object.gotpl type.gotpl generated!.gotpl directives_.gotpl
+//go:embed args.gotpl field.gotpl field_.gotpl input.gotpl input_.gotpl interface.gotpl object.gotpl type.gotpl generated!.gotpl directives_.gotpl functions_.gotpl
 var schemaTemplateFS embed.FS
 
-//go:embed api!.gotpl internal!.gotpl args.gotpl field.gotpl input.gotpl interface.gotpl object.gotpl type.gotpl generated!.gotpl directives_.gotpl
+//go:embed api!.gotpl internal!.gotpl args.gotpl field.gotpl field_.gotpl input.gotpl input_.gotpl interface.gotpl object.gotpl type.gotpl generated!.gotpl directives_.gotpl functions_.gotpl
 var singleFileTemplateFS embed.FS
 
 func GenerateCode(data *Data) error {
 	if !data.Config.Exec.IsDefined() {
 		return errors.New("missing exec config")
+	}
+	if err := data.tableGenerate(); err != nil {
+		return err
 	}
 
 	switch data.Config.Exec.Layout {
@@ -38,7 +45,7 @@ func GenerateCode(data *Data) error {
 }
 
 func generateSingleFile(data *Data) error {
-	return templates.Render(templates.Options{
+	return renderExec(data, templates.Options{
 		PackageName:     data.Config.Exec.Package,
 		Filename:        data.Config.Exec.Filename,
 		Data:            data,
@@ -47,7 +54,7 @@ func generateSingleFile(data *Data) error {
 		Packages:        data.Config.Packages,
 		TemplateFS:      singleFileTemplateFS,
 		PruneOptions:    data.Config.GetPruneOptions(),
-	})
+	}, tableSingleFileTemplateFS)
 }
 
 func generatePerSchema(data *Data) error {
@@ -91,7 +98,7 @@ func generatePerSchema(data *Data) error {
 		dir := data.Config.Exec.DirName
 		path := filepath.Join(dir, filename)
 
-		err = templates.Render(templates.Options{
+		err = renderExec(build, templates.Options{
 			PackageName:     data.Config.Exec.Package,
 			Filename:        path,
 			Data:            build,
@@ -100,7 +107,7 @@ func generatePerSchema(data *Data) error {
 			Packages:        data.Config.Packages,
 			TemplateFS:      schemaTemplateFS,
 			PruneOptions:    data.Config.GetPruneOptions(),
-		})
+		}, tableSchemaTemplateFS)
 		if err != nil {
 			return err
 		}
@@ -143,6 +150,7 @@ func addBuild(filename string, p *ast.Position, data *Data, builds *map[string]*
 		// for the implementors that happen to share the interface's file.
 		allBatchFieldTypes: data.batchFieldTypes(),
 	}
+	data.tableShare((*builds)[filename], filename)
 }
 
 // Root file contains top-level definitions that should not be duplicated across the generated
@@ -151,7 +159,7 @@ func generateRootFile(data *Data) error {
 	dir := data.Config.Exec.DirName
 	path := filepath.Join(dir, "root_.generated.go")
 
-	return templates.Render(templates.Options{
+	return renderExec(data, templates.Options{
 		PackageName:     data.Config.Exec.Package,
 		Filename:        path,
 		Data:            data,
@@ -160,7 +168,7 @@ func generateRootFile(data *Data) error {
 		Packages:        data.Config.Packages,
 		TemplateFS:      rootTemplateFS,
 		PruneOptions:    data.Config.GetPruneOptions(),
-	})
+	}, tableRootTemplateFS)
 }
 
 func addObjects(data *Data, builds *map[string]*Data) error {

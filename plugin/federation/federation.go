@@ -593,6 +593,7 @@ func (f *Federation) GenerateCode(data *codegen.Data) error {
 	}
 
 	f.RequiresEntities = requiresEntities
+	f.addUnmarshalerCalls(data)
 
 	// Populate ImplDirectives on each entity by extracting the resolved
 	// OBJECT-level directives from the corresponding codegen.Object.
@@ -623,12 +624,46 @@ func (f *Federation) GenerateCode(data *codegen.Data) error {
 			Federation
 			UsePointers                          bool
 			UseFunctionSyntaxForExecutionContext bool
-		}{*f, data.Config.ResolversAlwaysReturnPointers, data.Config.UseFunctionSyntaxForExecutionContext},
+		}{*f, data.Config.ResolversAlwaysReturnPointers, data.FunctionSyntax()},
 		GeneratedHeader: true,
 		Packages:        data.Config.Packages,
 		Template:        federationTemplate,
 		PruneOptions:    data.Config.GetPruneOptions(),
 	})
+}
+
+// addUnmarshalerCalls sets the UnmarshalCall of the key and @requires fields of the
+// entities, whose values the template unmarshals, after it adds the calls to data, so
+// that table mode keeps their unmarshalers typed.
+func (f *Federation) addUnmarshalerCalls(data *codegen.Data) {
+	var keys []*KeyField
+	var requires []*Requires
+	for _, e := range f.Entities {
+		for _, r := range e.Resolvers {
+			for _, k := range r.KeyFields {
+				if k.Type != nil {
+					keys = append(keys, k)
+				}
+			}
+		}
+		for _, r := range e.Requires {
+			if r.Type != nil {
+				requires = append(requires, r)
+			}
+		}
+	}
+	for _, k := range keys {
+		data.AddUnmarshalerCall(k.Type)
+	}
+	for _, r := range requires {
+		data.AddUnmarshalerCall(r.Type)
+	}
+	for _, k := range keys {
+		k.UnmarshalCall = data.UnmarshalCall(k.Type)
+	}
+	for _, r := range requires {
+		r.UnmarshalCall = data.UnmarshalCall(r.Type)
+	}
 }
 
 func containsUnionField(reqField *Requires) bool {

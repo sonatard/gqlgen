@@ -28,6 +28,12 @@
           "enum": ["single-file", "follow-schema"],
           "default": "single-file"
         },
+        "mode": {
+          "type": "string",
+          "enum": ["functions", "table"],
+          "default": "functions",
+          "description": "How the executor is generated. \"table\" generates tables executed by the github.com/99designs/gqlgen/graphql/exec runtime instead of a function per field, which makes the generated code much smaller."
+        },
         "dir": {
           "type": "string",
           "description": "Directory for generated files (required for follow-schema layout)"

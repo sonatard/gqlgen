@@ -35,6 +35,10 @@ type Object struct {
 	Stream                   bool
 	Directives               []*Directive
 	PointersInUnmarshalInput bool
+
+	// tableFunc is the name of the function that table mode generates for the object or
+	// input, set by tableFuncNames.
+	tableFunc string
 }
 
 func (b *builder) buildObject(typ *ast.Definition) (*Object, error) {

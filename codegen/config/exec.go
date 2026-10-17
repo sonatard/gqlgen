@@ -14,6 +14,11 @@ type ExecConfig struct {
 	Package string     `yaml:"package,omitempty"`
 	Layout  ExecLayout `yaml:"layout,omitempty"` // Default: single-file
 
+	// Mode selects how the executor is generated. The default generates functions for every
+	// field and type. ExecModeTable generates tables that a shared runtime executes, which
+	// makes the generated code much smaller.
+	Mode ExecMode `yaml:"mode,omitempty"`
+
 	// Only for single-file layout:
 	Filename string `yaml:"filename,omitempty"`
 
@@ -38,9 +43,36 @@ var (
 	ExecLayoutFollowSchema ExecLayout = "follow-schema"
 )
 
+type ExecMode string
+
+const (
+	// Generate a function for every field, argument, input and type reference.
+	ExecModeFunctions ExecMode = "functions"
+	// Generate tables of fields and inputs that the graphql/exec runtime executes. The
+	// remaining functions always take the execution context as a parameter, as with
+	// use_function_syntax_for_execution_context.
+	ExecModeTable ExecMode = "table"
+)
+
+// IsTable reports whether the executor is generated as tables for the graphql/exec runtime.
+func (r *ExecConfig) IsTable() bool {
+	return r.Mode == ExecModeTable
+}
+
 func (r *ExecConfig) Check() error {
 	if r.Layout == "" {
 		r.Layout = ExecLayoutSingleFile
+	}
+
+	switch r.Mode {
+	case "", ExecModeFunctions, ExecModeTable:
+	default:
+		return fmt.Errorf(
+			"invalid exec mode %s, use %s or %s",
+			r.Mode,
+			ExecModeFunctions,
+			ExecModeTable,
+		)
 	}
 
 	switch r.Layout {
