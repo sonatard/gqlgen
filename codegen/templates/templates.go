@@ -76,17 +76,23 @@ var (
 // abstraction of the text/template package that makes it easier to write gqlgen
 // plugins. If Options.Template is empty, the Render function will look for `.gotpl`
 // files inside the directory where you wrote the plugin.
-func Render(cfg Options) error {
+func Render(cfg Options) (err error) {
 	if CurrentImports != nil {
 		panic(errors.New("recursive or concurrent call to RenderToFile detected"))
 	}
 	CurrentImports = &Imports{packages: cfg.Packages, destDir: filepath.Dir(cfg.Filename)}
+	// A failed render leaves no CurrentImports, so that the next call can run.
+	defer func() {
+		if err != nil {
+			CurrentImports = nil
+		}
+	}()
 
 	funcs := Funcs()
 	maps.Copy(funcs, cfg.Funcs)
 
 	t := template.New("").Funcs(funcs)
-	t, err := parseTemplates(cfg, t)
+	t, err = parseTemplates(cfg, t)
 	if err != nil {
 		return err
 	}
