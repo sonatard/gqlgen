@@ -408,6 +408,17 @@ func TestTemplateOverride(t *testing.T) {
 	}
 }
 
+// A render that fails leaves the templates package ready for the next one, rather than
+// making it panic as a recursive call.
+func TestRenderAfterFailedRender(t *testing.T) {
+	filename := filepath.Join(t.TempDir(), "out.go")
+	broken := Options{Template: "{{ .Missing", Filename: filename, Packages: code.NewPackages()}
+	require.Error(t, Render(broken))
+
+	valid := Options{Template: "hello", Filename: filename, Packages: code.NewPackages()}
+	require.NoError(t, Render(valid))
+}
+
 func TestRenderFS(t *testing.T) {
 	tempDir := t.TempDir()
 

@@ -47,6 +47,14 @@ jobs:
         set -euo pipefail
         go mod download
         gotestsum --jsonfile go_test.json --junitfile report.xml --format-icons=hivis --format=pkgname-and-test-fails -- -race ./... -trimpath
+    - name: Tests with source paths
+      shell: bash
+      if: (success() || failure()) && matrix.os == 'ubuntu-latest'
+      run: |
+        set -euo pipefail
+        # The tests of plugintest look up the templates beside their source file, which
+        # -trimpath hides, so the previous step skips them.
+        gotestsum --junitfile go_source_paths_report.xml --format-icons=hivis --format=pkgname-and-test-fails -- -race ./codegen/templates/internal/plugintest/
     - name: Example tests
       shell: bash
       if: success() || failure() # always run even if the previous step fails
