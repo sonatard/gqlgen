@@ -848,7 +848,7 @@ func (ec *executionContext) _Entity_findPersonByID(ctx context.Context, field gr
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				name, err := ec.unmarshalNString2string(ctx, "PersonGuard")
+				arg0, err := ec.unmarshalNString2string(ctx, "PersonGuard")
 				if err != nil {
 					var zeroVal *Person
 					return zeroVal, err
@@ -857,7 +857,7 @@ func (ec *executionContext) _Entity_findPersonByID(ctx context.Context, field gr
 					var zeroVal *Person
 					return zeroVal, errors.New("directive guard is not implemented")
 				}
-				return ec.Directives.Guard(ctx, nil, directive0, name)
+				return ec.Directives.Guard(ctx, nil, directive0, arg0)
 			}
 
 			next = directive1
@@ -910,7 +910,7 @@ func (ec *executionContext) _Entity_findProductBySku(ctx context.Context, field 
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				requires, err := ec.unmarshalNString2string(ctx, "admin")
+				arg0, err := ec.unmarshalNString2string(ctx, "admin")
 				if err != nil {
 					var zeroVal *Product
 					return zeroVal, err
@@ -919,10 +919,10 @@ func (ec *executionContext) _Entity_findProductBySku(ctx context.Context, field 
 					var zeroVal *Product
 					return zeroVal, errors.New("directive auth is not implemented")
 				}
-				return ec.Directives.Auth(ctx, nil, directive0, requires)
+				return ec.Directives.Auth(ctx, nil, directive0, arg0)
 			}
 			directive2 := func(ctx context.Context) (any, error) {
-				name, err := ec.unmarshalNString2string(ctx, "ProductGuard")
+				arg0, err := ec.unmarshalNString2string(ctx, "ProductGuard")
 				if err != nil {
 					var zeroVal *Product
 					return zeroVal, err
@@ -931,7 +931,7 @@ func (ec *executionContext) _Entity_findProductBySku(ctx context.Context, field 
 					var zeroVal *Product
 					return zeroVal, errors.New("directive guard is not implemented")
 				}
-				return ec.Directives.Guard(ctx, nil, directive1, name)
+				return ec.Directives.Guard(ctx, nil, directive1, arg0)
 			}
 
 			next = directive2
@@ -1122,7 +1122,7 @@ func (ec *executionContext) _Query_getPerson(ctx context.Context, field graphql.
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				name, err := ec.unmarshalNString2string(ctx, "PersonGuard")
+				arg0, err := ec.unmarshalNString2string(ctx, "PersonGuard")
 				if err != nil {
 					var zeroVal *Person
 					return zeroVal, err
@@ -1131,7 +1131,7 @@ func (ec *executionContext) _Query_getPerson(ctx context.Context, field graphql.
 					var zeroVal *Person
 					return zeroVal, errors.New("directive guard is not implemented")
 				}
-				return ec.Directives.Guard(ctx, nil, directive0, name)
+				return ec.Directives.Guard(ctx, nil, directive0, arg0)
 			}
 
 			next = directive1
@@ -1184,7 +1184,7 @@ func (ec *executionContext) _Query_getProduct(ctx context.Context, field graphql
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				requires, err := ec.unmarshalNString2string(ctx, "admin")
+				arg0, err := ec.unmarshalNString2string(ctx, "admin")
 				if err != nil {
 					var zeroVal *Product
 					return zeroVal, err
@@ -1193,10 +1193,10 @@ func (ec *executionContext) _Query_getProduct(ctx context.Context, field graphql
 					var zeroVal *Product
 					return zeroVal, errors.New("directive auth is not implemented")
 				}
-				return ec.Directives.Auth(ctx, nil, directive0, requires)
+				return ec.Directives.Auth(ctx, nil, directive0, arg0)
 			}
 			directive2 := func(ctx context.Context) (any, error) {
-				name, err := ec.unmarshalNString2string(ctx, "ProductGuard")
+				arg0, err := ec.unmarshalNString2string(ctx, "ProductGuard")
 				if err != nil {
 					var zeroVal *Product
 					return zeroVal, err
@@ -1205,7 +1205,7 @@ func (ec *executionContext) _Query_getProduct(ctx context.Context, field graphql
 					var zeroVal *Product
 					return zeroVal, errors.New("directive guard is not implemented")
 				}
-				return ec.Directives.Guard(ctx, nil, directive1, name)
+				return ec.Directives.Guard(ctx, nil, directive1, arg0)
 			}
 
 			next = directive2
