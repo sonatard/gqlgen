@@ -63,7 +63,7 @@ func New() *TestExecutor {
 		next: next,
 	}
 
-	exec.schema = &graphql.ExecutableSchemaMock{
+	exec.schema = &executableSchema{
 		ExecFunc: func(ctx context.Context) graphql.ResponseHandler {
 			opCtx := graphql.GetOperationContext(ctx)
 			switch opCtx.Operation.Operation {
@@ -150,7 +150,7 @@ func NewError() *TestExecutor {
 		next: next,
 	}
 
-	exec.schema = &graphql.ExecutableSchemaMock{
+	exec.schema = &executableSchema{
 		ExecFunc: func(ctx context.Context) graphql.ResponseHandler {
 			opCtx := graphql.GetOperationContext(ctx)
 			switch opCtx.Operation.Operation {
@@ -186,6 +186,36 @@ func NewError() *TestExecutor {
 
 	exec.Executor = executor.New(exec.schema)
 	return exec
+}
+
+// executableSchema implements graphql.ExecutableSchema with plain functions.
+//
+// It stands in for graphql.ExecutableSchemaMock, which appends every call to a
+// slice that nothing here reads. The executor benchmarks run on this schema,
+// and that slice grows with b.N, so its appends cost a different number of
+// bytes per op depending on where b.N falls between two of its reallocations.
+// B/op then changed from run to run of the same code.
+type executableSchema struct {
+	ExecFunc       func(ctx context.Context) graphql.ResponseHandler
+	SchemaFunc     func() *ast.Schema
+	ComplexityFunc func(ctx context.Context, typeName, fieldName string, childComplexity int, args map[string]any) (int, bool)
+}
+
+func (s *executableSchema) Schema() *ast.Schema {
+	return s.SchemaFunc()
+}
+
+func (s *executableSchema) Complexity(
+	ctx context.Context,
+	typeName, fieldName string,
+	childComplexity int,
+	args map[string]any,
+) (int, bool) {
+	return s.ComplexityFunc(ctx, typeName, fieldName, childComplexity, args)
+}
+
+func (s *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
+	return s.ExecFunc(ctx)
 }
 
 type TestExecutor struct {
