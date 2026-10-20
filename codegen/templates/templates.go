@@ -81,6 +81,8 @@ func Render(cfg Options) error {
 		panic(errors.New("recursive or concurrent call to RenderToFile detected"))
 	}
 	CurrentImports = &Imports{packages: cfg.Packages, destDir: filepath.Dir(cfg.Filename)}
+	// However the render ends, it leaves no CurrentImports, so that the next call can run.
+	defer func() { CurrentImports = nil }()
 
 	funcs := Funcs()
 	maps.Copy(funcs, cfg.Funcs)
@@ -164,7 +166,6 @@ func Render(cfg Options) error {
 	if err != nil {
 		return err
 	}
-	CurrentImports = nil
 
 	if err = write(cfg.Filename, result.Bytes(), cfg.Packages, cfg.PruneOptions); err != nil {
 		return err
