@@ -125,8 +125,7 @@ func BenchmarkRequest(b *testing.B) {
 			exec.SetQueryCache(lru.New[*ast.QueryDocument](128))
 			params := benchParams(benchQuery(fields))
 
-			b.ReportAllocs()
-			for b.Loop() {
+			request := func() {
 				ctx := graphql.StartOperationTrace(context.Background())
 				opCtx, errs := exec.CreateOperationContext(ctx, params)
 				if len(errs) > 0 {
@@ -134,6 +133,17 @@ func BenchmarkRequest(b *testing.B) {
 				}
 				handler, dispatchCtx := exec.DispatchOperation(ctx, opCtx)
 				handler(dispatchCtx)
+			}
+
+			// Serve one request outside the measured loop to warm the cache.
+			// Otherwise the first iteration parses and validates the query, and
+			// that one-off cost divided by b.N makes B/op depend on how many
+			// iterations ran.
+			request()
+
+			b.ReportAllocs()
+			for b.Loop() {
+				request()
 			}
 		})
 	}
